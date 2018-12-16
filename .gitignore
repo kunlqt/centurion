@@ -1,0 +1,15 @@
+/centuriondb/x64
+/x64
+/.vs
+/centuriondb2/x64
+/centuriondb2/isavistore
+/centuriondb2/instore
+/centuriondb2/isvstore
+/centuriondb2/docstore
+/centuriondb2/idvstore
+/centuriondb2/ibvstore
+/antlr4cpp-runtime/x64
+/antlr4cpp-runtime/.vs
+/centuriondb/sample_data
+/centurionserver/x64
+/centurionsql/x64
