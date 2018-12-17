@@ -57,6 +57,8 @@ namespace centurion
 			auto console = spdlog::get("console");
 			size_t documentsFound = 0;
 			rapidjson::Document doc;
+			bool isFirst = true;
+			strm << "[";
 			while (searchIterator->valid()) {
 				const auto documentId = searchIterator->current();
 				if (documentId == 0) {
@@ -67,6 +69,13 @@ namespace centurion
 					rapidjson::StringBuffer result;
 					rapidjson::Writer<rapidjson::StringBuffer> writer(result);
 					if (doc.Accept(writer)) {
+						if (isFirst)
+						{
+							isFirst = false;
+						} else
+						{
+							strm << ",";
+						}
 						strm << result.GetString();
 					}
 				} else {
@@ -74,6 +83,7 @@ namespace centurion
 				}
 				searchIterator->next();
 			}
+			strm << "]";
 			return documentsFound;
 		}
 
