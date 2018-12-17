@@ -149,7 +149,8 @@ private:
     auto derived = dynamic_cast<Derived<T>*>(_ptr);
 
     if (checkCast && !derived)
-      throw std::bad_cast();
+		derived = static_cast<Derived<T>*>(_ptr);
+   //   throw std::bad_cast();
 
     return derived;
   }

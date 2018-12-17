@@ -9,9 +9,9 @@
 #ifndef AstBuilder_h
 #define AstBuilder_h
 
+#include "QualifiedName.h"
 #include "NodeLocation.h"
 #include "ParsingOptions.h"
-#include "QualifiedName.h"
 #include "CentSqlBaseVisitor.h"
 #include "CentSqlParser.h"
 #include <antlr4-runtime.h>

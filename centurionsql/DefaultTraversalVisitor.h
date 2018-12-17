@@ -1,31 +1,9 @@
 #pragma once
 
-#include "AstVisitor.h"
-#include "Select.h"
-#include "Query.h"
-#include "ComparisonExpression.h"
-#include "QuerySpecification.h"
-#include "ArithmeticBinaryExpression.h"
-#include "With.h"
-#include "WithQuery.h"
-#include "SingleColumn.h"
-#include "GroupingOperation.h"
-#include "IsNotNullPredicate.h"
-#include "IsNullPredicate.h"
-#include "LogicalBinaryExpression.h"
-#include "SubqueryExpression.h"
-#include "Join.h"
-#include "JoinOn.h"
-#include "GroupBy.h"
-#include "SimpleGroupBy.h"
-#include "AliasedRelation.h"
-#include "ArithmeticUnaryExpression.h"
-#include "NotExpression.h"
-#include "InListExpression.h"
-#include "InPredicate.h"
+#include "AstVisitorImpl.h"
 
 namespace centurion {
-	class DefaultTraversalVisitor : public AstVisitor {
+	class DefaultTraversalVisitor : public AstVisitorImpl {
 
 		virtual antlrcpp::Any visitArithmeticBinary(ArithmeticBinaryExpression* node, antlr4::ParserRuleContext* context) override
 		{

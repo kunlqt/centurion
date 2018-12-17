@@ -1,5 +1,6 @@
 #include "HttpSession.hpp"
 #include "WebsocketSession.hpp"
+#include "SearchIteratorBuilder.h"
 #include <boost/config.hpp>
 #include <boost/algorithm/string.hpp>
 #include <iostream>
@@ -149,25 +150,44 @@ handle_request(
 				}
 			}
 		}
+
+		if (boost::iends_with(req.target(), "/query")) {
+			if (req[http::field::content_type] == "application/sql") {
+				
+			}
+		}
 		if (boost::iends_with(req.target(), "/query")) {
 			if (req[http::field::content_type] == "application/json") {
 				try {
 					rapidjson::StringStream ss(req.body().data());
 					rapidjson::StringBuffer output;
-					auto docsInserted = dbm->execQuery(ss, output);
+					rapidjson::Value results(rapidjson::kArrayType);
+					rapidjson::Document doc(rapidjson::kObjectType);
+					auto docsInserted = dbm->execQuery(ss, results, doc.GetAllocator());
 					http::response<http::string_body> res{ http::status::ok, req.version() };
 					res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
 					res.set(http::field::content_type, "application/json");
-					res.body() = output.GetString();
+					doc.AddMember("status", "ok", doc.GetAllocator());
+					doc.AddMember("message", results, doc.GetAllocator());
+					rapidjson::StringBuffer result;
+					rapidjson::Writer<rapidjson::StringBuffer> writer(result);
+					if (doc.Accept(writer)) {
+						res.body() = result.GetString();
+					}
 					res.keep_alive(req.keep_alive());
 					return send(std::move(res));
 				} catch (std::runtime_error& err)
 				{
 					http::response<http::string_body> res{ http::status::internal_server_error, req.version() };
 					res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
-					res.set(http::field::content_type, "text/html");
+					res.set(http::field::content_type, "application/json");
+					rapidjson::Document doc(rapidjson::kObjectType);
+					doc["status"] = "error";
+					doc["message"].SetString(err.what(), strlen(err.what()));
+					rapidjson::StringBuffer result;
+					rapidjson::Writer<rapidjson::StringBuffer> writer(result);
+					res.body() = result.GetString();
 					res.keep_alive(req.keep_alive());
-					res.body() = "An error occurred: '" + std::string(err.what()) + "'";
 					res.prepare_payload();
 					return send(std::move(res));
 				}

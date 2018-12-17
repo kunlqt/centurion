@@ -5,41 +5,11 @@
 //  Copyright © 2018 vasko. All rights reserved.
 //
 
-
-#include "Identifier.h"
-#include "SingleColumn.h"
-#include "AllColumns.h"
-#include "Table.h"
-#include "Query.h"
-#include "Select.h"
-#include "QuerySpecification.h"
-#include "DereferenceExpression.h"
-#include "Join.h"
-#include "SimpleGroupBy.h"
-#include "LongLiteral.h"
-#include "DoubleLiteral.h"
-#include "DecimalLiteral.h"
-#include "StringLiteral.h"
-#include "LogicalBinaryExpression.h"
-#include "AliasedRelation.h"
-#include "ComparisonExpression.h"
-#include "NotExpression.h"
-#include "GroupingOperation.h"
-#include "IsNullPredicate.h"
-#include "IsNotNullPredicate.h"
-#include "ArithmeticBinaryExpression.h"
-#include "ArithmeticUnaryExpression.h"
-#include "SubqueryExpression.h"
-#include "NaturalJoin.h"
 #include "AstBuilder.h"
 #include "CentSqlLexer.h"
 #include "Utils.h"
 #include "ParsingException.h"
-#include "JoinOn.h"
-#include "JoinUsing.h"
-#include "ShowStats.h"
-#include "InListExpression.h"
-#include "InPredicate.h"
+#include "AstNodes.h"
 
 namespace centurion {
 	static LogicalBinaryExpression::Operator getLogicalBinaryOperator(antlr4::Token* token);

@@ -1,8 +1,7 @@
 #pragma once
-
 #include "Utils.h"
-#include <string>
 #include <vector>
+#include <string>
 
 namespace centurion {
 

@@ -92,12 +92,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="AliasedRelation.h" />
-    <ClInclude Include="AllColumns.h" />
-    <ClInclude Include="ArithmeticBinaryExpression.h" />
-    <ClInclude Include="ArithmeticUnaryExpression.h" />
     <ClInclude Include="AstBuilder.h" />
-    <ClInclude Include="AstVisitor.h" />
+    <ClInclude Include="AstVisitorImpl.h" />
     <ClInclude Include="CaseInsensitiveStream.h" />
     <ClInclude Include="CentSqlBaseListener.h" />
     <ClInclude Include="CentSqlBaseVisitor.h" />
@@ -105,56 +101,17 @@
     <ClInclude Include="CentSqlListener.h" />
     <ClInclude Include="CentSqlParser.h" />
     <ClInclude Include="CentSqlVisitor.h" />
-    <ClInclude Include="ComparisonExpression.h" />
-    <ClInclude Include="DecimalLiteral.h" />
     <ClInclude Include="DefaultTraversalVisitor.h" />
-    <ClInclude Include="DereferenceExpression.h" />
-    <ClInclude Include="DoubleLiteral.h" />
-    <ClInclude Include="Expression.h" />
-    <ClInclude Include="GroupBy.h" />
-    <ClInclude Include="GroupingElement.h" />
-    <ClInclude Include="GroupingOperation.h" />
-    <ClInclude Include="Identifier.h" />
-    <ClInclude Include="InListExpression.h" />
-    <ClInclude Include="InPredicate.h" />
-    <ClInclude Include="IsNotNullPredicate.h" />
-    <ClInclude Include="IsNullPredicate.h" />
-    <ClInclude Include="Join.h" />
-    <ClInclude Include="JoinCriteria.h" />
-    <ClInclude Include="JoinOn.h" />
-    <ClInclude Include="JoinUsing.h" />
-    <ClInclude Include="Literal.h" />
-    <ClInclude Include="LogicalBinaryExpression.h" />
-    <ClInclude Include="LongLiteral.h" />
-    <ClInclude Include="NaturalJoin.h" />
-    <ClInclude Include="Node.h" />
     <ClInclude Include="NodeLocation.h" />
-    <ClInclude Include="NotExpression.h" />
-    <ClInclude Include="OrderBy.h" />
+    <ClInclude Include="AstNodes.h" />
     <ClInclude Include="ParsingException.h" />
     <ClInclude Include="ParsingOptions.h" />
-    <ClInclude Include="pch.h" />
     <ClInclude Include="QualifiedName.h" />
-    <ClInclude Include="Query.h" />
-    <ClInclude Include="QueryBody.h" />
-    <ClInclude Include="QuerySpecification.h" />
-    <ClInclude Include="Relation.h" />
-    <ClInclude Include="Select.h" />
-    <ClInclude Include="SelectItem.h" />
-    <ClInclude Include="ShowStats.h" />
-    <ClInclude Include="SimpleGroupBy.h" />
-    <ClInclude Include="SingleColumn.h" />
-    <ClInclude Include="SortItem.h" />
-    <ClInclude Include="Statement.h" />
-    <ClInclude Include="StringLiteral.h" />
-    <ClInclude Include="SubqueryExpression.h" />
-    <ClInclude Include="Table.h" />
     <ClInclude Include="Utils.h" />
-    <ClInclude Include="With.h" />
-    <ClInclude Include="WithQuery.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ArithmeticBinaryExpression.cpp" />
+    <ClCompile Include="AstVisitorImpl.cpp" />
+    <ClCompile Include="AstNodes.cpp" />
     <ClCompile Include="AstBuilder.cpp" />
     <ClCompile Include="CaseInsensitiveStream.cpp" />
     <ClCompile Include="CentSqlBaseListener.cpp" />
@@ -163,10 +120,7 @@
     <ClCompile Include="CentSqlListener.cpp" />
     <ClCompile Include="CentSqlParser.cpp" />
     <ClCompile Include="CentSqlVisitor.cpp" />
-    <ClCompile Include="ComparisonExpression.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Node.cpp" />
-    <ClCompile Include="WithQuery.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

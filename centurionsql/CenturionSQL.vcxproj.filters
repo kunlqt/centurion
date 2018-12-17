@@ -15,13 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="pch.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="AstBuilder.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="AstVisitor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="CaseInsensitiveStream.h">
@@ -45,154 +39,28 @@
     <ClInclude Include="CentSqlVisitor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Expression.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Node.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="NodeLocation.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="ParsingOptions.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SelectItem.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SingleColumn.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Identifier.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="AllColumns.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="QualifiedName.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Relation.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="QueryBody.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Table.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="DereferenceExpression.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Statement.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Query.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="WithQuery.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="With.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="OrderBy.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SortItem.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="QuerySpecification.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Select.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GroupBy.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GroupingElement.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Join.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="JoinCriteria.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SimpleGroupBy.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Literal.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="LongLiteral.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="LogicalBinaryExpression.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ComparisonExpression.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="DoubleLiteral.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="DecimalLiteral.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="ParsingException.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="AliasedRelation.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="StringLiteral.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="NotExpression.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GroupingOperation.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="IsNullPredicate.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="IsNotNullPredicate.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="DefaultTraversalVisitor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ArithmeticBinaryExpression.h">
+    <ClInclude Include="NodeLocation.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ArithmeticUnaryExpression.h">
+    <ClInclude Include="QualifiedName.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SubqueryExpression.h">
+    <ClInclude Include="AstVisitorImpl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="NaturalJoin.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="JoinOn.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="JoinUsing.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ShowStats.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="InListExpression.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="InPredicate.h">
+    <ClInclude Include="AstNodes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -224,16 +92,10 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Node.cpp">
+    <ClCompile Include="AstVisitorImpl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ComparisonExpression.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="WithQuery.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ArithmeticBinaryExpression.cpp">
+    <ClCompile Include="AstNodes.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

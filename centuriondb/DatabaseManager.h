@@ -44,10 +44,10 @@ namespace centurion
 			savs_(databaseRootDir_ / iasDirName)
 		{}
 		
-		size_t execQuery(rapidjson::StringStream& query, rapidjson::StringBuffer& results)
+		size_t execQuery(rapidjson::StringStream& query, rapidjson::Value& results, rapidjson::Document::AllocatorType& allocator)
 		{
 			auto searchIterators = buildSearchIterators(query);
-			return searchDocuments(searchIterators, results);
+			return searchDocuments(searchIterators, results, allocator);
 		}
 
 		size_t insertDocuments(rapidjson::StringStream& is)
@@ -127,13 +127,11 @@ namespace centurion
 			return searchIterators;
 		}
 
-		size_t searchDocuments(std::vector<centurion::SearchIterator*>& searchIterators, rapidjson::StringBuffer& results)
+		size_t searchDocuments(std::vector<centurion::SearchIterator*>& searchIterators, rapidjson::Value& results, rapidjson::Document::AllocatorType& allocator)
 		{
 			auto console = spdlog::get("console");
 			centurion::MergeIterator m(searchIterators);
 			size_t documentsFound = 0;
-			bool isFirst = true;
-			results.Put('[');
 			rapidjson::Document doc;
 			while (m.valid()) {
 				const auto documentId = m.next();
@@ -142,21 +140,14 @@ namespace centurion
 				}
 				documentsFound++;
 				if (documentStore_.findDocument(documentId, doc)) {
-					if (isFirst)
-					{
-						isFirst = false;
-					} else {
-						results.Put(',');
-					}
-					rapidjson::Writer<rapidjson::StringBuffer> writer(results);
-					if (!doc.Accept(writer)) {
-						throw std::runtime_error("Error parsing retrieved document");
-					}
+#ifdef GetObject
+#undef GetObject
+#endif			
+					results.PushBack(doc.GetObject(), allocator);
 				} else {
 					throw std::runtime_error("Document not found in the document store");
 				}
 			}
-			results.Put(']');
 			return documentsFound;
 		}
 
