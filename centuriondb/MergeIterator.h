@@ -35,12 +35,13 @@ namespace centurion
 			}
 		}
 
-		virtual DocumentId next() override
+		virtual void next() override
 		{
 			DocumentId maxDocumentId = InvalidDocumentId;
 			if (!valid())
 			{
-				return InvalidDocumentId;
+				isValid_ = false;
+				return;
 			}
 			while (true) {
 				size_t matchCount = 0;
@@ -49,7 +50,7 @@ namespace centurion
 					if (!it->valid())
 					{
 						isValid_ = false;
-						return InvalidDocumentId;
+						return;
 					}
 					DocumentId currDocumentId = it->current();
 					if (currDocumentId > maxDocumentId)
@@ -63,9 +64,10 @@ namespace centurion
 							if (!it->valid())
 							{
 								isValid_ = false;
-								return InvalidDocumentId;
+								return;
 							}
-							currDocumentId = it->next();							
+							currDocumentId = it->current();
+							it->next();							
 						}
 						if (currDocumentId > maxDocumentId)
 						{
@@ -86,7 +88,6 @@ namespace centurion
 							it->next();
 						}
 					}
-					return maxDocumentId;
 				}
 			}			
 		}

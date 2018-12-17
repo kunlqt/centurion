@@ -34,11 +34,9 @@ namespace centurion
 			delete iterator_;
 		}
 
-		DocumentId next() override
+		void next() override
 		{
-			const DocumentId result = current();
 			iterator_->Next();
-			return result;
 		}
 
 		DocumentId current() const override

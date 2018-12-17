@@ -153,9 +153,38 @@ handle_request(
 
 		if (boost::iends_with(req.target(), "/query")) {
 			if (req[http::field::content_type] == "application/sql") {
-				
-			}
+				try {
+					centurion::SearchIteratorBuilder builder;
+					std::stringstream ss(req.body());
+					centurion::SearchIterator* si = builder.buildQuery(*dbm, ss);
+					std::stringstream sss;
+					auto docsInserted = dbm->searchDocuments(si, sss);
+					http::response<http::string_body> res{ http::status::ok, req.version() };
+					res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
+					res.set(http::field::content_type, "application/json");
+					res.body() = sss.str();
+
+					res.keep_alive(req.keep_alive());
+					return send(std::move(res));
+				}
+				catch (std::runtime_error& err)
+				{
+					http::response<http::string_body> res{ http::status::internal_server_error, req.version() };
+					res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
+					res.set(http::field::content_type, "application/json");
+					rapidjson::Document doc(rapidjson::kObjectType);
+					doc["status"] = "error";
+					doc["message"].SetString(err.what(), strlen(err.what()));
+					rapidjson::StringBuffer result;
+					rapidjson::Writer<rapidjson::StringBuffer> writer(result);
+					res.body() = result.GetString();
+					res.keep_alive(req.keep_alive());
+					res.prepare_payload();
+					return send(std::move(res));
+				}
+			}			
 		}
+#if 0
 		if (boost::iends_with(req.target(), "/query")) {
 			if (req[http::field::content_type] == "application/json") {
 				try {
@@ -193,7 +222,7 @@ handle_request(
 				}
 			}
 		}
-
+#endif
 	}
 
     // Make sure we can handle the method

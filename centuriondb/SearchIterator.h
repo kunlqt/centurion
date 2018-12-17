@@ -11,6 +11,6 @@ namespace centurion
 		virtual ~SearchIterator() {};
 		virtual bool valid() const = 0;
 		virtual DocumentId current() const = 0;
-		virtual DocumentId next() = 0;
+		virtual void next() = 0;
 	};
 }

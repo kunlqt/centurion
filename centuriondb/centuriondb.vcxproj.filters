@@ -122,5 +122,8 @@
     <ClInclude Include="BooleanValueIndexStore.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="SearchIteratorAnd.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

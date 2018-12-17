@@ -48,9 +48,6 @@
     <ClInclude Include="ParsingException.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="DefaultTraversalVisitor.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="NodeLocation.h">
       <Filter>Header Files</Filter>
     </ClInclude>

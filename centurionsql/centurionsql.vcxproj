@@ -101,7 +101,6 @@
     <ClInclude Include="CentSqlListener.h" />
     <ClInclude Include="CentSqlParser.h" />
     <ClInclude Include="CentSqlVisitor.h" />
-    <ClInclude Include="DefaultTraversalVisitor.h" />
     <ClInclude Include="NodeLocation.h" />
     <ClInclude Include="AstNodes.h" />
     <ClInclude Include="ParsingException.h" />

@@ -1,6 +1,3 @@
-#include "SearchIteratorBuilder.h"
-#include "SearchIterator.h"
-#include "DefaultTraversalVisitor.h"
 #include <CentSqlBaseVisitor.h>
 #include <CentSqlLexer.h>
 #include <CentSqlParser.h>
@@ -10,9 +7,16 @@
 #include <antlr4-runtime.h>
 #include <atn/ParserATNSimulator.h>
 
+#include "SearchIteratorBuilder.h"
+#include "SearchIterator.h"
+#include "DefaultTraversalVisitor.h"
+
+
 namespace centurion {
-	std::vector<centurion::SearchIterator*> SearchIteratorBuilder::buildQuery(std::istream& query)
+	
+	SearchIterator* SearchIteratorBuilder::buildQuery(DatabaseManager& dbm, std::istream& query)
 	{
+
 		antlr4::CaseInsensitiveStream input(query);
 		CentSqlLexer lexer(&input);
 		antlr4::CommonTokenStream tokens(&lexer);
@@ -25,11 +29,12 @@ namespace centurion {
 			AstBuilder astBuilder(options);
 			tree = parser.singleStatement();
 			auto statement = astBuilder.visitSingleStatement(dynamic_cast<CentSqlParser::SingleStatementContext*>(tree));
-			DefaultTraversalVisitor visitor;
-			visitor.process(statement);
-
+			DefaultTraversalVisitor visitor(dbm);
+			return visitor.process(statement);
 		} catch (const antlr4::ParseCancellationException& exc) {
 			std::cout << exc.what() << std::endl;
+			throw;
+			/*
 			tokens.reset();
 			parser.reset();
 			parser.setErrorHandler(std::make_shared<antlr4::DefaultErrorStrategy>());
@@ -38,9 +43,8 @@ namespace centurion {
 			tree = parser.singleStatement();
 			CentSqlBaseVisitor visitor;
 			auto statement = astBuilder.visitSingleStatement(dynamic_cast<CentSqlParser::SingleStatementContext*>(tree));
+			*/
 		}
-		std::vector<centurion::SearchIterator*> result;
-		return result;
 	}
 }
 

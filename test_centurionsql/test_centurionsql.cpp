@@ -17,7 +17,7 @@ using namespace std;
 int main(int argc, const char * argv[]) {
 	using namespace centurion;
 	std::stringstream stream;
-	stream << "SELeCT person FROM students WHERE person.student.name='vasko'";
+	stream << "SELeCT a.b.c.d.* FROM supercategory WHERE a.b.c.d.e.f='vasko' and person.age = 39";
 	antlr4::CaseInsensitiveStream input(stream);
 	CentSqlLexer lexer(&input);
 	antlr4::CommonTokenStream tokens(&lexer);

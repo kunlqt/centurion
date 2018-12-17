@@ -23,22 +23,22 @@ namespace centurion
 		DoubleValueSearchIterator(const DoubleValueSearchIterator&) = delete;
 		DoubleValueSearchIterator(DoubleValueSearchIterator&& other) = delete;
 
-		static DoubleValueSearchIterator* eq(DoubleValueIndexStore& store, IndexId indexId, double val, double eps = DefaultComparisionPrecision)
+		static DoubleValueSearchIterator* eq(const DoubleValueIndexStore& store, IndexId indexId, double val, double eps = DefaultComparisionPrecision)
 		{
 			return new DoubleValueSearchIterator(store, indexId, val, val, eps);
 		}
 
-		static DoubleValueSearchIterator* lt(DoubleValueIndexStore& store, IndexId indexId, double val, double eps = DefaultComparisionPrecision)
+		static DoubleValueSearchIterator* lt(const DoubleValueIndexStore& store, IndexId indexId, double val, double eps = DefaultComparisionPrecision)
 		{
 			return new DoubleValueSearchIterator(store, indexId, std::numeric_limits<double>::min(), val, eps);
 		}
 
-		static DoubleValueSearchIterator* gt(DoubleValueIndexStore& store, IndexId indexId, double val, double eps = DefaultComparisionPrecision)
+		static DoubleValueSearchIterator* gt(const DoubleValueIndexStore& store, IndexId indexId, double val, double eps = DefaultComparisionPrecision)
 		{
 			return new DoubleValueSearchIterator(store, indexId, val, std::numeric_limits<double>::max(), eps);
 		}
 
-		static DoubleValueSearchIterator* between(DoubleValueIndexStore& store, IndexId indexId, double lower, double upper, double eps = DefaultComparisionPrecision)
+		static DoubleValueSearchIterator* between(const DoubleValueIndexStore& store, IndexId indexId, double lower, double upper, double eps = DefaultComparisionPrecision)
 		{
 			return new DoubleValueSearchIterator(store, indexId, lower, upper, eps);
 		}
@@ -50,11 +50,9 @@ namespace centurion
 			delete iterator_;
 		}
 
-		DocumentId next() override
+		void next() override
 		{
-			const DocumentId result = current();
 			iterator_->Next();
-			return result;
 		}
 
 		DocumentId current() const override
@@ -86,7 +84,7 @@ namespace centurion
 		IndexId indexId() const { return indexId_; }
 
 	private:
-		DoubleValueSearchIterator(DoubleValueIndexStore& store, IndexId indexId, double lowerBound, double upperBound, double eps)
+		DoubleValueSearchIterator(const DoubleValueIndexStore& store, IndexId indexId, double lowerBound, double upperBound, double eps)
 			:
 			store_(store),
 			indexId_(indexId),
@@ -109,7 +107,7 @@ namespace centurion
 			}
 		}
 
-		DoubleValueIndexStore& store_;
+		const DoubleValueIndexStore& store_;
 		IndexId indexId_;
 		double lowerBound_;
 		size_t lowerSliceBufSize_;

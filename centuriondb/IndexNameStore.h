@@ -43,6 +43,22 @@ namespace centurion {
 			if (dropIfExist_) rocksdb::DestroyDB(fileName_.string(), rocksdb::Options());
 		}
 
+		const IndexId getIndexId(const std::string& indexName) const
+		{
+			return getIndexId(indexName.c_str(), indexName.size());
+		}
+
+		const IndexId getIndexId(const char* indexName, size_t indexNameSize) const
+		{
+			std::string s;
+			const rocksdb::Slice slice(indexName, indexNameSize);
+			if (db_->Get(rocksdb::ReadOptions(), slice, &s).ok())
+			{
+				return *(reinterpret_cast<const IndexId*>(s.data()));
+			} 
+			throw std::runtime_error("put indexName error");			
+		}
+
 		IndexId getIndexId(const std::string& indexName)
 		{
 			return getIndexId(indexName.c_str(), indexName.size());
@@ -55,7 +71,7 @@ namespace centurion {
 			if (db_->Get(rocksdb::ReadOptions(), slice, &s).ok())
 			{
 				return *(reinterpret_cast<const IndexId*>(s.data()));
-			} 
+			}
 			++maxIndexId_;
 			IndexId tmp = maxIndexId_;
 			if (!db_->Put(rocksdb::WriteOptions(), slice, rocksdb::Slice(reinterpret_cast<const char*>(&tmp), sizeof tmp)).ok())

@@ -24,12 +24,12 @@ namespace centurion
 		StringValueSearchIterator(const StringValueSearchIterator&) = delete;
 		StringValueSearchIterator(StringValueSearchIterator&& other) = delete;			
 
-		static StringValueSearchIterator* eq(StringValueIndexStore& store, IndexId indexId, const std::string& str)
+		static StringValueSearchIterator* eq(const StringValueIndexStore& store, IndexId indexId, const std::string& str)
 		{
 			return new StringValueSearchIterator(store, indexId, str.data(), str.size());
 		}
 
-		static StringValueSearchIterator* eq(StringValueIndexStore& store, IndexId indexId, const char* str, std::uint32_t strSize)
+		static StringValueSearchIterator* eq(const StringValueIndexStore& store, IndexId indexId, const char* str, std::uint32_t strSize)
 		{
 			return new StringValueSearchIterator(store, indexId, str, strSize);
 		}
@@ -41,11 +41,10 @@ namespace centurion
 			delete iterator_;
 		}
 
-		DocumentId next() override
+		void next() override
 		{
-			const DocumentId result = current();
 			iterator_->Next();
-			return result;
+			
 		}
 
 		DocumentId current() const override
@@ -82,7 +81,7 @@ namespace centurion
 		IndexId indexId() const { return indexId_; }
 
 	private:
-		StringValueSearchIterator(StringValueIndexStore& store, IndexId indexId, const char* str, std::uint32_t strSize)
+		StringValueSearchIterator(const StringValueIndexStore& store, IndexId indexId, const char* str, std::uint32_t strSize)
 			:
 			indexId_(indexId),
 			strSize_(strSize),

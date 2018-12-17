@@ -43,12 +43,40 @@ namespace centurion
 			ibvs_(databaseRootDir_ / ibvDirName),
 			savs_(databaseRootDir_ / iasDirName)
 		{}
-		
+
+		/*
 		size_t execQuery(rapidjson::StringStream& query, rapidjson::Value& results, rapidjson::Document::AllocatorType& allocator)
 		{
-			auto searchIterators = buildSearchIterators(query);
+			auto searchIterator = buildSearchIterators(query);
 			return searchDocuments(searchIterators, results, allocator);
 		}
+		*/
+
+		size_t searchDocuments(centurion::SearchIterator* searchIterator, std::ostream& strm)
+		{
+			auto console = spdlog::get("console");
+			size_t documentsFound = 0;
+			rapidjson::Document doc;
+			while (searchIterator->valid()) {
+				const auto documentId = searchIterator->current();
+				if (documentId == 0) {
+					break;
+				}
+				documentsFound++;
+				if (documentStore_.findDocument(documentId, doc)) {
+					rapidjson::StringBuffer result;
+					rapidjson::Writer<rapidjson::StringBuffer> writer(result);
+					if (doc.Accept(writer)) {
+						strm << result.GetString();
+					}
+				} else {
+					throw std::runtime_error("Document not found in the document store");
+				}
+				searchIterator->next();
+			}
+			return documentsFound;
+		}
+
 
 		size_t insertDocuments(rapidjson::StringStream& is)
 		{
@@ -100,6 +128,13 @@ namespace centurion
 			return cnt;
 		}
 
+		const DocumentStore& documentStore() const { return documentStore_; };
+		const IndexNameStore& indexNameStore() const { return indexNameStore_; };
+		const StringValueIndexStore& isvs() const { return isvs_; };
+		const DoubleValueIndexStore& idvs() const { return idvs_; };
+		const BooleanValueIndexStore& ibvs() const { return ibvs_; };
+		const StringArrayValueIndexStore& savs() const { return savs_; };
+
 	private:
 		std::vector<centurion::SearchIterator*> buildSearchIterators(rapidjson::StringStream& query)
 		{
@@ -125,30 +160,6 @@ namespace centurion
 			}
 
 			return searchIterators;
-		}
-
-		size_t searchDocuments(std::vector<centurion::SearchIterator*>& searchIterators, rapidjson::Value& results, rapidjson::Document::AllocatorType& allocator)
-		{
-			auto console = spdlog::get("console");
-			centurion::MergeIterator m(searchIterators);
-			size_t documentsFound = 0;
-			rapidjson::Document doc;
-			while (m.valid()) {
-				const auto documentId = m.next();
-				if (documentId == 0) {
-					break;
-				}
-				documentsFound++;
-				if (documentStore_.findDocument(documentId, doc)) {
-#ifdef GetObject
-#undef GetObject
-#endif			
-					results.PushBack(doc.GetObject(), allocator);
-				} else {
-					throw std::runtime_error("Document not found in the document store");
-				}
-			}
-			return documentsFound;
 		}
 
 

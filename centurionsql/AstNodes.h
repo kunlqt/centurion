@@ -1065,8 +1065,8 @@ namespace centurion {
 		Expression* getExpression() const { return expression_; }
 
 	private:
-		std::optional<Identifier*> alias_;
 		Expression* expression_;
+		std::optional<Identifier*> alias_;		
 	};
 
 	class AliasedRelation : public Relation {
@@ -1817,7 +1817,7 @@ namespace centurion {
 		virtual antlrcpp::Any process(Node* node) = 0;
 		virtual antlrcpp::Any process(Node* node, antlr4::ParserRuleContext* context) = 0;
 
-	//private:
+//	protected:
 		virtual antlrcpp::Any visitExpression(Expression* node, antlr4::ParserRuleContext* context) = 0;
 
 		virtual antlrcpp::Any visitSelect(Select* node, antlr4::ParserRuleContext* context) = 0;
