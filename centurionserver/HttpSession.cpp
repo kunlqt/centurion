@@ -154,11 +154,16 @@ handle_request(
 		if (boost::iends_with(req.target(), "/query")) {
 			if (req[http::field::content_type] == "application/sql") {
 				try {
+					auto console = spdlog::get("console");
+					console->trace("handling /query sql request");
 					centurion::SearchIteratorBuilder builder;
 					std::stringstream ss(req.body());
+					console->trace("creating build query...");
 					centurion::SearchIterator* si = builder.buildQuery(*dbm, ss);
 					std::stringstream sss;
+					console->trace("creating search documents...");
 					auto docsInserted = dbm->searchDocuments(si, sss);
+					console->trace("Search documents finished");
 					http::response<http::string_body> res{ http::status::ok, req.version() };
 					res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
 					res.set(http::field::content_type, "application/json");

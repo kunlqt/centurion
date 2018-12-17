@@ -84,6 +84,7 @@ namespace centurion
 				searchIterator->next();
 			}
 			strm << "]";
+			console->trace("Total: {} documents found", documentsFound);
 			return documentsFound;
 		}
 

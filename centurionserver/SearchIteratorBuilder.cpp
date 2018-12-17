@@ -16,7 +16,8 @@ namespace centurion {
 	
 	SearchIterator* SearchIteratorBuilder::buildQuery(DatabaseManager& dbm, std::istream& query)
 	{
-
+		auto console = spdlog::get("console");
+		console->trace("Starting SQL parser...");
 		antlr4::CaseInsensitiveStream input(query);
 		CentSqlLexer lexer(&input);
 		antlr4::CommonTokenStream tokens(&lexer);
@@ -27,10 +28,13 @@ namespace centurion {
 			parser.setErrorHandler(std::make_shared<antlr4::BailErrorStrategy>());
 			parser.getInterpreter<antlr4::atn::ParserATNSimulator>()->setPredictionMode(antlr4::atn::PredictionMode::SLL);
 			AstBuilder astBuilder(options);
+			console->trace("Visiting single sql statetment");
 			tree = parser.singleStatement();
 			auto statement = astBuilder.visitSingleStatement(dynamic_cast<CentSqlParser::SingleStatementContext*>(tree));
 			DefaultTraversalVisitor visitor(dbm);
-			return visitor.process(statement);
+			auto result = visitor.process(statement);
+			console->trace("Parsing done, returning results");
+			return result;
 		} catch (const antlr4::ParseCancellationException& exc) {
 			std::cout << exc.what() << std::endl;
 			throw;
