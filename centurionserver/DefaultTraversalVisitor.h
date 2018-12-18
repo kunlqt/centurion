@@ -3,6 +3,7 @@
 #include "StackableAstVisitor.h"
 #include "StringValueSearchIterator.h"
 #include "SearchIteratorAnd.h"
+#include "SearchIteratorOr.h"
 #include <fmt/ostream.h>
 
 namespace centurion {
@@ -14,13 +15,57 @@ namespace centurion {
 		, dbm_(dbm) {}
 
 	
-		virtual antlrcpp::Any visitArithmeticBinary(ArithmeticBinaryExpression* node, antlr4::ParserRuleContext* context) override
+		virtual antlrcpp::Any visitArithmeticBinary(ArithmeticBinaryExpression* expr, antlr4::ParserRuleContext* context) override
 		{
 			auto console = spdlog::get("console");
-			console->trace("visitArithmeticBinary operation: {}", node->getOperator());
-
-			process(node->getLeft(), context);
-			process(node->getRight(), context);
+			console->trace("visitArithmeticBinary operation: {}", expr->getOperator());
+			antlrcpp::Any left = process(expr->getLeft(), context);
+			antlrcpp::Any right = process(expr->getRight(), context);
+			if (expr->getOperator() == ArithmeticBinaryExpression::Operator::ADD)
+			{
+				if (left.is<double>() && right.is<double>()) {
+					return left.as<double>() + right.as<double>();
+				} else if (left.is<double>() && right.is<long>()) {
+					return left.as<double>() + right.as<long>();
+				} else if (left.is<long>() && right.is<double>()) {
+					return left.as<long>() + right.as<double>();
+				} else if (left.is<long>() && right.is<long>()) {
+					return left.as<long>() + right.as<long>();
+				}
+			} else if (expr->getOperator() == ArithmeticBinaryExpression::Operator::SUBTRACT)
+			{
+				if (left.is<double>() && right.is<double>()) {
+					return left.as<double>() - right.as<double>();
+				} else if (left.is<double>() && right.is<long>()) {
+					return left.as<double>() - right.as<long>();
+				} else if (left.is<long>() && right.is<double>()) {
+					return left.as<long>() - right.as<double>();
+				} else if (left.is<long>() && right.is<long>()) {
+					return left.as<long>() - right.as<long>();
+				}
+			} else if (expr->getOperator() == ArithmeticBinaryExpression::Operator::MULTIPLY)
+			{
+				if (left.is<double>() && right.is<double>()) {
+					return left.as<double>() * right.as<double>();
+				} else if (left.is<double>() && right.is<long>()) {
+					return left.as<double>() * right.as<long>();
+				} else if (left.is<long>() && right.is<double>()) {
+					return left.as<long>() * right.as<double>();
+				} else if (left.is<long>() && right.is<long>()) {
+					return left.as<long>() * right.as<long>();
+				}
+			} else if (expr->getOperator() == ArithmeticBinaryExpression::Operator::DIVIDE)
+			{
+				if (left.is<double>() && right.is<double>()) {
+					return left.as<double>() / right.as<double>();
+				} else if (left.is<double>() && right.is<long>()) {
+					return left.as<double>() / right.as<long>();
+				} else if (left.is<long>() && right.is<double>()) {
+					return left.as<long>() / right.as<double>();
+				} else if (left.is<long>() && right.is<long>()) {
+					return left.as<long>() / right.as<long>();
+				}
+			}
 			return antlrcpp::Any();
 		}
 
@@ -45,6 +90,24 @@ namespace centurion {
 				{
 					return (SearchIterator*)DoubleValueSearchIterator::eq(dbm_.idvs(), idx, right.as<long>());
 				}
+			} else if (comparisonExpr->getOperator() == ComparisonExpression::Operator::GREATER_THAN)
+			{
+				if (right.is<double>())
+				{
+					return (SearchIterator*)DoubleValueSearchIterator::gt(dbm_.idvs(), idx, right.as<double>());
+				} else if (right.is<long>())
+				{
+					return (SearchIterator*)DoubleValueSearchIterator::gt(dbm_.idvs(), idx, right.as<long>());
+				}
+			} else if (comparisonExpr->getOperator() == ComparisonExpression::Operator::LESS_THAN)
+			{
+				if (right.is<double>())
+				{
+					return (SearchIterator*)DoubleValueSearchIterator::lt(dbm_.idvs(), idx, right.as<double>());
+				} else if (right.is<long>())
+				{
+					return (SearchIterator*)DoubleValueSearchIterator::lt(dbm_.idvs(), idx, right.as<long>());
+				}
 			}
 			return antlrcpp::Any();
 		}
@@ -59,6 +122,9 @@ namespace centurion {
 			if (logicalExpr->getOperator() == LogicalBinaryExpression::Operator::AND)
 			{
 				return new SearchIteratorAnd(left, right);
+			} else if (logicalExpr->getOperator() == LogicalBinaryExpression::Operator::OR)
+			{
+				return new SearchIteratorOr(left, right);
 			}
 			return antlrcpp::Any();
 		}
@@ -138,7 +204,7 @@ namespace centurion {
 			auto console = spdlog::get("console");
 			console->trace("visitDecimalLiteral: {}", node->getValue());
 
-			return node->getValue();
+			return std::stod(node->getValue());
 		}
 
 		virtual antlrcpp::Any visitLongLiteral(LongLiteral* node, antlr4::ParserRuleContext* context) override

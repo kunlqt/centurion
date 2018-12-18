@@ -125,5 +125,8 @@
     <ClInclude Include="SearchIteratorAnd.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="SearchIteratorOr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -188,6 +188,7 @@
     <ClInclude Include="IndexId.h" />
     <ClInclude Include="IndexNameStore.h" />
     <ClInclude Include="SearchIteratorAnd.h" />
+    <ClInclude Include="SearchIteratorOr.h" />
     <ClInclude Include="StringArrayValueIndexComparator.h" />
     <ClInclude Include="StringArrayValueIndexStore.h" />
     <ClInclude Include="StringArrayValueSearchIterator.h" />

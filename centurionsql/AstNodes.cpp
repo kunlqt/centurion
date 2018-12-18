@@ -160,20 +160,20 @@ namespace centurion {
 		return visitor->visitSimpleGroupBy(this, context);
 	}
 
-	LogicalBinaryExpression::Operator LogicalBinaryExpression::Operator::AND("AND");
-	LogicalBinaryExpression::Operator LogicalBinaryExpression::Operator::OR("OR");
+	LogicalBinaryExpression::Operator LogicalBinaryExpression::Operator::AND(And, "AND");
+	LogicalBinaryExpression::Operator LogicalBinaryExpression::Operator::OR(Or, "OR");
 
-	ArithmeticBinaryExpression::Operator ArithmeticBinaryExpression::Operator::ADD("+");
-	ArithmeticBinaryExpression::Operator ArithmeticBinaryExpression::Operator::SUBTRACT("-");
-	ArithmeticBinaryExpression::Operator ArithmeticBinaryExpression::Operator::MULTIPLY("*");
-	ArithmeticBinaryExpression::Operator ArithmeticBinaryExpression::Operator::DIVIDE("/");
-	ArithmeticBinaryExpression::Operator ArithmeticBinaryExpression::Operator::MODULUS("%");
+	ArithmeticBinaryExpression::Operator ArithmeticBinaryExpression::Operator::ADD(Add, "+");
+	ArithmeticBinaryExpression::Operator ArithmeticBinaryExpression::Operator::SUBTRACT(Subtract, "-");
+	ArithmeticBinaryExpression::Operator ArithmeticBinaryExpression::Operator::MULTIPLY(Multiply, "*");
+	ArithmeticBinaryExpression::Operator ArithmeticBinaryExpression::Operator::DIVIDE(Divide, "/");
+	ArithmeticBinaryExpression::Operator ArithmeticBinaryExpression::Operator::MODULUS(Modulus, "%");
 
-	ComparisonExpression::Operator ComparisonExpression::Operator::EQUAL("=");
-	ComparisonExpression::Operator ComparisonExpression::Operator::NOT_EQUAL("<>");
-	ComparisonExpression::Operator ComparisonExpression::Operator::LESS_THAN("<");
-	ComparisonExpression::Operator ComparisonExpression::Operator::LESS_THAN_OR_EQUAL("<=");
-	ComparisonExpression::Operator ComparisonExpression::Operator::GREATER_THAN(">");
-	ComparisonExpression::Operator ComparisonExpression::Operator::GREATER_THAN_OR_EQUAL(">=");
-	ComparisonExpression::Operator ComparisonExpression::Operator::IS_DISTINCT_FROM("IS DISTINCT FROM");
+	ComparisonExpression::Operator ComparisonExpression::Operator::EQUAL(Equal, "=");
+	ComparisonExpression::Operator ComparisonExpression::Operator::NOT_EQUAL(NotEqual, "<>");
+	ComparisonExpression::Operator ComparisonExpression::Operator::LESS_THAN(LessThan, "<");
+	ComparisonExpression::Operator ComparisonExpression::Operator::LESS_THAN_OR_EQUAL(LessThanOrEqual, "<=");
+	ComparisonExpression::Operator ComparisonExpression::Operator::GREATER_THAN(GreaterThan, ">");
+	ComparisonExpression::Operator ComparisonExpression::Operator::GREATER_THAN_OR_EQUAL(GreaterThanOrEqual, ">=");
+	ComparisonExpression::Operator ComparisonExpression::Operator::IS_DISTINCT_FROM(IsDistinctFrom, "IS DISTINCT FROM");
 }

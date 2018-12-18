@@ -346,7 +346,7 @@ public:
 			static Operator MODULUS;
 
 			bool operator==(const ArithmeticBinaryExpression::Operator& other) const {
-				return value_ == other.value_;
+				return op_ == other.op_;
 			}
 
 			friend std::ostream& operator<< (std::ostream& stream, const Operator& oper) {
@@ -355,11 +355,11 @@ public:
 			}
 
 		private:
-			Operator(std::string value) : value_(std::move(value)) { }
+			enum openum { Add, Subtract, Multiply, Divide, Modulus };
+			Operator(openum op, std::string value) : value_(std::move(value)), op_(op) { }
 			std::string value_;
+			openum op_;
 		};
-
-
 
 		ArithmeticBinaryExpression(Operator oper, Expression* left, Expression* right)
 			:
@@ -465,7 +465,7 @@ public:
 			static Operator IS_DISTINCT_FROM;
 
 			bool operator==(const ComparisonExpression::Operator& other) const {
-				return name_ == other.name_;
+				return op_ == other.op_;
 			}
 
 			friend std::ostream& operator<< (std::ostream& stream, const Operator& oper) {
@@ -474,8 +474,16 @@ public:
 			}
 
 		private:
-			Operator(const std::string& name) : name_(name) { }
+			enum openum { Equal , NotEqual
+			, LessThan
+			, LessThanOrEqual
+			, GreaterThan
+			, GreaterThanOrEqual
+			, IsDistinctFrom
+			};
+			Operator(openum op, const std::string& name) : name_(name), op_(op) { }
 			std::string name_;
+			openum op_;
 		};
 
 		ComparisonExpression(const Operator& oper, Expression* left, Expression* right)
@@ -575,7 +583,7 @@ public:
 			static Operator OR;
 
 			bool operator==(const LogicalBinaryExpression::Operator& other) const {
-				return name_ == other.name_;
+				return op_ == other.op_;
 			}
 
 			friend std::ostream& operator<< (std::ostream& stream, const Operator& oper) {
@@ -584,8 +592,10 @@ public:
 			}
 
 		private:
-			Operator(const std::string& name) : name_(name) { }
+			enum openum { And, Or };
+			Operator(openum op, const std::string& name) : name_(name), op_(op) { }
 			std::string name_;
+			openum op_;
 		};
 
 		LogicalBinaryExpression(Operator oper, Expression* left, Expression* right)
