@@ -7,18 +7,21 @@
 #include <fmt/ostream.h>
 
 namespace centurion {
-	class DefaultTraversalVisitor : public StackableAstVisitor {
-		const DatabaseManager& dbm_;
+	class DefaultTraversalVisitor : public AstVisitor {
+		const DatabaseManager& dbm_;			
+		std::shared_ptr<spdlog::logger> log_;
+
 	public:
 		DefaultTraversalVisitor(const DatabaseManager& dbm)
-		: StackableAstVisitor()
-		, dbm_(dbm) {}
-
-	
-		virtual antlrcpp::Any visitArithmeticBinary(ArithmeticBinaryExpression* expr, antlr4::ParserRuleContext* context) override
+		:
+		dbm_(dbm) 
 		{
-			auto console = spdlog::get("console");
-			console->trace("visitArithmeticBinary operation: {}", expr->getOperator());
+			log_ = spdlog::get("root")->clone("defaultastvisitor");
+		}
+
+		virtual antlrcpp::Any visitArithmeticBinary(ArithmeticBinaryExpression* expr, antlr4::ParserRuleContext* context) override
+		{	
+			log_->trace("visitArithmeticBinary operation: {}", expr->getOperator());
 			antlrcpp::Any left = process(expr->getLeft(), context);
 			antlrcpp::Any right = process(expr->getRight(), context);
 			if (expr->getOperator() == ArithmeticBinaryExpression::Operator::ADD)
@@ -31,6 +34,8 @@ namespace centurion {
 					return left.as<long>() + right.as<double>();
 				} else if (left.is<long>() && right.is<long>()) {
 					return left.as<long>() + right.as<long>();
+				} else if (left.is<std::string>() && right.is<std::string>()) {
+					return left.as<std::string>() + right.as<std::string>();
 				}
 			} else if (expr->getOperator() == ArithmeticBinaryExpression::Operator::SUBTRACT)
 			{
@@ -71,42 +76,52 @@ namespace centurion {
 
 		virtual antlrcpp::Any visitComparisonExpression(ComparisonExpression* comparisonExpr, antlr4::ParserRuleContext* context) override
 		{
-			auto console = spdlog::get("console");
-			console->trace("visitComparisonExpression operation: {}", comparisonExpr->getOperator());
-
-			antlrcpp::Any left = process(comparisonExpr->getLeft(), context);
-			antlrcpp::Any right = process(comparisonExpr->getRight(), context);
-			std::string indexName = "/" + left.as<std::string>();
+			
+			log_->trace("visitComparisonExpression operation: {}", comparisonExpr->getOperator());
+			antlrcpp::Any field;
+			antlrcpp::Any value;
+			if (dynamic_cast<Identifier*>(comparisonExpr->getLeft()) || dynamic_cast<DereferenceExpression*>(comparisonExpr->getLeft()))
+			{
+				field = process(comparisonExpr->getLeft(), context);
+				value = process(comparisonExpr->getRight(), context);
+			} else if (dynamic_cast<Identifier*>(comparisonExpr->getRight()) || dynamic_cast<DereferenceExpression*>(comparisonExpr->getRight()))
+			{
+				field = process(comparisonExpr->getRight(), context);
+				value = process(comparisonExpr->getLeft(), context);
+			} else {
+				return antlrcpp::Any();
+			}
+			const std::string indexName = "/" + field.as<std::string>();
 			IndexId idx = dbm_.indexNameStore().getIndexId(indexName);
 			if (comparisonExpr->getOperator() == ComparisonExpression::Operator::EQUAL)
 			{
-				if (right.is<std::string>())
+				if (value.is<std::string>())
 				{
-					return (SearchIterator*)StringValueSearchIterator::eq(dbm_.isvs(), idx, right.as<std::string>());
-				} else if (right.is<double>())
+					return (SearchIterator*)StringValueSearchIterator::eq(dbm_.isvs(), idx, value.as<std::string>());
+				} else if (value.is<double>())
 				{
-					return (SearchIterator*)DoubleValueSearchIterator::eq(dbm_.idvs(), idx, right.as<double>());
-				} else if (right.is<long>())
+					return (SearchIterator*)DoubleValueSearchIterator::eq(dbm_.idvs(), idx, value.as<double>());
+				} else if (value.is<long>())
 				{
-					return (SearchIterator*)DoubleValueSearchIterator::eq(dbm_.idvs(), idx, right.as<long>());
+					return (SearchIterator*)DoubleValueSearchIterator::eq(dbm_.idvs(), idx, value.as<long>());
 				}
 			} else if (comparisonExpr->getOperator() == ComparisonExpression::Operator::GREATER_THAN)
 			{
-				if (right.is<double>())
+				if (value.is<double>())
 				{
-					return (SearchIterator*)DoubleValueSearchIterator::gt(dbm_.idvs(), idx, right.as<double>());
-				} else if (right.is<long>())
+					return (SearchIterator*)DoubleValueSearchIterator::gt(dbm_.idvs(), idx, value.as<double>());
+				} else if (value.is<long>())
 				{
-					return (SearchIterator*)DoubleValueSearchIterator::gt(dbm_.idvs(), idx, right.as<long>());
+					return (SearchIterator*)DoubleValueSearchIterator::gt(dbm_.idvs(), idx, value.as<long>());
 				}
 			} else if (comparisonExpr->getOperator() == ComparisonExpression::Operator::LESS_THAN)
 			{
-				if (right.is<double>())
+				if (value.is<double>())
 				{
-					return (SearchIterator*)DoubleValueSearchIterator::lt(dbm_.idvs(), idx, right.as<double>());
-				} else if (right.is<long>())
+					return (SearchIterator*)DoubleValueSearchIterator::lt(dbm_.idvs(), idx, value.as<double>());
+				} else if (value.is<long>())
 				{
-					return (SearchIterator*)DoubleValueSearchIterator::lt(dbm_.idvs(), idx, right.as<long>());
+					return (SearchIterator*)DoubleValueSearchIterator::lt(dbm_.idvs(), idx, value.as<long>());
 				}
 			}
 			return antlrcpp::Any();
@@ -114,8 +129,8 @@ namespace centurion {
 
 		virtual antlrcpp::Any visitLogicalBinaryExpression(LogicalBinaryExpression* logicalExpr, antlr4::ParserRuleContext* context) override
 		{
-			auto console = spdlog::get("console");
-			console->trace("visitLogicalBinaryExpression operator: {}", logicalExpr->getOperator());
+			
+			log_->trace("visitLogicalBinaryExpression operator: {}", logicalExpr->getOperator());
 
 			antlrcpp::Any left = process(logicalExpr->getLeft(), context);
 			antlrcpp::Any right = process(logicalExpr->getRight(), context);
@@ -130,8 +145,8 @@ namespace centurion {
 		}
 
 		virtual antlrcpp::Any visitQuery(Query* query, antlr4::ParserRuleContext* context) override {
-			auto console = spdlog::get("console");
-			console->trace("visitQuery");
+			
+			log_->trace("visitQuery");
 
 			if (query->getWith().has_value()) {
 				process(query->getWith().value(), context);
@@ -145,8 +160,8 @@ namespace centurion {
 
 		virtual antlrcpp::Any visitWith(With* with, antlr4::ParserRuleContext* context) override
 		{
-			auto console = spdlog::get("console");
-			console->trace("visitWith");
+			
+			log_->trace("visitWith");
 
 			for (const auto& query : with->getQueries()) {
 				process(query, context);
@@ -156,29 +171,35 @@ namespace centurion {
 
 		virtual antlrcpp::Any visitWithQuery(WithQuery* node, antlr4::ParserRuleContext* context) override
 		{
-			auto console = spdlog::get("console");
-			console->trace("visitWithQuery");
+			
+			log_->trace("visitWithQuery");
 
 			return process(node->getQuery(), context);
 		}
 
-		virtual antlrcpp::Any visitSelect(Select* select, antlr4::ParserRuleContext* context) override 
+		virtual antlrcpp::Any visitAllColumns(AllColumns* node, antlr4::ParserRuleContext* context) override
 		{
-			auto console = spdlog::get("console");
-			console->trace("visitSelect");
-
-			for (SelectItem* selectItem : select->getSelectItems()) {
-				process(selectItem, context);
-			}
-			return antlrcpp::Any();
+			log_->trace("visitAllColumns");			
+			return std::string("/");
 		}
 
-
+		virtual antlrcpp::Any visitSelect(Select* select, antlr4::ParserRuleContext* context) override 
+		{	
+			log_->trace("visitSelect");
+			std::vector<std::string> result;
+			for (SelectItem* selectItem : select->getSelectItems()) {
+				auto processResult = process(selectItem, context);
+				if (processResult.is<std::string>()) {					
+					result.emplace_back(processResult.as<std::string>());
+				}
+			}
+			return result;
+		}
 
 		virtual antlrcpp::Any visitStringLiteral(StringLiteral* node, antlr4::ParserRuleContext* context) override
 		{
-			auto console = spdlog::get("console");
-			console->trace("visitStringLiteral: {}", node->getValue());
+			
+			log_->trace("visitStringLiteral: {}", node->getValue());
 
 			auto s = node->getValue();
 			if (s.size() >= 2)
@@ -193,43 +214,39 @@ namespace centurion {
 
 		virtual antlrcpp::Any visitDoubleLiteral(DoubleLiteral* node, antlr4::ParserRuleContext* context) override
 		{
-			auto console = spdlog::get("console");
-			console->trace("visitDoubleLiteral: {}", node->getValue());
+			
+			log_->trace("visitDoubleLiteral: {}", node->getValue());
 
 			return node->getValue();
 		}
 
 		virtual antlrcpp::Any visitDecimalLiteral(DecimalLiteral* node, antlr4::ParserRuleContext* context) override
 		{
-			auto console = spdlog::get("console");
-			console->trace("visitDecimalLiteral: {}", node->getValue());
+			
+			log_->trace("visitDecimalLiteral: {}", node->getValue());
 
 			return std::stod(node->getValue());
 		}
 
 		virtual antlrcpp::Any visitLongLiteral(LongLiteral* node, antlr4::ParserRuleContext* context) override
-		{
-			auto console = spdlog::get("console");
-			console->trace("visitLongLiteral: {}", node->getValue());
-
+		{			
+			log_->trace("visitLongLiteral: {}", node->getValue());
 			return node->getValue();
 		}
 
 
 		virtual antlrcpp::Any visitSingleColumn(SingleColumn* node, antlr4::ParserRuleContext* context) override
 		{
-			auto console = spdlog::get("console");
-			console->trace("visitSingleColumn");
-
-			antlrcpp::Any result = process(node->getExpression(), context);
+			
+			log_->trace("visitSingleColumn");
+			antlrcpp::Any result = "/" + process(node->getExpression(), context).as<std::string>();
 			return result;
 		}
 
 		virtual antlrcpp::Any visitGroupingOperation(GroupingOperation* node, antlr4::ParserRuleContext* context) override
 		{
-			auto console = spdlog::get("console");
-			console->trace("visitGroupingOperation");
-
+			
+			log_->trace("visitGroupingOperation");
 			for (Expression* columnArgument : node->getGroupingColumns()) {
 				process(columnArgument, context);
 			}
@@ -238,29 +255,26 @@ namespace centurion {
 
 		virtual antlrcpp::Any visitIdentifier(Identifier* identifier, antlr4::ParserRuleContext* context) override
 		{
-			auto console = spdlog::get("console");
-			console->trace("visitIdentifier: {}", identifier->getValue());
-
+			
+			log_->trace("visitIdentifier: {}", identifier->getValue());
 			return 	identifier->getValue();
 		}
 
-		virtual antlrcpp::Any visitDereferenceExpression(DereferenceExpression* dereferenceExpression, antlr4::ParserRuleContext* context) override
-		{
-			auto console = spdlog::get("console");
-			std::string result = "/" + dereferenceExpression->getField()->getValue();
-			console->trace("visitDereferenceExpression: {}", result);			
-
-			if (dereferenceExpression->getBase() != nullptr)
+		virtual antlrcpp::Any visitDereferenceExpression(DereferenceExpression* expr, antlr4::ParserRuleContext* context) override
+		{						
+			log_->trace("visitDereferenceExpression: {}", expr->getField()->getValue());
+			if (expr->getBase() != nullptr)
 			{
-				return process(dereferenceExpression->getBase(), context).as<std::string>() + result;
+				return process(expr->getBase(), context).as<std::string>() + "/" + expr->getField()->getValue();
 			} 
-			return result;
+			//return result;
+			throw std::runtime_error("missing base");
 		}
 
 		virtual antlrcpp::Any visitInListExpression(InListExpression* node, antlr4::ParserRuleContext* context) override
 		{
-			auto console = spdlog::get("console");
-			console->trace("visitInListExpression");
+			
+			log_->trace("visitInListExpression");
 
 			for (Expression* value : node->getValues()) {
 				process(value, context);
@@ -271,8 +285,8 @@ namespace centurion {
 
 		virtual antlrcpp::Any visitInPredicate(InPredicate* node, antlr4::ParserRuleContext* context) override
 		{
-			auto console = spdlog::get("console");
-			console->trace("visitInPredicate");
+			
+			log_->trace("visitInPredicate");
 
 			process(node->getValue(), context);
 			process(node->getValueList(), context);
@@ -281,32 +295,32 @@ namespace centurion {
 
 		virtual antlrcpp::Any visitArithmeticUnary(ArithmeticUnaryExpression* node, antlr4::ParserRuleContext* context) override
 		{
-			auto console = spdlog::get("console");
-			console->trace("visitArithmeticUnary");
+			
+			log_->trace("visitArithmeticUnary");
 
 			return process(node->getValue(), context);
 		}
 
 		virtual antlrcpp::Any visitNotExpression(NotExpression* node, antlr4::ParserRuleContext* context) override
 		{
-			auto console = spdlog::get("console");
-			console->trace("visitNotExpression");
+			
+			log_->trace("visitNotExpression");
 
 			return process(node->getValue(), context);
 		}
 
 		virtual antlrcpp::Any visitIsNotNullPredicate(IsNotNullPredicate* node, antlr4::ParserRuleContext* context) override
 		{
-			auto console = spdlog::get("console");
-			console->trace("visitIsNotNullPredicate");
+			
+			log_->trace("visitIsNotNullPredicate");
 
 			return process(node->getValue(), context);
 		}
 
 		virtual antlrcpp::Any visitIsNullPredicate(IsNullPredicate* node, antlr4::ParserRuleContext* context) override
 		{
-			auto console = spdlog::get("console");
-			console->trace("visitIsNullPredicate");
+			
+			log_->trace("visitIsNullPredicate");
 
 			return process(node->getValue(), context);
 		}
@@ -314,16 +328,16 @@ namespace centurion {
 
 		virtual antlrcpp::Any visitSubqueryExpression(SubqueryExpression* node, antlr4::ParserRuleContext* context) override
 		{
-			auto console = spdlog::get("console");
-			console->trace("visitSubqueryExpression");
+			
+			log_->trace("visitSubqueryExpression");
 
 			return process(node->getQuery(), context);
 		}
 
 		virtual antlrcpp::Any visitOrderBy(OrderBy* node, antlr4::ParserRuleContext* context) override
 		{
-			auto console = spdlog::get("console");
-			console->trace("visitOrderBy");
+			
+			log_->trace("visitOrderBy");
 
 			for (SortItem* sortItem : node->getSortItems()) {
 				process(sortItem, context);
@@ -333,24 +347,24 @@ namespace centurion {
 
 		virtual antlrcpp::Any visitSortItem(SortItem* node, antlr4::ParserRuleContext* context) override
 		{
-			auto console = spdlog::get("console");
-			console->trace("visitSortItem");
+			
+			log_->trace("visitSortItem");
 
 			return process(node->getSortKey(), context);
 		}
 
 		virtual antlrcpp::Any visitQuerySpecification(QuerySpecification* node, antlr4::ParserRuleContext* context) override
 		{
-			auto console = spdlog::get("console");
-			console->trace("visitQuerySpecification");
+			
+			log_->trace("visitQuerySpecification");
 
-			antlrcpp::Any result;
-			process(node->getSelect().value(), context);
+			antlrcpp::Any selectResults = process(node->getSelect().value(), context);
 			if (node->getFrom().has_value()) {
 				process(node->getFrom().value(), context);
 			}
+			antlrcpp::Any whereResults;
 			if (node->getWhere().has_value()) {
-				result = process(node->getWhere().value(), context);
+				whereResults = process(node->getWhere().value(), context);
 			}
 			if (node->getGroupBy().has_value()) {
 				process(node->getGroupBy().value(), context);
@@ -361,21 +375,21 @@ namespace centurion {
 			if (node->getOrderBy().has_value()) {
 				process(node->getOrderBy().value(), context);
 			}
-			return result;
+			return std::make_pair(selectResults, whereResults);
 		}
 
 		virtual antlrcpp::Any visitAliasedRelation(AliasedRelation* node, antlr4::ParserRuleContext* context) override
 		{
-			auto console = spdlog::get("console");
-			console->trace("visitAliasedRelation");
+			
+			log_->trace("visitAliasedRelation");
 
 			return process(node->getRelation(), context);
 		}
 
 		virtual antlrcpp::Any visitJoin(Join* node, antlr4::ParserRuleContext* context) override
 		{
-			auto console = spdlog::get("console");
-			console->trace("visitJoin");
+			
+			log_->trace("visitJoin");
 
 			process(node->getLeft(), context);
 			process(node->getRight(), context);
@@ -392,8 +406,8 @@ namespace centurion {
 
 		virtual antlrcpp::Any visitGroupBy(GroupBy* node, antlr4::ParserRuleContext* context) override
 		{
-			auto console = spdlog::get("console");
-			console->trace("visitGroupBy");
+			
+			log_->trace("visitGroupBy");
 
 			for (const auto& groupingElement : node->getGroupingElements()) {
 				process(groupingElement, context);
@@ -403,8 +417,8 @@ namespace centurion {
 
 		virtual antlrcpp::Any visitSimpleGroupBy(SimpleGroupBy* node, antlr4::ParserRuleContext* context) override
 		{
-			auto console = spdlog::get("console");
-			console->trace("visitSimpleGroupBy");
+			
+			log_->trace("visitSimpleGroupBy");
 
 			for (const auto& expression : node->getExpressions()) {
 				process(expression, context);

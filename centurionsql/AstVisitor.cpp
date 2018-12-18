@@ -1,6 +1,16 @@
 #include "AstVisitor.h"
 
 namespace centurion {
+	AstVisitor::AstVisitor() 	
+	{
+		log_ = spdlog::get("root")->clone("astvisitor");
+	}
+
+	AstVisitor::~AstVisitor()
+	{
+		
+	}
+
 	antlrcpp::Any AstVisitor::process(Node* node)
 	{
 		return process(node, nullptr);
@@ -13,201 +23,241 @@ namespace centurion {
 
 	antlrcpp::Any AstVisitor::visitExpression(Expression* node, antlr4::ParserRuleContext* context)
 	{
+		log_->trace("visitExpression");
 		return visitNode((Node*)node, context);
 	}
 
 	antlrcpp::Any AstVisitor::visitSelect(Select* node, antlr4::ParserRuleContext* context)
 	{
+		log_->trace("visitSelect");
 		return visitNode((Node*)node, context);
 	}
 
 	antlrcpp::Any AstVisitor::visitSelectItem(SelectItem* node, antlr4::ParserRuleContext* context)
 	{
+		log_->trace("visitSelectItem");
 		return visitNode((Node*)node, context);
 	}
 
 	antlrcpp::Any AstVisitor::visitSingleColumn(SingleColumn* node, antlr4::ParserRuleContext* context)
 	{
+		log_->trace("visitSingleColumn");
 		return visitSelectItem((SelectItem*)node, context);
 	}
 
 	antlrcpp::Any AstVisitor::visitAllColumns(AllColumns* node, antlr4::ParserRuleContext* context)
 	{
+		log_->trace("visitAllColumns");
 		return visitSelectItem((SelectItem*)node, context);
 	}
 
 	antlrcpp::Any AstVisitor::visitIdentifier(Identifier* node, antlr4::ParserRuleContext* context)
 	{
+		log_->trace("visitIdentifier");
 		return visitExpression((Expression*)node, context);
 	}
 
 	antlrcpp::Any AstVisitor::visitTable(Table* node, antlr4::ParserRuleContext* context)
 	{
+		log_->trace("visitTable");
 		return visitQueryBody((QueryBody*)node, context);
 	}
 
 	antlrcpp::Any AstVisitor::visitQueryBody(QueryBody* node, antlr4::ParserRuleContext* context)
 	{
+		log_->trace("visitQueryBody");
 		return visitRelation((Relation*)node, context);
 	}
 
 	antlrcpp::Any AstVisitor::visitRelation(Relation* node, antlr4::ParserRuleContext* context)
 	{
+		log_->trace("visitRelation");
 		return visitNode((Node*)node, context);
 	}
 
 	antlrcpp::Any AstVisitor::visitNode(Node* node, antlr4::ParserRuleContext* context)
 	{
+		log_->trace("visitNode");
 		return nullptr;
 	}
 
 	antlrcpp::Any AstVisitor::visitDereferenceExpression(DereferenceExpression* node, antlr4::ParserRuleContext* context)
 	{
+		log_->trace("visitDereferenceExpression");
 		return visitExpression((Expression*)node, context);
 	}
 
 	antlrcpp::Any AstVisitor::visitStatement(Statement* node, antlr4::ParserRuleContext* context)
 	{
+		log_->trace("visitStatement");
 		return visitNode((Node*)node, context);
 	}
 
 	antlrcpp::Any AstVisitor::visitQuery(Query* node, antlr4::ParserRuleContext* context)
 	{
+		log_->trace("visitQuery");
 		return visitStatement((Statement*)node, context);
 	}
 
 	antlrcpp::Any AstVisitor::visitWithQuery(WithQuery* node, antlr4::ParserRuleContext* context)
 	{
+		log_->trace("visitWithQuery");
 		return visitNode((Node*)node, context);
 	}
 
 	antlrcpp::Any AstVisitor::visitWith(With* node, antlr4::ParserRuleContext* context)
 	{
+		log_->trace("visitWith");
 		return visitNode((Node*)node, context);
 	}
 
 	antlrcpp::Any AstVisitor::visitOrderBy(OrderBy* node, antlr4::ParserRuleContext* context)
 	{
+		log_->trace("visitOrderBy");
 		return visitNode((Node*)node, context);
 	}
 
 	antlrcpp::Any AstVisitor::visitSortItem(SortItem* node, antlr4::ParserRuleContext* context)
 	{
+		log_->trace("visitSortItem");
 		return visitNode((Node*)node, context);
 	}
 
 	antlrcpp::Any AstVisitor::visitQuerySpecification(QuerySpecification* node, antlr4::ParserRuleContext* context)
 	{
+		log_->trace("visitQuerySpecification");
 		return visitQueryBody((QueryBody*)node, context);
 	}
 
 	antlrcpp::Any AstVisitor::visitGroupingElement(GroupingElement* node, antlr4::ParserRuleContext* context)
 	{
+		log_->trace("visitGroupingElement");
 		return visitNode((Node*)node, context);
 	}
 
 	antlrcpp::Any AstVisitor::visitGroupBy(GroupBy* node, antlr4::ParserRuleContext* context)
 	{
+		log_->trace("visitGroupBy");
 		return visitNode((Node*)node, context);
 	}
 
 	antlrcpp::Any AstVisitor::visitJoin(Join* node, antlr4::ParserRuleContext* context)
 	{
+		log_->trace("visitJoin");
 		return visitRelation((Relation*)node, context);
 	}
 
 	antlrcpp::Any AstVisitor::visitComparisonExpression(ComparisonExpression* node, antlr4::ParserRuleContext* context)
 	{
+		log_->trace("visitComparisonExpression");
 		return visitExpression((Expression*)node, context);
 	}
 
 	antlrcpp::Any AstVisitor::visitLiteral(Literal* node, antlr4::ParserRuleContext* context)
 	{
+		log_->trace("visitLiteral");
 		return visitExpression((Expression*)node, context);
 	}
 
 	antlrcpp::Any AstVisitor::visitDoubleLiteral(DoubleLiteral* node, antlr4::ParserRuleContext* context)
 	{
+		log_->trace("visitDoubleLiteral");
 		return visitLiteral((Literal*)node, context);
 	}
 
 	antlrcpp::Any AstVisitor::visitDecimalLiteral(DecimalLiteral* node, antlr4::ParserRuleContext* context)
 	{
+		log_->trace("visitDecimalLiteral");
 		return visitLiteral((Literal*)node, context);
 	}
 
 	antlrcpp::Any AstVisitor::visitNotExpression(NotExpression* node, antlr4::ParserRuleContext* context)
 	{
+		log_->trace("visitNotExpression");
 		return visitExpression((Expression*)node, context);
 	}
 
 	antlrcpp::Any AstVisitor::visitIsNotNullPredicate(IsNotNullPredicate* node, antlr4::ParserRuleContext* context)
 	{
+		log_->trace("visitIsNotNullPredicate");
 		return visitExpression((Expression*)node, context);
 	}
 
 	antlrcpp::Any AstVisitor::visitIsNullPredicate(IsNullPredicate* node, antlr4::ParserRuleContext* context)
 	{
+		log_->trace("visitIsNullPredicate");
 		return visitExpression((Expression*)node, context);
 	}
 
 	antlrcpp::Any AstVisitor::visitLongLiteral(LongLiteral* node, antlr4::ParserRuleContext* context)
 	{
+		log_->trace("visitLongLiteral");
 		return visitLiteral((Literal*)node, context);
 	}
 
 	antlrcpp::Any AstVisitor::visitLogicalBinaryExpression(LogicalBinaryExpression* node, antlr4::ParserRuleContext* context)
 	{
+		log_->trace("visitLogicalBinaryExpression");
 		return visitExpression((Expression*)node, context);
 	}
 
 	antlrcpp::Any AstVisitor::visitStringLiteral(StringLiteral* node, antlr4::ParserRuleContext* context)
 	{
+		log_->trace("visitStringLiteral");
 		return visitLiteral((Literal*)node, context);
 	}
 
 	antlrcpp::Any AstVisitor::visitAliasedRelation(AliasedRelation* node, antlr4::ParserRuleContext* context)
 	{
+		log_->trace("visitAliasedRelation");
 		return visitRelation((Relation*)node, context);
 	}
 
 	antlrcpp::Any AstVisitor::visitGroupingOperation(GroupingOperation* node, antlr4::ParserRuleContext* context)
 	{
+		log_->trace("visitGroupingOperation");
 		return visitExpression((Expression*)node, context);
 	}
 
 	antlrcpp::Any AstVisitor::visitArithmeticBinary(ArithmeticBinaryExpression* node, antlr4::ParserRuleContext* context)
 	{
+		log_->trace("visitArithmeticBinary");
 		return visitExpression((Expression*)node, context);
 	}
 
 	antlrcpp::Any AstVisitor::visitArithmeticUnary(ArithmeticUnaryExpression* node, antlr4::ParserRuleContext* context)
 	{
+		log_->trace("visitArithmeticUnary");
 		return visitExpression((Expression*)node, context);
 	}
 
 	antlrcpp::Any AstVisitor::visitSubqueryExpression(SubqueryExpression* node, antlr4::ParserRuleContext* context)
 	{
+		log_->trace("visitSubqueryExpression");
 		return visitExpression((Expression*)node, context);
 	}
 
 	antlrcpp::Any AstVisitor::visitShowStats(ShowStats* node, antlr4::ParserRuleContext* context)
 	{
+		log_->trace("visitShowStats");
 		return visitStatement((Statement*)node, context);
 	}
 
 	antlrcpp::Any AstVisitor::visitSimpleGroupBy(SimpleGroupBy* node, antlr4::ParserRuleContext* context)
 	{
+		log_->trace("visitSimpleGroupBy");
 		return visitGroupingElement((GroupingElement*)node, context);
 	}
 
 	antlrcpp::Any AstVisitor::visitInListExpression(InListExpression* node, antlr4::ParserRuleContext* context)
 	{
+		log_->trace("visitInListExpression");
 		return visitExpression((Expression*)node, context);
 	}
 
 	antlrcpp::Any AstVisitor::visitInPredicate(InPredicate* node, antlr4::ParserRuleContext* context)
 	{
+		log_->trace("visitInPredicate");
 		return visitExpression((Expression*)node, context);
 	}
 

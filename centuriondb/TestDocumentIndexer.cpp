@@ -10,7 +10,7 @@
 
 #if 0
 TEST(TestDocumentIndexer, TestInsertDocuments) {
-	auto console = spdlog::get("console");
+	auto console = spdlog::get("root");
 
 	centurion::IndexNameStore indexNameStore("instore", true);
 	centurion::StringValueIndexStore isvs("ivstore", true);

@@ -42,7 +42,7 @@ namespace centurion {
 			auto status = db_->Write(writeOptions_, &w);
 			if (!status.ok())
 			{
-				auto console = spdlog::get("console");
+				auto console = spdlog::get("root");
 				console->error("Error indexing string value. Error: {}", status.ToString());
 				return false;
 			}

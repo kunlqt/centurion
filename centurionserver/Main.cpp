@@ -12,8 +12,8 @@
 
 int main(int argc, char* argv[])
 {
-	auto console = spdlog::stdout_color_mt("console");
-	console->set_level(spdlog::level::trace);
+	auto rootLogger = spdlog::stdout_color_mt("root");
+	rootLogger->set_level(spdlog::level::trace);
 
 	// Check command line arguments.
 	if (argc != 5)
@@ -30,19 +30,19 @@ int main(int argc, char* argv[])
 
 	if (!boost::filesystem::exists(db_root))
 	{
-		console->error("DB directory {} does not exists", db_root.string());
+		rootLogger->error("DB directory {} does not exists", db_root.string());
 		return 0;
 	}
 
 	if (!boost::filesystem::exists(doc_root))
 	{
-		console->error("html document directory {} does not exists", doc_root.string());
+		rootLogger->error("html document directory {} does not exists", doc_root.string());
 		return 0;
 	}
 
 	if (!boost::filesystem::exists(doc_root / "index.html"))
 	{
-		console->error("index.html doesn't exist in the document directory {}", doc_root.string());
+		rootLogger->error("index.html doesn't exist in the document directory {}", doc_root.string());
 		return 0;
 	}
 
@@ -86,7 +86,7 @@ int main(int argc, char* argv[]) {
 	//::testing::InitGoogleTest(&argc, argv);
 	//return RUN_ALL_TESTS();
 
-	console->info("CenturionDB service started");
+	rootLogger->info("CenturionDB service started");
 	//loadDocuments();
 	query();
 

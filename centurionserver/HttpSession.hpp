@@ -17,6 +17,7 @@ using tcp = boost::asio::ip::tcp;               // from <boost/asio/ip/tcp.hpp>
 */
 class http_session : public std::enable_shared_from_this<http_session>
 {
+	std::shared_ptr<spdlog::logger> log_;
     tcp::socket socket_;
     beast::flat_buffer buffer_;
     std::shared_ptr<shared_state> state_;

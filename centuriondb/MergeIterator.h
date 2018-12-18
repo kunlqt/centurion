@@ -19,7 +19,7 @@ namespace centurion
 			currentDocumentId_(InvalidDocumentId),
 			isValid_(true)
 		{
-			auto console = spdlog::get("console");
+			auto console = spdlog::get("root");
 			if (std::any_of(iterators_.begin(), iterators_.end(), [](auto it) { return !it->valid(); }))
 			{
 				console->error("some of the iterators passed to MergeIterator are invalid");

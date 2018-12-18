@@ -86,6 +86,8 @@ handle_request(
     http::request<Body, http::basic_fields<Allocator>>&& req,
     Send&& send)
 {
+	auto log = spdlog::get("root");
+
     // Returns a bad request response
     auto const bad_request =
     [&req](beast::string_view why)
@@ -153,17 +155,16 @@ handle_request(
 
 		if (boost::iends_with(req.target(), "/query")) {
 			if (req[http::field::content_type] == "application/sql") {
-				try {
-					auto console = spdlog::get("console");
-					console->trace("handling /query sql request");
+				try {					
+					log->trace("handling /query sql request");
 					centurion::SearchIteratorBuilder builder;
 					std::stringstream ss(req.body());
-					console->trace("creating build query...");
+					log->trace("creating build query...");
 					centurion::SearchIterator* si = builder.buildQuery(*dbm, ss);
 					std::stringstream sss;
-					console->trace("creating search documents...");
+					log->trace("creating search documents...");
 					auto docsInserted = dbm->searchDocuments(si, sss);
-					console->trace("Search documents finished");
+					log->trace("Search documents finished");
 					http::response<http::string_body> res{ http::status::ok, req.version() };
 					res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
 					res.set(http::field::content_type, "application/json");
@@ -273,11 +274,13 @@ http_session::http_session(
     , state_(state)
 	, dbm_(dbm)
 {
+	log_ = spdlog::get("root")->clone("http_session");
 	parser_.body_limit((std::numeric_limits<std::uint64_t>::max)());
 }
 
 void http_session::run()
 {
+	log_->trace("started");
 	http::async_read(socket_, buffer_, parser_, 
 		std::bind(
 			&http_session::on_read,
@@ -285,16 +288,6 @@ void http_session::run()
 			std::placeholders::_1,
 			std::placeholders::_2)
 	);
-	
-	/*
-    // Read a request
-	http::async_read(socket_, buffer_, req_,
-        std::bind(
-            &http_session::on_read,
-            shared_from_this(),
-            std::placeholders::_1,
-            std::placeholders::_2));
-	*/
 }
 
 // Report a failure
@@ -393,7 +386,7 @@ void http_session::on_read(beast::error_code ec, std::size_t)
     handle_request(
 		dbm_.get(),
         state_->doc_root().string(),
-        std::move(parser_.get() /* req_ */),
+        std::move(parser_.get()),
         send_lambda(*this));
 
 #endif

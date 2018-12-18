@@ -6,7 +6,7 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 
 TEST(TestIndexedDoubleValueStore, TestIndexDoubleValue) {
-	auto console = spdlog::get("console");
+	auto console = spdlog::get("root");
 	centurion::IndexNameStore indexNameStore("instore", true);
 	centurion::DoubleValueIndexStore isvs("ivstore", true);
 	centurion::IndexId idx = 5;

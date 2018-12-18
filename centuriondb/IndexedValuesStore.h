@@ -17,7 +17,7 @@ namespace centurion {
 			comparator_(cmp),
 			dropIfExist_(dropIfExist)
 		{
-			auto console = spdlog::get("console");
+			log_ = spdlog::get("root")->clone("IndexedValuesStore");			
 			opts_.create_if_missing = true;
 			opts_.manual_wal_flush = true;
 			opts_.enable_pipelined_write = true;
@@ -27,17 +27,18 @@ namespace centurion {
 				rocksdb::DestroyDB(filename_.string(), opts_);
 			}
 			opts_.comparator = cmp;			
-			console->trace("Opening db index value store: {}...", filename_.string());
+			log_->trace("Opening db index value store: {}...", filename_.string());
 			rocksdb::Status s1 = rocksdb::DB::Open(opts_, filename_.string(), &db_);
 			if (s1.ok()) {
-				console->trace("Index value store opened!");
+				log_->trace("Index value store opened!");
 			} else {
-				console->error("An error occured while opening db index value store, error: {}", s1.ToString());
+				log_->error("An error occured while opening db index value store, error: {}", s1.ToString());
 			}
 		}
 
 		virtual ~IndexedValuesStore()
 		{
+			log_->trace("Releasing index value store!");
 			db_->FlushWAL(true);
 			db_->SyncWAL();
 			db_->Close();
@@ -52,7 +53,7 @@ namespace centurion {
 			return db_->NewIterator(opts);
 		}
 		
-	protected:
+	protected:			
 		rocksdb::Options opts_;
 		rocksdb::WriteOptions writeOptions_;
 		rocksdb::SliceParts emptySliceParts_;
@@ -60,5 +61,8 @@ namespace centurion {
 		boost::filesystem::path filename_;
 		const rocksdb::Comparator* comparator_;
 		bool dropIfExist_;
+
+	private:
+		std::shared_ptr<spdlog::logger> log_;
 	};
 }

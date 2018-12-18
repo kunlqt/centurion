@@ -16,7 +16,7 @@ namespace centurion {
 	
 	SearchIterator* SearchIteratorBuilder::buildQuery(DatabaseManager& dbm, std::istream& query)
 	{
-		auto console = spdlog::get("console");
+		auto console = spdlog::get("root");
 		console->trace("Starting SQL parser...");
 		antlr4::CaseInsensitiveStream input(query);
 		CentSqlLexer lexer(&input);

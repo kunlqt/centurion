@@ -54,7 +54,7 @@ namespace centurion
 
 		size_t searchDocuments(centurion::SearchIterator* searchIterator, std::ostream& strm)
 		{
-			auto console = spdlog::get("console");
+			auto console = spdlog::get("root");
 			size_t documentsFound = 0;
 			rapidjson::Document doc;
 			bool isFirst = true;
@@ -94,7 +94,7 @@ namespace centurion
 			centurion::DocumentIndexer documentIndexer(documentStore_, indexNameStore_, isvs_, idvs_, ibvs_, savs_);
 
 			bool dropDatabase = false;
-			auto console = spdlog::get("console");
+			auto console = spdlog::get("root");
 
 			console->trace("Loading json file...");
 			const size_t readBufferSize = 16535 * 1024;
@@ -150,7 +150,7 @@ namespace centurion
 		std::vector<centurion::SearchIterator*> buildSearchIterators(rapidjson::StringStream& query)
 		{
 			std::vector<centurion::SearchIterator*> searchIterators;
-			auto console = spdlog::get("console");
+			auto console = spdlog::get("root");
 			rapidjson::Document doc;
 			doc.ParseStream(query);
 			if (doc.HasParseError())

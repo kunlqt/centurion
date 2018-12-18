@@ -44,7 +44,7 @@ namespace centurion
 			if (iterator_->Valid()) {
 				return *(DocumentId*)(iterator_->key().data() + sizeof(indexId_) + sizeof(std::uint8_t));
 			} else {
-				auto console = spdlog::get("console");
+				auto console = spdlog::get("root");
 				console->trace("BooleanValueSearchIterator.current().valid()=false");
 			}
 			throw std::runtime_error("Invalid iterator");
@@ -80,7 +80,7 @@ namespace centurion
 			upperSliceBuf_(new char[upperSliceBufSize_]),
 			upperBoundSlice_(buildBooleanSlice(val ? indexId + 1: indexId, !val, upperSliceBuf_, upperSliceBufSize_))
 		{
-			auto console = spdlog::get("console");
+			auto console = spdlog::get("root");
 			opts_.iterate_lower_bound = &lowerBoundSlice_;
 			opts_.iterate_upper_bound = &upperBoundSlice_;
 			iterator_ = store_.newIterator(opts_);

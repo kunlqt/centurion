@@ -9,16 +9,20 @@
 #pragma once
 
 #include "AstNodes.h"
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
 #include <antlr4-runtime.h>
 
 namespace centurion {
 	class AstVisitor {
+	private:
+		std::shared_ptr<spdlog::logger> log_;
 
 	public:
-		virtual ~AstVisitor()
-		{
+		AstVisitor();
 
-		}
+		virtual ~AstVisitor();
+
 
 		virtual antlrcpp::Any process(Node* node);
 		virtual antlrcpp::Any process(Node* node, antlr4::ParserRuleContext* context);

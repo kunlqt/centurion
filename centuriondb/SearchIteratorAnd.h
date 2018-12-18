@@ -18,7 +18,7 @@ namespace centurion
 			currentDocumentId_(InvalidDocumentId),
 			isValid_(true)
 		{
-			auto console = spdlog::get("console");
+			auto console = spdlog::get("root");
 			if (!left_->valid() || !right_->valid())
 			{
 				console->error("some of the iterators passed to SearchIteratorAnd are invalid");

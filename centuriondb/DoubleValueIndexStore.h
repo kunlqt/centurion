@@ -32,7 +32,7 @@ namespace centurion {
 			auto status = db_->Write(rocksdb::WriteOptions(), &w);
 			if (!status.ok())
 			{
-				auto console = spdlog::get("console");
+				auto console = spdlog::get("root");
 				console->error("Error indexing double value. Error: {}", status.ToString());
 				return false;
 			}

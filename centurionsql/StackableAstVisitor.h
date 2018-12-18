@@ -6,7 +6,6 @@
 namespace centurion {
 	class StackableAstVisitor : public AstVisitor {
 	public:
-
 		class StackableAstVisitorContext : public antlr4::ParserRuleContext
 		{
 		public:
