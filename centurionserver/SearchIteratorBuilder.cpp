@@ -32,7 +32,8 @@ namespace centurion {
 			tree = parser.singleStatement();
 			auto statement = astBuilder.visitSingleStatement(dynamic_cast<CentSqlParser::SingleStatementContext*>(tree));
 			DefaultTraversalVisitor visitor(dbm);
-			auto result = visitor.process(statement);
+			antlr4::ParserRuleContext context;			
+			auto result = visitor.process(statement, &context);
 			console->trace("Parsing done, returning results");
 			return result;
 		} catch (const antlr4::ParseCancellationException& exc) {

@@ -55,8 +55,10 @@ namespace centurion {
 			if (db_->Get(rocksdb::ReadOptions(), slice, &s).ok())
 			{
 				return *(reinterpret_cast<const IndexId*>(s.data()));
-			} 
-			throw std::runtime_error("put indexName error");			
+			}
+			std::stringstream ss;
+			ss << "Field: " << indexName << " not found";
+			throw std::runtime_error(ss.str());
 		}
 
 		IndexId getIndexId(const std::string& indexName)

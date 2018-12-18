@@ -54,10 +54,13 @@
     <ClInclude Include="QualifiedName.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="AstVisitorImpl.h">
+    <ClInclude Include="AstNodes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="AstNodes.h">
+    <ClInclude Include="AstVisitor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="StackableAstVisitor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -89,10 +92,10 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="AstVisitorImpl.cpp">
+    <ClCompile Include="AstNodes.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="AstNodes.cpp">
+    <ClCompile Include="AstVisitor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

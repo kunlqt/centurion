@@ -95,7 +95,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="AstBuilder.h" />
-    <ClInclude Include="AstVisitorImpl.h" />
+    <ClInclude Include="AstVisitor.h" />
     <ClInclude Include="CaseInsensitiveStream.h" />
     <ClInclude Include="CentSqlBaseListener.h" />
     <ClInclude Include="CentSqlBaseVisitor.h" />
@@ -108,10 +108,11 @@
     <ClInclude Include="ParsingException.h" />
     <ClInclude Include="ParsingOptions.h" />
     <ClInclude Include="QualifiedName.h" />
+    <ClInclude Include="StackableAstVisitor.h" />
     <ClInclude Include="Utils.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="AstVisitorImpl.cpp" />
+    <ClCompile Include="AstVisitor.cpp" />
     <ClCompile Include="AstNodes.cpp" />
     <ClCompile Include="AstBuilder.cpp" />
     <ClCompile Include="CaseInsensitiveStream.cpp" />

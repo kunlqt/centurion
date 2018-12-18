@@ -7,7 +7,7 @@
 #include <boost/asio/ip/address.hpp>
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/signal_set.hpp>
-#include <boost/filesystem/path.hpp>
+#include <boost/filesystem.hpp>
 #include <iostream>
 
 int main(int argc, char* argv[])
@@ -27,6 +27,25 @@ int main(int argc, char* argv[])
 	auto port = static_cast<unsigned short>(std::atoi(argv[2]));
 	auto db_root = boost::filesystem::path(argv[3]);
 	auto doc_root = boost::filesystem::path(argv[4]);
+
+	if (!boost::filesystem::exists(db_root))
+	{
+		console->error("DB directory {} does not exists", db_root.string());
+		return 0;
+	}
+
+	if (!boost::filesystem::exists(doc_root))
+	{
+		console->error("html document directory {} does not exists", doc_root.string());
+		return 0;
+	}
+
+	if (!boost::filesystem::exists(doc_root / "index.html"))
+	{
+		console->error("index.html doesn't exist in the document directory {}", doc_root.string());
+		return 0;
+	}
+
 
 	// The io_context is required for all I/O
 	net::io_context ioc;

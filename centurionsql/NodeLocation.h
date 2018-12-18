@@ -1,10 +1,10 @@
 #pragma once
 
 namespace centurion {
-
+	
 	class NodeLocation {
 	public:
-		NodeLocation(size_t line, size_t charPositionInLine) {
+		NodeLocation(size_t line, size_t charPositionInLine)  {
 			line_ = line;
 			charPositionInLine_ = charPositionInLine;
 		}
@@ -20,7 +20,7 @@ namespace centurion {
 	private:
 		size_t line_;
 		size_t charPositionInLine_;
-
+		
 	};
 
 }

@@ -1,7 +1,8 @@
 #include "AstNodes.h"
-
+#include "AstVisitor.h"
 
 namespace centurion {
+	
 	antlrcpp::Any Node::accept(AstVisitor* visitor, antlr4::ParserRuleContext* context)
 	{
 		return visitor->visitNode(this, context);
@@ -158,6 +159,9 @@ namespace centurion {
 	antlrcpp::Any SimpleGroupBy::accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) {
 		return visitor->visitSimpleGroupBy(this, context);
 	}
+
+	LogicalBinaryExpression::Operator LogicalBinaryExpression::Operator::AND("AND");
+	LogicalBinaryExpression::Operator LogicalBinaryExpression::Operator::OR("OR");
 
 	ArithmeticBinaryExpression::Operator ArithmeticBinaryExpression::Operator::ADD("+");
 	ArithmeticBinaryExpression::Operator ArithmeticBinaryExpression::Operator::SUBTRACT("-");

@@ -134,8 +134,8 @@ handle_request(
 					auto docsInserted = dbm->insertDocuments(ss);
 					http::response<http::string_body> res{ http::status::ok, req.version() };
 					res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
-					res.set(http::field::content_type, "application/json");
-					res.body() = "Inserted total of: " + std::to_string(docsInserted) + " documents";
+					res.set(http::field::content_type, "text/html");
+					res.body() = "Inserted total: " + std::to_string(docsInserted) + " documents";
 					res.keep_alive(req.keep_alive());
 					return send(std::move(res));
 				} catch (std::runtime_error& err)
@@ -174,14 +174,31 @@ handle_request(
 				}
 				catch (std::runtime_error& err)
 				{
+					http::response<http::string_body> res{ http::status::bad_request, req.version() };
+					res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
+					res.set(http::field::content_type, "application/json");
+					rapidjson::Document doc(rapidjson::kObjectType);
+					doc.AddMember(rapidjson::StringRef("status"), rapidjson::StringRef("error"), doc.GetAllocator());
+					doc.AddMember(rapidjson::StringRef("message"), rapidjson::StringRef(err.what()), doc.GetAllocator());
+					rapidjson::StringBuffer result;
+					rapidjson::Writer<rapidjson::StringBuffer> writer(result);
+					doc.Accept(writer);
+					res.body() = result.GetString();
+					res.keep_alive(req.keep_alive());
+					res.prepare_payload();
+					return send(std::move(res));
+				}
+				catch (...)
+				{
 					http::response<http::string_body> res{ http::status::internal_server_error, req.version() };
 					res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
 					res.set(http::field::content_type, "application/json");
 					rapidjson::Document doc(rapidjson::kObjectType);
-					doc["status"] = "error";
-					doc["message"].SetString(err.what(), strlen(err.what()));
+					doc.AddMember(rapidjson::StringRef("status"), rapidjson::StringRef("error"), doc.GetAllocator());
+					doc.AddMember(rapidjson::StringRef("message"), rapidjson::StringRef("Internal error"), doc.GetAllocator());
 					rapidjson::StringBuffer result;
 					rapidjson::Writer<rapidjson::StringBuffer> writer(result);
+					doc.Accept(writer);
 					res.body() = result.GetString();
 					res.keep_alive(req.keep_alive());
 					res.prepare_payload();
@@ -189,45 +206,6 @@ handle_request(
 				}
 			}			
 		}
-#if 0
-		if (boost::iends_with(req.target(), "/query")) {
-			if (req[http::field::content_type] == "application/json") {
-				try {
-					rapidjson::StringStream ss(req.body().data());
-					rapidjson::StringBuffer output;
-					rapidjson::Value results(rapidjson::kArrayType);
-					rapidjson::Document doc(rapidjson::kObjectType);
-					auto docsInserted = dbm->execQuery(ss, results, doc.GetAllocator());
-					http::response<http::string_body> res{ http::status::ok, req.version() };
-					res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
-					res.set(http::field::content_type, "application/json");
-					doc.AddMember("status", "ok", doc.GetAllocator());
-					doc.AddMember("message", results, doc.GetAllocator());
-					rapidjson::StringBuffer result;
-					rapidjson::Writer<rapidjson::StringBuffer> writer(result);
-					if (doc.Accept(writer)) {
-						res.body() = result.GetString();
-					}
-					res.keep_alive(req.keep_alive());
-					return send(std::move(res));
-				} catch (std::runtime_error& err)
-				{
-					http::response<http::string_body> res{ http::status::internal_server_error, req.version() };
-					res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
-					res.set(http::field::content_type, "application/json");
-					rapidjson::Document doc(rapidjson::kObjectType);
-					doc["status"] = "error";
-					doc["message"].SetString(err.what(), strlen(err.what()));
-					rapidjson::StringBuffer result;
-					rapidjson::Writer<rapidjson::StringBuffer> writer(result);
-					res.body() = result.GetString();
-					res.keep_alive(req.keep_alive());
-					res.prepare_payload();
-					return send(std::move(res));
-				}
-			}
-		}
-#endif
 	}
 
     // Make sure we can handle the method
