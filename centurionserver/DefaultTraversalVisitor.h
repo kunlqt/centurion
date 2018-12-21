@@ -1,5 +1,6 @@
 #pragma once
 
+#include "TraversalVisitorResult.h"
 #include "StackableAstVisitor.h"
 #include "StringValueSearchIterator.h"
 #include "SearchIteratorAnd.h"
@@ -186,11 +187,11 @@ namespace centurion {
 		virtual antlrcpp::Any visitSelect(Select* select, antlr4::ParserRuleContext* context) override 
 		{	
 			log_->trace("visitSelect");
-			std::vector<std::string> result;
+			auto result = new std::vector<std::string>();
 			for (SelectItem* selectItem : select->getSelectItems()) {
 				auto processResult = process(selectItem, context);
 				if (processResult.is<std::string>()) {					
-					result.emplace_back(processResult.as<std::string>());
+					result->emplace_back(processResult.as<std::string>());
 				}
 			}
 			return result;
@@ -355,16 +356,14 @@ namespace centurion {
 
 		virtual antlrcpp::Any visitQuerySpecification(QuerySpecification* node, antlr4::ParserRuleContext* context) override
 		{
-			
-			log_->trace("visitQuerySpecification");
-
-			antlrcpp::Any selectResults = process(node->getSelect().value(), context);
+			TraversalVisitorResult* result = new TraversalVisitorResult();
+			log_->trace("visitQuerySpecification");			
+			result->selectFields = process(node->getSelect().value(), context);
 			if (node->getFrom().has_value()) {
 				process(node->getFrom().value(), context);
-			}
-			antlrcpp::Any whereResults;
+			}			
 			if (node->getWhere().has_value()) {
-				whereResults = process(node->getWhere().value(), context);
+				result->searchRootIterator = process(node->getWhere().value(), context);
 			}
 			if (node->getGroupBy().has_value()) {
 				process(node->getGroupBy().value(), context);
@@ -375,7 +374,7 @@ namespace centurion {
 			if (node->getOrderBy().has_value()) {
 				process(node->getOrderBy().value(), context);
 			}
-			return std::make_pair(selectResults, whereResults);
+			return result;
 		}
 
 		virtual antlrcpp::Any visitAliasedRelation(AliasedRelation* node, antlr4::ParserRuleContext* context) override

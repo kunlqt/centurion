@@ -198,6 +198,7 @@
     <ClInclude Include="Sha2.h" />
     <ClInclude Include="StringValueIndexComparator.h" />
     <ClInclude Include="StringValueSearchIterator.h" />
+    <ClInclude Include="TraversalVisitorResult.h" />
     <ClInclude Include="Utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

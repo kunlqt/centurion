@@ -1,14 +1,13 @@
 #pragma once
 
 #include "DatabaseManager.h"
-#include "SearchIterator.h"
-#include <vector>
+#include "TraversalVisitorResult.h"
 
 namespace centurion {
 	class SearchIteratorBuilder
 	{
 	public:
-		SearchIterator* buildQuery(DatabaseManager& dbm, std::istream& query);
+		TraversalVisitorResult* buildQuery(DatabaseManager& dbm, std::istream& query);
 
 	};
 }

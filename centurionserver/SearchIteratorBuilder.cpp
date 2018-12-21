@@ -14,7 +14,7 @@
 
 namespace centurion {
 	
-	SearchIterator* SearchIteratorBuilder::buildQuery(DatabaseManager& dbm, std::istream& query)
+	TraversalVisitorResult* SearchIteratorBuilder::buildQuery(DatabaseManager& dbm, std::istream& query)
 	{
 		auto console = spdlog::get("root");
 		console->trace("Starting SQL parser...");
@@ -33,9 +33,9 @@ namespace centurion {
 			auto statement = astBuilder.visitSingleStatement(dynamic_cast<CentSqlParser::SingleStatementContext*>(tree));
 			DefaultTraversalVisitor visitor(dbm);
 			StackableAstVisitor::StackableAstVisitorContext parserContext;
-			auto result = visitor.process(statement, &parserContext);
+			TraversalVisitorResult* res = visitor.process(statement, &parserContext).as<TraversalVisitorResult*>();			
 			console->trace("Parsing done, returning results");
-			return result;
+			return res;
 		} catch (const antlr4::ParseCancellationException& exc) {
 			std::cout << exc.what() << std::endl;
 			throw;

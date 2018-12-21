@@ -160,7 +160,8 @@ handle_request(
 					centurion::SearchIteratorBuilder builder;
 					std::stringstream ss(req.body());
 					log->trace("creating build query...");
-					centurion::SearchIterator* si = builder.buildQuery(*dbm, ss);
+					auto qry = builder.buildQuery(*dbm, ss);
+					centurion::SearchIterator* si = qry->searchRootIterator;
 					std::stringstream sss;
 					log->trace("creating search documents...");
 					auto docsInserted = dbm->searchDocuments(si, sss);
