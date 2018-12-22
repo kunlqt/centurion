@@ -52,6 +52,20 @@ namespace centurion
 
 		void next() override
 		{
+			if (iterator_ == nullptr)
+			{
+				iterator_ = store_.newIterator(opts_);
+				iterator_->Seek(lowerBoundSlice_);
+				if (iterator_->Valid())
+				{
+					isValid_ = checkUpperBound();
+				} else {
+					auto console = spdlog::get("root");
+					console->error("Invalid DoubleValueSearchIterator when searching for double values between {0} and {1}", lowerBound_, upperBound_);
+					isValid_ = false;
+				}
+				return;
+			}
 			if (isValid_ && iterator_->Valid()) {
 				iterator_->Next();
 				if (iterator_->Valid())
@@ -87,6 +101,7 @@ namespace centurion
 	private:
 		DoubleValueSearchIterator(const DoubleValueIndexStore& store, IndexId indexId, double lowerBound, double upperBound)
 			:
+			iterator_(nullptr),
 			store_(store),
 			indexId_(indexId),
 			lowerBound_(lowerBound),
@@ -102,23 +117,13 @@ namespace centurion
 			auto console = spdlog::get("root");
 			opts_.iterate_lower_bound = &lowerBoundSlice_;
 			opts_.iterate_upper_bound = &upperBoundSlice_;
-			iterator_ = store_.newIterator(opts_);
-			iterator_->Seek(lowerBoundSlice_);
-			if (iterator_->Valid())
-			{
-				isValid_ = checkUpperBound();
-			} else {
-				console->error("Invalid DoubleValueSearchIterator when searching for double values between {0} and {1}", lowerBound, upperBound);
-				isValid_ = false;
-			}
 		}
 
 		bool checkUpperBound() const
 		{
 			const char* kd = iterator_->key().data();
 			const IndexId idxA = GetIndexId(kd);
-			const IndexId idxB = GetIndexId(lowerSliceBuf_);
-			if (idxA == idxB) {
+			if (idxA == indexId_) {
 				const double valueFound = *reinterpret_cast<const double*>(kd + sizeof(indexId_));
 				return (lowerBound_ <= valueFound) && (valueFound <= upperBound_);
 			}

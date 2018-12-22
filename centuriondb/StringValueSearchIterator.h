@@ -43,41 +43,62 @@ namespace centurion
 
 		void next() override
 		{
-			if (isValid_ && iterator_->Valid()) {
+			auto console = spdlog::get("root");
+			if (getState() == BeforeFirst) {
+				iterator_->Seek(lowerBoundSlice_);
+				if (iterator_->Valid())
+				{
+					if (checkUpperBound())
+					{
+						setState(First);
+						currentDocumentId_ = *(DocumentId*)(iterator_->key().data() + GetDocumentIdOffsetInString(GetStringSize(iterator_->key().data())));
+					} else {
+						setState(AfterLast);
+						currentDocumentId_ = InvalidDocumentId;
+					}
+				} else {					
+					console->error("Invalid string search iterator");
+					setState(AfterLast);
+					currentDocumentId_ = InvalidDocumentId;
+				}
+			} else if (valid() && iterator_->Valid()) {
 				iterator_->Next();
 				if (iterator_->Valid())
 				{
-					isValid_ = checkUpperBound();
-				} else
-				{
-					isValid_ = false;
+					if (checkUpperBound())
+					{
+						if (getState() == First)
+						{
+							setState(None);
+						}
+						currentDocumentId_ = *(DocumentId*)(iterator_->key().data() + GetDocumentIdOffsetInString(GetStringSize(iterator_->key().data())));
+					} else {
+						setState(AfterLast);
+						currentDocumentId_ = InvalidDocumentId;
+					}
+				} else {
+					setState(AfterLast);
+					currentDocumentId_ = InvalidDocumentId;
 				}
 			} else {
-				isValid_ = false;
+				setState(AfterLast);
+				currentDocumentId_ = InvalidDocumentId;
 			}
+			console->trace("StringSearchIterator returned: {}", currentDocumentId_);
 		}
 
 		DocumentId current() const override
 		{
-			if (isValid_) {
-				return *(DocumentId*)(iterator_->key().data() + GetDocumentIdOffsetInString(GetStringSize(iterator_->key().data())));
-			} else {
-				auto console = spdlog::get("root");
-				console->trace("StringValueSearchIterator.current().valid()=false");
-			}
-			throw std::runtime_error("Invalid iterator");
+			return currentDocumentId_;
 		}
 
-		bool valid() const override
-		{
-			return isValid_;
-		}
 
 		IndexId indexId() const { return indexId_; }
 
 	private:
 		StringValueSearchIterator(const StringValueIndexStore& store, IndexId indexId, const char* str, std::uint32_t strSize)
 			:
+			store_(store),
 			indexId_(indexId),
 			strSize_(strSize),
 			lowerSliceBufSize_(GetDocumentIdOffsetInString(strSize)),
@@ -86,28 +107,20 @@ namespace centurion
 			upperSliceBufSize_(StringBufferOffset),
 			upperSliceBuf_(new char[upperSliceBufSize_]),
 			upperBoundSlice_(buildStringSlice(indexId + 1, nullptr, 0, upperSliceBuf_, upperSliceBufSize_)),
-			isValid_(true)
+			iterator_(nullptr),
+			currentDocumentId_(InvalidDocumentId)
 		{
 			auto console = spdlog::get("root");
 			opts_.iterate_lower_bound = &lowerBoundSlice_;
 			opts_.iterate_upper_bound = &upperBoundSlice_;
-			iterator_ = store.newIterator(opts_);
-			iterator_->Seek(lowerBoundSlice_);
-			if (iterator_->Valid())
-			{
-				isValid_ = checkUpperBound();
-			} else {
-				console->error("Invalid StringValueSearchIterator when searching for string value: {0}", str);
-				isValid_ = false;
-			} 
+			iterator_ = store_.newIterator(opts_);
 		}
 
 		bool checkUpperBound() const
 		{
 			const char* kd = iterator_->key().data();
 			const IndexId idxA = GetIndexId(kd);
-			const IndexId idxB = GetIndexId(lowerSliceBuf_);
-			if (idxA == idxB) {
+			if (idxA == indexId_) {
 				const auto strSizeFound = GetStringSize(kd);
 				if (strSizeFound == strSize_) {
 					if (iterator_->key().size() >= lowerSliceBufSize_)
@@ -118,7 +131,7 @@ namespace centurion
 			}
 			return false;
 		}
-
+		const StringValueIndexStore& store_;
 		IndexId indexId_;
 		StringSizeType strSize_;
 		size_t lowerSliceBufSize_;
@@ -129,7 +142,7 @@ namespace centurion
 		rocksdb::Slice upperBoundSlice_;
 		rocksdb::ReadOptions opts_;
 		rocksdb::Iterator* iterator_;
-		bool isValid_;
+		DocumentId currentDocumentId_;
 	};
 
 }

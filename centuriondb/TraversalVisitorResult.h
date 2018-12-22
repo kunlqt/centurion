@@ -8,7 +8,7 @@ namespace centurion {
 	using SelectedFields = std::vector<std::string>;
 
 	struct TraversalVisitorResult {
-		std::shared_ptr<SelectedFields> selectFields;
-		std::shared_ptr<SearchIterator> searchRootIterator;
+		SelectedFields* selectFields;
+		SearchIterator* searchRootIterator;
 	};
 }

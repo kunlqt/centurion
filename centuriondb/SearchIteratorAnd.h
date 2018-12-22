@@ -15,17 +15,9 @@ namespace centurion
 			:
 			left_(left), 
 			right_(right),
-			currentDocumentId_(InvalidDocumentId),
-			isValid_(true)
+			currentDocumentId_(InvalidDocumentId)
 		{
-			auto console = spdlog::get("root");
-			if (!left_->valid() || !right_->valid())
-			{
-				console->error("some of the iterators passed to SearchIteratorAnd are invalid");
-				isValid_ = false;
-				return;
-			}
-			next();
+			auto console = spdlog::get("root");			
 		}
 
 		virtual ~SearchIteratorAnd() override
@@ -36,41 +28,40 @@ namespace centurion
 
 		virtual void next() override
 		{
-			if (!isValid_)
+			left_->next();
+			if (!left_->valid())
 			{
+				setState(AfterLast);
+				return;
+			}
+			right_->next();
+			if (!right_->valid())
+			{
+				setState(AfterLast);
 				return;
 			}
 			while (true) {
-				if (!left_->valid() || !right_->valid())
-				{
-					isValid_ = false;
-					return;
+				while (left_->current() < right_->current()) {
+					left_->next();
+					if (!left_->valid()) {
+						setState(AfterLast);
+						return;
+					}										
 				}
-				DocumentId doc1 = left_->current();
-				DocumentId doc2 = right_->current();
-				while (doc1 < doc2) {
-					if (!left_->valid())
-					{
-						isValid_ = false;
+				while (left_->current() > right_->current()) {
+					right_->next();
+					if (!right_->valid()) {
+						setState(AfterLast);
 						return;
 					}
-					left_->next();
-					doc1 = left_->current();
 				}
-				while (doc1 > doc2) {
-					if (!right_->valid())
-					{
-						isValid_ = false;
-						return;
+				if (left_->current() == right_->current()) {
+					currentDocumentId_ = left_->current();
+					if (getState() == BeforeFirst) {
+						setState(First);
+					} else if (getState() == First) {
+						setState(None);
 					}
-					right_->next();
-					doc2 = right_->current();
-				}
-				if (doc1 == doc2)
-				{
-					currentDocumentId_ = doc1;
-					left_->next();
-					right_->next();
 					return;
 				}
 			}
@@ -81,15 +72,10 @@ namespace centurion
 			return currentDocumentId_;
 		}
 
-		virtual bool valid() const override
-		{
-			return isValid_;
-		}
 
 	private:
 		SearchIterator * left_;
 		SearchIterator* right_;
 		DocumentId currentDocumentId_;
-		bool isValid_;
 	};
 }

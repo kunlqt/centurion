@@ -15,17 +15,10 @@ namespace centurion
 			:
 			left_(left),
 			right_(right),
-			currentDocumentId_(InvalidDocumentId),
-			isValid_(true)
+			currentDocumentId_(InvalidDocumentId)
 		{
 			auto console = spdlog::get("root");
-			if (!left_->valid() || !right_->valid())
-			{
-				console->error("some of the iterators passed to SearchIteratorOr are invalid");
-				isValid_ = false;
-				return;
-			}
-			next();
+			
 		}
 
 		virtual ~SearchIteratorOr() override
@@ -36,25 +29,34 @@ namespace centurion
 
 		virtual void next() override
 		{
-			if (!isValid_)
+			if (getState() == BeforeFirst)
 			{
-				return;
+				left_->next();
+				right_->next();
+				if (!left_->valid() && !right_->valid())
+				{
+					setState(AfterLast);
+					return;
+				}
 			}
+			
 			while (true) {
 				if (!left_->valid())
 				{
 					if (!right_->valid())
 					{
-						isValid_ = false;
+						setState(AfterLast);
 						return;
 					}
 					currentDocumentId_ = right_->current();
+					setState(None);
 					right_->next();
 					return;
-				}
+				} 
 				if (!right_->valid())
 				{
 					currentDocumentId_ = left_->current();
+					setState(None);
 					left_->next();
 					return;
 				}
@@ -65,17 +67,20 @@ namespace centurion
 				{
 					currentDocumentId_ = doc1;
 					left_->next();
+					setState(None);
 					return;
 				}
 				if (doc1 > doc2)
 				{
 					currentDocumentId_ = doc2;
 					right_->next();
+					setState(None);
 					return;
 				}
 				currentDocumentId_ = doc2;
 				left_->next();
 				right_->next();
+				setState(None);
 				return;
 			}
 		}
@@ -85,15 +90,10 @@ namespace centurion
 			return currentDocumentId_;
 		}
 
-		virtual bool valid() const override
-		{
-			return isValid_;
-		}
 
 	private:
 		SearchIterator * left_;
 		SearchIterator* right_;
 		DocumentId currentDocumentId_;
-		bool isValid_;
 	};
 }

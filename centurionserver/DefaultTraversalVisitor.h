@@ -98,31 +98,31 @@ namespace centurion {
 			{
 				if (value.is<std::string>())
 				{
-					return std::shared_ptr<SearchIterator>(StringValueSearchIterator::eq(dbm_.isvs(), idx, value.as<std::string>()));
+					return (SearchIterator*)(StringValueSearchIterator::eq(dbm_.isvs(), idx, value.as<std::string>()));
 				} else if (value.is<double>())
 				{
-					return std::shared_ptr<SearchIterator>(DoubleValueSearchIterator::eq(dbm_.idvs(), idx, value.as<double>()));
+					return (SearchIterator*)(DoubleValueSearchIterator::eq(dbm_.idvs(), idx, value.as<double>()));
 				} else if (value.is<long>())
 				{
-					return std::shared_ptr<SearchIterator>(DoubleValueSearchIterator::eq(dbm_.idvs(), idx, value.as<long>()));
+					return (SearchIterator*)(DoubleValueSearchIterator::eq(dbm_.idvs(), idx, value.as<long>()));
 				}
 			} else if (comparisonExpr->getOperator() == ComparisonExpression::Operator::GREATER_THAN)
 			{
 				if (value.is<double>())
 				{
-					return std::shared_ptr<SearchIterator>(DoubleValueSearchIterator::gt(dbm_.idvs(), idx, value.as<double>()));
+					return (SearchIterator*)(DoubleValueSearchIterator::gt(dbm_.idvs(), idx, value.as<double>()));
 				} else if (value.is<long>())
 				{
-					return std::shared_ptr<SearchIterator>(DoubleValueSearchIterator::gt(dbm_.idvs(), idx, value.as<long>()));
+					return (SearchIterator*)(DoubleValueSearchIterator::gt(dbm_.idvs(), idx, value.as<long>()));
 				}
 			} else if (comparisonExpr->getOperator() == ComparisonExpression::Operator::LESS_THAN)
 			{
 				if (value.is<double>())
 				{
-					return std::shared_ptr<SearchIterator>(DoubleValueSearchIterator::lt(dbm_.idvs(), idx, value.as<double>()));
+					return (SearchIterator*)(DoubleValueSearchIterator::lt(dbm_.idvs(), idx, value.as<double>()));
 				} else if (value.is<long>())
 				{
-					return std::shared_ptr<SearchIterator>(DoubleValueSearchIterator::lt(dbm_.idvs(), idx, value.as<long>()));
+					return (SearchIterator*)(DoubleValueSearchIterator::lt(dbm_.idvs(), idx, value.as<long>()));
 				}
 			}
 			return antlrcpp::Any();
@@ -187,7 +187,7 @@ namespace centurion {
 		virtual antlrcpp::Any visitSelect(Select* select, antlr4::ParserRuleContext* context) override 
 		{	
 			log_->trace("visitSelect");
-			auto result = std::make_shared<SelectedFields>();
+			auto result = new SelectedFields;
 			for (SelectItem* selectItem : select->getSelectItems()) {
 				auto processResult = process(selectItem, context);
 				if (processResult.is<std::string>()) {					

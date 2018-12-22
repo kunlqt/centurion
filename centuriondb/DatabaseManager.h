@@ -76,11 +76,14 @@ namespace centurion
 				}
 			}
 			
-			while (visitorResult->searchRootIterator->valid()) {
-				const auto documentId = visitorResult->searchRootIterator->current();
-				if (documentId == 0) {
+			while (true) {
+				visitorResult->searchRootIterator->next();
+				if (!visitorResult->searchRootIterator->valid())
+				{
 					break;
 				}
+				const auto documentId = visitorResult->searchRootIterator->current();
+				console->trace("Found document id: {}", documentId);
 				totalDocumentsFound++;
 				if (documentStore_.findDocument(documentId, documentFound)) {
 					rapidjson::Document resultDocument(rapidjson::kObjectType);
@@ -113,7 +116,6 @@ namespace centurion
 				} else {
 					throw std::runtime_error("Document not found in the document store");
 				}
-				visitorResult->searchRootIterator->next();
 			}
 			strm << "]";
 			console->trace("Total: {} documents found", totalDocumentsFound);
