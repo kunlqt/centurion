@@ -5,8 +5,10 @@
 #include <vector>
 
 namespace centurion {
+	using SelectedFields = std::vector<std::string>;
+
 	struct TraversalVisitorResult {
-		std::vector<std::string>* selectFields;
-		SearchIterator* searchRootIterator;
+		std::shared_ptr<SelectedFields> selectFields;
+		std::shared_ptr<SearchIterator> searchRootIterator;
 	};
 }

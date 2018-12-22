@@ -19,6 +19,7 @@
 #include <vector>
 #include <sstream>
 #include <iostream>
+#include "TraversalVisitorResult.h"
 
 namespace centurion
 {
@@ -52,23 +53,54 @@ namespace centurion
 		}
 		*/
 
-		size_t searchDocuments(centurion::SearchIterator* searchIterator, std::ostream& strm)
+		size_t searchDocuments(TraversalVisitorResult* visitorResult, std::ostream& strm)
 		{
 			auto console = spdlog::get("root");
-			size_t documentsFound = 0;
-			rapidjson::Document doc;
+			size_t totalDocumentsFound = 0;
+			rapidjson::Document documentFound;
 			bool isFirst = true;
 			strm << "[";
-			while (searchIterator->valid()) {
-				const auto documentId = searchIterator->current();
+			auto fields = visitorResult->selectFields;
+			bool selectAllFields = true;
+			if (!fields->empty()) {
+				for (auto fieldIter = fields->begin();
+					fieldIter != fields->end();
+					++fieldIter)
+				{
+					if (*fieldIter == "/")
+					{
+						selectAllFields = true;
+						break;
+					}
+					selectAllFields = false;
+				}
+			}
+			
+			while (visitorResult->searchRootIterator->valid()) {
+				const auto documentId = visitorResult->searchRootIterator->current();
 				if (documentId == 0) {
 					break;
 				}
-				documentsFound++;
-				if (documentStore_.findDocument(documentId, doc)) {
+				totalDocumentsFound++;
+				if (documentStore_.findDocument(documentId, documentFound)) {
+					rapidjson::Document resultDocument(rapidjson::kObjectType);
+					if (selectAllFields)
+					{
+						resultDocument.Swap(documentFound);
+					} else {
+						for (auto fieldIter = fields->begin();
+							fieldIter != fields->end();
+							++fieldIter)
+						{
+							rapidjson::Value* selectedFieldValue = rapidjson::Pointer(fieldIter->data()).Get(documentFound);
+							if (selectedFieldValue != nullptr) {
+								rapidjson::Pointer(fieldIter->data()).Swap(resultDocument, *selectedFieldValue);
+							}
+						}
+					}
 					rapidjson::StringBuffer result;
 					rapidjson::Writer<rapidjson::StringBuffer> writer(result);
-					if (doc.Accept(writer)) {
+					if (resultDocument.Accept(writer)) {
 						if (isFirst)
 						{
 							isFirst = false;
@@ -81,11 +113,11 @@ namespace centurion
 				} else {
 					throw std::runtime_error("Document not found in the document store");
 				}
-				searchIterator->next();
+				visitorResult->searchRootIterator->next();
 			}
 			strm << "]";
-			console->trace("Total: {} documents found", documentsFound);
-			return documentsFound;
+			console->trace("Total: {} documents found", totalDocumentsFound);
+			return totalDocumentsFound;
 		}
 
 

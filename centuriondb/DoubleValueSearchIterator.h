@@ -11,8 +11,8 @@ namespace centurion
 {
 	inline rocksdb::Slice buildDoubleSlice(IndexId indexId, double value, char* dst, size_t dstSize)
 	{
-		*((IndexId*)dst) = indexId;
-		*((double*)(dst + sizeof(indexId))) = value;
+		SetIndexId(dst, indexId);
+		CreateDoubleIndex(dst, indexId, value);
 		return { dst, dstSize };
 	}
 
@@ -25,22 +25,22 @@ namespace centurion
 
 		static DoubleValueSearchIterator* eq(const DoubleValueIndexStore& store, IndexId indexId, double val, double eps = DefaultComparisionPrecision)
 		{
-			return new DoubleValueSearchIterator(store, indexId, val, val, eps);
+			return new DoubleValueSearchIterator(store, indexId, val - eps, val + eps);
 		}
 
 		static DoubleValueSearchIterator* lt(const DoubleValueIndexStore& store, IndexId indexId, double val, double eps = DefaultComparisionPrecision)
 		{
-			return new DoubleValueSearchIterator(store, indexId, std::numeric_limits<double>::min(), val, eps);
+			return new DoubleValueSearchIterator(store, indexId, std::numeric_limits<double>::min(), val - eps);
 		}
 
 		static DoubleValueSearchIterator* gt(const DoubleValueIndexStore& store, IndexId indexId, double val, double eps = DefaultComparisionPrecision)
 		{
-			return new DoubleValueSearchIterator(store, indexId, val, std::numeric_limits<double>::max(), eps);
+			return new DoubleValueSearchIterator(store, indexId, val + eps, std::numeric_limits<double>::max());
 		}
 
 		static DoubleValueSearchIterator* between(const DoubleValueIndexStore& store, IndexId indexId, double lower, double upper, double eps = DefaultComparisionPrecision)
 		{
-			return new DoubleValueSearchIterator(store, indexId, lower, upper, eps);
+			return new DoubleValueSearchIterator(store, indexId, lower + eps, upper - eps);
 		}
 
 		virtual ~DoubleValueSearchIterator()
@@ -52,12 +52,23 @@ namespace centurion
 
 		void next() override
 		{
-			iterator_->Next();
+			if (isValid_ && iterator_->Valid()) {
+				iterator_->Next();
+				if (iterator_->Valid())
+				{
+					isValid_ = checkUpperBound();
+				} else
+				{
+					isValid_ = false;
+				}
+			} else {
+				isValid_ = false;
+			}
 		}
 
 		DocumentId current() const override
 		{
-			if (iterator_->Valid()) {
+			if (isValid_) {
 				return *(DocumentId*)(iterator_->key().data() + sizeof(indexId_) + sizeof(double));
 			} else {
 				auto console = spdlog::get("root");
@@ -68,43 +79,50 @@ namespace centurion
 
 		bool valid() const override
 		{
-			if (iterator_->Valid())
-			{
-				const char* kd = iterator_->key().data();
-				const IndexId idxA = GetIndexId(kd);
-				const IndexId idxB = GetIndexId(lowerSliceBuf_);
-				if (idxA == idxB) {
-					const double valueFound = *reinterpret_cast<const double*>(kd + sizeof(indexId_));
-					return (lowerBound_ <= valueFound) && (valueFound <= upperBound_);
-				}
-			}
-			return false;
+			return isValid_;
 		}
 
 		IndexId indexId() const { return indexId_; }
 
 	private:
-		DoubleValueSearchIterator(const DoubleValueIndexStore& store, IndexId indexId, double lowerBound, double upperBound, double eps)
+		DoubleValueSearchIterator(const DoubleValueIndexStore& store, IndexId indexId, double lowerBound, double upperBound)
 			:
 			store_(store),
 			indexId_(indexId),
-			lowerBound_(lowerBound - eps),
+			lowerBound_(lowerBound),
 			lowerSliceBufSize_(sizeof(indexId) + sizeof(double)),
 			lowerSliceBuf_(new char[lowerSliceBufSize_]),
 			lowerBoundSlice_(buildDoubleSlice(indexId, lowerBound_, lowerSliceBuf_, lowerSliceBufSize_)),
-			upperBound_(upperBound + eps),
+			upperBound_(upperBound),
 			upperSliceBufSize_(sizeof(indexId) + sizeof(double)),
 			upperSliceBuf_(new char[upperSliceBufSize_]),
 			upperBoundSlice_(buildDoubleSlice(indexId, upperBound_, upperSliceBuf_, upperSliceBufSize_))
+		, isValid_(true)
 		{
 			auto console = spdlog::get("root");
 			opts_.iterate_lower_bound = &lowerBoundSlice_;
 			opts_.iterate_upper_bound = &upperBoundSlice_;
 			iterator_ = store_.newIterator(opts_);
 			iterator_->Seek(lowerBoundSlice_);
-			if (!iterator_->Valid()) {
-				console->error("Invalid DoubleValueSearchIterator when searching for double values between {0} and {1}", lowerBound_, upperBound_);
+			if (iterator_->Valid())
+			{
+				isValid_ = checkUpperBound();
+			} else {
+				console->error("Invalid DoubleValueSearchIterator when searching for double values between {0} and {1}", lowerBound, upperBound);
+				isValid_ = false;
 			}
+		}
+
+		bool checkUpperBound() const
+		{
+			const char* kd = iterator_->key().data();
+			const IndexId idxA = GetIndexId(kd);
+			const IndexId idxB = GetIndexId(lowerSliceBuf_);
+			if (idxA == idxB) {
+				const double valueFound = *reinterpret_cast<const double*>(kd + sizeof(indexId_));
+				return (lowerBound_ <= valueFound) && (valueFound <= upperBound_);
+			}
+			return false;
 		}
 
 		const DoubleValueIndexStore& store_;
@@ -119,7 +137,7 @@ namespace centurion
 		rocksdb::Slice upperBoundSlice_;
 		rocksdb::ReadOptions opts_;
 		rocksdb::Iterator* iterator_;
-
+		bool isValid_;
 	};
 
 }

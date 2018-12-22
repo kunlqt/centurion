@@ -160,17 +160,15 @@ handle_request(
 					centurion::SearchIteratorBuilder builder;
 					std::stringstream ss(req.body());
 					log->trace("creating build query...");
-					auto qry = builder.buildQuery(*dbm, ss);
-					centurion::SearchIterator* si = qry->searchRootIterator;
+					const auto traversalVisitorResult = builder.buildQuery(*dbm, ss);
 					std::stringstream sss;
 					log->trace("creating search documents...");
-					auto docsInserted = dbm->searchDocuments(si, sss);
+					auto docsFound = dbm->searchDocuments(traversalVisitorResult.get(), sss);
 					log->trace("Search documents finished");
 					http::response<http::string_body> res{ http::status::ok, req.version() };
 					res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
 					res.set(http::field::content_type, "application/json");
 					res.body() = sss.str();
-
 					res.keep_alive(req.keep_alive());
 					return send(std::move(res));
 				}

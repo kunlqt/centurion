@@ -7,7 +7,7 @@ namespace centurion {
 	class SearchIteratorBuilder
 	{
 	public:
-		TraversalVisitorResult* buildQuery(DatabaseManager& dbm, std::istream& query);
+		std::shared_ptr<TraversalVisitorResult> buildQuery(DatabaseManager& dbm, std::istream& query);
 
 	};
 }

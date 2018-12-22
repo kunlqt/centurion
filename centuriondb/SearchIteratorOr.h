@@ -23,6 +23,7 @@ namespace centurion
 			{
 				console->error("some of the iterators passed to SearchIteratorOr are invalid");
 				isValid_ = false;
+				return;
 			}
 			next();
 		}

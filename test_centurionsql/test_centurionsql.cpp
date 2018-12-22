@@ -8,7 +8,7 @@
 #include "CaseInsensitiveStream.h"
 #include "AstBuilder.h"
 #include "ParsingOptions.h"
-#include "DefaultTraversalVisitor.h"
+#include "AstVisitor.h"
 
 using namespace std;
 
@@ -30,7 +30,7 @@ int main(int argc, const char * argv[]) {
 		AstBuilder astBuilder(options);
 		tree = parser.singleStatement();
 		auto statement = astBuilder.visitSingleStatement(dynamic_cast<CentSqlParser::SingleStatementContext*>(tree));
-		DefaultTraversalVisitor visitor;
+		AstVisitor visitor;
 		visitor.process(statement);
 
 	} catch (const antlr4::ParseCancellationException& exc) {
