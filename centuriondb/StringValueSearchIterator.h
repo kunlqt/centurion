@@ -45,13 +45,14 @@ namespace centurion
 		{
 			auto console = spdlog::get("root");
 			if (getState() == BeforeFirst) {
+				iterator_ = store_.newIterator(opts_);
 				iterator_->Seek(lowerBoundSlice_);
 				if (iterator_->Valid())
 				{
 					if (checkUpperBound())
 					{
 						setState(First);
-						currentDocumentId_ = *(DocumentId*)(iterator_->key().data() + GetDocumentIdOffsetInString(GetStringSize(iterator_->key().data())));
+						currentDocumentId_ = ExtractDocumentIdFromString(iterator_->key().data());
 					} else {
 						setState(AfterLast);
 						currentDocumentId_ = InvalidDocumentId;
@@ -71,7 +72,7 @@ namespace centurion
 						{
 							setState(None);
 						}
-						currentDocumentId_ = *(DocumentId*)(iterator_->key().data() + GetDocumentIdOffsetInString(GetStringSize(iterator_->key().data())));
+						currentDocumentId_ = ExtractDocumentIdFromString(iterator_->key().data());
 					} else {
 						setState(AfterLast);
 						currentDocumentId_ = InvalidDocumentId;
@@ -91,7 +92,6 @@ namespace centurion
 		{
 			return currentDocumentId_;
 		}
-
 
 		IndexId indexId() const { return indexId_; }
 
@@ -113,7 +113,6 @@ namespace centurion
 			auto console = spdlog::get("root");
 			opts_.iterate_lower_bound = &lowerBoundSlice_;
 			opts_.iterate_upper_bound = &upperBoundSlice_;
-			iterator_ = store_.newIterator(opts_);
 		}
 
 		bool checkUpperBound() const

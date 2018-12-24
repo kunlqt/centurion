@@ -16,6 +16,8 @@ using StringSizeType = std::uint32_t;
 
 #define GetDocumentIdOffsetInString(stringSize) (StringBufferOffset + stringSize)
 
+#define ExtractDocumentIdFromString(buffer) (*(DocumentId*)((std::uint8_t*)buffer + GetDocumentIdOffsetInString(GetStringSize(buffer))))
+
 #define SetStringData(dst, str, strSize) if (strSize > 0) memcpy(dst + StringBufferOffset, str, strSize)
 
 #define CreateStringIndex(buffer, indexId, str, stringSize) \

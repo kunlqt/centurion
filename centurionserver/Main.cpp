@@ -13,7 +13,7 @@
 int main(int argc, char* argv[])
 {
 	auto rootLogger = spdlog::stdout_color_mt("root");
-	rootLogger->set_level(spdlog::level::trace);
+	rootLogger->set_level(spdlog::level::err);
 
 	// Check command line arguments.
 	if (argc != 5)
