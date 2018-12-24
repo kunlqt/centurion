@@ -8,7 +8,8 @@
 #include <fmt/ostream.h>
 
 namespace centurion {
-	class DefaultTraversalVisitor : public AstVisitor {
+	
+	class DefaultTraversalVisitor : public StackableAstVisitor {
 		const DatabaseManager& dbm_;			
 		std::shared_ptr<spdlog::logger> log_;
 
@@ -20,109 +21,129 @@ namespace centurion {
 			log_ = spdlog::get("root")->clone("defaultastvisitor");
 		}
 
+		 bool CastToDouble(antlrcpp::Any val, double& target) const
+		{
+			if (val.is<DoubleLiteral*>()) {
+				target = val.as<DoubleLiteral*>()->getValue(); 
+				return true;
+			}
+			if (val.is<DecimalLiteral*>()) {
+				std::stod(val.as<DecimalLiteral*>()->getValue()); 
+				return true;
+			}
+			if (val.is<LongLiteral*>()) {
+				target = val.as<LongLiteral*>()->getValue();
+				return true;
+			}
+			return false;
+		}
 		virtual antlrcpp::Any visitArithmeticBinary(ArithmeticBinaryExpression* expr, antlr4::ParserRuleContext* context) override
 		{	
 			log_->trace("visitArithmeticBinary operation: {}", expr->getOperator());
 			antlrcpp::Any left = process(expr->getLeft(), context);
 			antlrcpp::Any right = process(expr->getRight(), context);
-			if (expr->getOperator() == ArithmeticBinaryExpression::Operator::ADD)
-			{
-				if (left.is<double>() && right.is<double>()) {
-					return left.as<double>() + right.as<double>();
-				} else if (left.is<double>() && right.is<long>()) {
-					return left.as<double>() + right.as<long>();
-				} else if (left.is<long>() && right.is<double>()) {
-					return left.as<long>() + right.as<double>();
-				} else if (left.is<long>() && right.is<long>()) {
-					return left.as<long>() + right.as<long>();
-				} else if (left.is<std::string>() && right.is<std::string>()) {
-					return left.as<std::string>() + right.as<std::string>();
+			double leftVal;
+			double rightVal;
+			if (CastToDouble(left, leftVal) && CastToDouble(right, rightVal)) {
+				if (expr->getOperator() == ArithmeticBinaryExpression::Operator::ADD) {
+					return new DoubleLiteral(expr->getLeft()->getLocation(), leftVal + rightVal);
+				} else if (expr->getOperator() == ArithmeticBinaryExpression::Operator::SUBTRACT) {
+					return new DoubleLiteral(expr->getLeft()->getLocation(), leftVal - rightVal);
+				} else if (expr->getOperator() == ArithmeticBinaryExpression::Operator::MULTIPLY) {
+					return new DoubleLiteral(expr->getLeft()->getLocation(), leftVal * rightVal);
+				} else if (expr->getOperator() == ArithmeticBinaryExpression::Operator::DIVIDE) {
+					return new DoubleLiteral(expr->getLeft()->getLocation(), leftVal / rightVal);
 				}
-			} else if (expr->getOperator() == ArithmeticBinaryExpression::Operator::SUBTRACT)
-			{
-				if (left.is<double>() && right.is<double>()) {
-					return left.as<double>() - right.as<double>();
-				} else if (left.is<double>() && right.is<long>()) {
-					return left.as<double>() - right.as<long>();
-				} else if (left.is<long>() && right.is<double>()) {
-					return left.as<long>() - right.as<double>();
-				} else if (left.is<long>() && right.is<long>()) {
-					return left.as<long>() - right.as<long>();
-				}
-			} else if (expr->getOperator() == ArithmeticBinaryExpression::Operator::MULTIPLY)
-			{
-				if (left.is<double>() && right.is<double>()) {
-					return left.as<double>() * right.as<double>();
-				} else if (left.is<double>() && right.is<long>()) {
-					return left.as<double>() * right.as<long>();
-				} else if (left.is<long>() && right.is<double>()) {
-					return left.as<long>() * right.as<double>();
-				} else if (left.is<long>() && right.is<long>()) {
-					return left.as<long>() * right.as<long>();
-				}
-			} else if (expr->getOperator() == ArithmeticBinaryExpression::Operator::DIVIDE)
-			{
-				if (left.is<double>() && right.is<double>()) {
-					return left.as<double>() / right.as<double>();
-				} else if (left.is<double>() && right.is<long>()) {
-					return left.as<double>() / right.as<long>();
-				} else if (left.is<long>() && right.is<double>()) {
-					return left.as<long>() / right.as<double>();
-				} else if (left.is<long>() && right.is<long>()) {
-					return left.as<long>() / right.as<long>();
-				}
-			}
+			} else if (left.is<StringLiteral*>() && right.is<StringLiteral*>()) {
+				return new StringLiteral(expr->getLeft()->getLocation(), left.as<StringLiteral*>()->getValue() + right.as<StringLiteral*>()->getValue());
+			}			
 			return antlrcpp::Any();
 		}
 
 		virtual antlrcpp::Any visitComparisonExpression(ComparisonExpression* comparisonExpr, antlr4::ParserRuleContext* context) override
 		{
-			
 			log_->trace("visitComparisonExpression operation: {}", comparisonExpr->getOperator());
-			antlrcpp::Any field;
+			antlrcpp::Any leftResult = process(comparisonExpr->getLeft(), context);
+			antlrcpp::Any rightResult = process(comparisonExpr->getRight(), context);
+			FieldIdentifier* field;
 			antlrcpp::Any value;
-			if (dynamic_cast<Identifier*>(comparisonExpr->getLeft()) || dynamic_cast<DereferenceExpression*>(comparisonExpr->getLeft()))
+			if (leftResult.is<FieldIdentifier*>())
 			{
-				field = process(comparisonExpr->getLeft(), context);
-				value = process(comparisonExpr->getRight(), context);
-			} else if (dynamic_cast<Identifier*>(comparisonExpr->getRight()) || dynamic_cast<DereferenceExpression*>(comparisonExpr->getRight()))
+				field = leftResult.as<FieldIdentifier*>();
+				value = rightResult;
+			} else if (dynamic_cast<FieldIdentifier*>(comparisonExpr->getRight()) && dynamic_cast<Literal*>(comparisonExpr->getLeft()))
 			{
-				field = process(comparisonExpr->getRight(), context);
-				value = process(comparisonExpr->getLeft(), context);
+				field = rightResult.as<FieldIdentifier*>();
+				value = leftResult;
 			} else {
 				return antlrcpp::Any();
 			}
-			const std::string indexName = "/" + field.as<std::string>();
-			IndexId idx = dbm_.indexNameStore().getIndexId(indexName);
+			const IndexId idx = dbm_.indexNameStore().getIndexId(field->toString());
 			if (comparisonExpr->getOperator() == ComparisonExpression::Operator::EQUAL)
 			{
-				if (value.is<std::string>())
+				if (value.is<StringLiteral*>())
 				{
-					return (SearchIterator*)(StringValueSearchIterator::eq(dbm_.isvs(), idx, value.as<std::string>()));
-				} else if (value.is<double>())
+					return (SearchIterator*)(StringValueSearchIterator::eq(dbm_.isvs(), idx, value.as<StringLiteral*>()->getValue()));
+				} else if (value.is<DecimalLiteral*>())
 				{
-					return (SearchIterator*)(DoubleValueSearchIterator::eq(dbm_.idvs(), idx, value.as<double>()));
-				} else if (value.is<long>())
+					return (SearchIterator*)(DoubleValueSearchIterator::eq(dbm_.idvs(), idx, std::stod(value.as<DecimalLiteral*>()->getValue())));
+				} else if (value.is<DoubleLiteral*>())
 				{
-					return (SearchIterator*)(DoubleValueSearchIterator::eq(dbm_.idvs(), idx, value.as<long>()));
+					return (SearchIterator*)(DoubleValueSearchIterator::eq(dbm_.idvs(), idx, value.as<DoubleLiteral*>()->getValue()));
+				} else if (value.is<LongLiteral*>())
+				{
+					return (SearchIterator*)(DoubleValueSearchIterator::eq(dbm_.idvs(), idx, value.as<LongLiteral*>()->getValue()));
+				} else if (value.is<BooleanLiteral*>())
+				{
+					return (SearchIterator*)(BooleanValueSearchIterator::eq(dbm_.ibvs(), idx, value.as<BooleanLiteral*>()->getValue()));
 				}
 			} else if (comparisonExpr->getOperator() == ComparisonExpression::Operator::GREATER_THAN)
 			{
-				if (value.is<double>())
+				if (value.is<DecimalLiteral*>())
 				{
-					return (SearchIterator*)(DoubleValueSearchIterator::gt(dbm_.idvs(), idx, value.as<double>()));
-				} else if (value.is<long>())
+					return (SearchIterator*)(DoubleValueSearchIterator::gt(dbm_.idvs(), idx, std::stod(value.as<DecimalLiteral*>()->getValue())));
+				} else if (value.is<DoubleLiteral*>())
 				{
-					return (SearchIterator*)(DoubleValueSearchIterator::gt(dbm_.idvs(), idx, value.as<long>()));
+					return (SearchIterator*)(DoubleValueSearchIterator::gt(dbm_.idvs(), idx, value.as<DoubleLiteral*>()->getValue()));
+				} else if (value.is<LongLiteral*>())
+				{
+					return (SearchIterator*)(DoubleValueSearchIterator::gt(dbm_.idvs(), idx, value.as<LongLiteral*>()->getValue()));
 				}
 			} else if (comparisonExpr->getOperator() == ComparisonExpression::Operator::LESS_THAN)
 			{
-				if (value.is<double>())
+				if (value.is<DecimalLiteral*>())
 				{
-					return (SearchIterator*)(DoubleValueSearchIterator::lt(dbm_.idvs(), idx, value.as<double>()));
-				} else if (value.is<long>())
+					return (SearchIterator*)(DoubleValueSearchIterator::lt(dbm_.idvs(), idx, std::stod(value.as<DecimalLiteral*>()->getValue())));
+				} else if (value.is<DoubleLiteral*>())
 				{
-					return (SearchIterator*)(DoubleValueSearchIterator::lt(dbm_.idvs(), idx, value.as<long>()));
+					return (SearchIterator*)(DoubleValueSearchIterator::lt(dbm_.idvs(), idx, value.as<DoubleLiteral*>()->getValue()));
+				} else if (value.is<LongLiteral*>())
+				{
+					return (SearchIterator*)(DoubleValueSearchIterator::lt(dbm_.idvs(), idx, value.as<LongLiteral*>()->getValue()));
+				}
+			} else if (comparisonExpr->getOperator() == ComparisonExpression::Operator::GREATER_THAN_OR_EQUAL)
+			{
+				if (value.is<DecimalLiteral*>())
+				{
+					return (SearchIterator*)(DoubleValueSearchIterator::gte(dbm_.idvs(), idx, std::stod(value.as<DecimalLiteral*>()->getValue())));
+				} else if (value.is<DoubleLiteral*>())
+				{
+					return (SearchIterator*)(DoubleValueSearchIterator::gte(dbm_.idvs(), idx, value.as<DoubleLiteral*>()->getValue()));
+				} else if (value.is<LongLiteral*>())
+				{
+					return (SearchIterator*)(DoubleValueSearchIterator::gte(dbm_.idvs(), idx, value.as<LongLiteral*>()->getValue()));
+				}
+			} else if (comparisonExpr->getOperator() == ComparisonExpression::Operator::LESS_THAN_OR_EQUAL)
+			{
+				if (value.is<DecimalLiteral*>())
+				{
+					return (SearchIterator*)(DoubleValueSearchIterator::lte(dbm_.idvs(), idx, std::stod(value.as<DecimalLiteral*>()->getValue())));
+				} else if (value.is<DoubleLiteral*>())
+				{
+					return (SearchIterator*)(DoubleValueSearchIterator::lte(dbm_.idvs(), idx, value.as<DoubleLiteral*>()->getValue()));
+				} else if (value.is<LongLiteral*>())
+				{
+					return (SearchIterator*)(DoubleValueSearchIterator::lte(dbm_.idvs(), idx, value.as<LongLiteral*>()->getValue()));
 				}
 			}
 			return antlrcpp::Any();
@@ -201,52 +222,43 @@ namespace centurion {
 		{
 			
 			log_->trace("visitStringLiteral: {}", node->getValue());
-
-			auto s = node->getValue();
-			if (s.size() >= 2)
-			{
-				if (s.front() == '\'' && s.back() == '\'')
-				{
-					return s.substr(1, s.size() - 2);
-				}
-			}
-			return s;
+			return node;
 		}
 
 		virtual antlrcpp::Any visitDoubleLiteral(DoubleLiteral* node, antlr4::ParserRuleContext* context) override
 		{
 			
 			log_->trace("visitDoubleLiteral: {}", node->getValue());
-
-			return node->getValue();
+			return node;
 		}
 
 		virtual antlrcpp::Any visitDecimalLiteral(DecimalLiteral* node, antlr4::ParserRuleContext* context) override
-		{
-			
+		{			
 			log_->trace("visitDecimalLiteral: {}", node->getValue());
-
-			return std::stod(node->getValue());
+			return node;
 		}
 
 		virtual antlrcpp::Any visitLongLiteral(LongLiteral* node, antlr4::ParserRuleContext* context) override
 		{			
 			log_->trace("visitLongLiteral: {}", node->getValue());
-			return node->getValue();
+			return node;
 		}
 
+		virtual antlrcpp::Any visitBooleanLiteral(BooleanLiteral* node, antlr4::ParserRuleContext* context) override
+		{
+			log_->trace("visitBooleanLiteral: {}", node->getValue());
+			return node;
+		}
 
 		virtual antlrcpp::Any visitSingleColumn(SingleColumn* node, antlr4::ParserRuleContext* context) override
-		{
-			
+		{			
 			log_->trace("visitSingleColumn");
 			antlrcpp::Any result = "/" + process(node->getExpression(), context).as<std::string>();
 			return result;
 		}
 
 		virtual antlrcpp::Any visitGroupingOperation(GroupingOperation* node, antlr4::ParserRuleContext* context) override
-		{
-			
+		{			
 			log_->trace("visitGroupingOperation");
 			for (Expression* columnArgument : node->getGroupingColumns()) {
 				process(columnArgument, context);
@@ -256,19 +268,28 @@ namespace centurion {
 
 		virtual antlrcpp::Any visitIdentifier(Identifier* identifier, antlr4::ParserRuleContext* context) override
 		{
-			
 			log_->trace("visitIdentifier: {}", identifier->getValue());
-			return 	identifier->getValue();
+			return identifier->getValue();
 		}
 
+		
 		virtual antlrcpp::Any visitDereferenceExpression(DereferenceExpression* expr, antlr4::ParserRuleContext* context) override
 		{						
 			log_->trace("visitDereferenceExpression: {}", expr->getField()->getValue());
 			if (expr->getBase() != nullptr)
 			{
-				return process(expr->getBase(), context).as<std::string>() + "/" + expr->getField()->getValue();
+				antlrcpp::Any b = process(expr->getBase(), context);
+				if (b.is<FieldIdentifier*>())
+				{
+					return b.as<FieldIdentifier*>()->AddComponent(expr->getField());
+				} else if (b.is<std::string>()) {
+					return new FieldIdentifier(
+						expr->getBase()->getLocation(), 
+						new Identifier(expr->getBase()->getLocation(), b.as<std::string>(), false), 
+						expr->getField()
+					);
+				}				
 			} 
-			//return result;
 			throw std::runtime_error("missing base");
 		}
 
@@ -314,7 +335,6 @@ namespace centurion {
 		{
 			
 			log_->trace("visitIsNotNullPredicate");
-
 			return process(node->getValue(), context);
 		}
 
@@ -322,16 +342,13 @@ namespace centurion {
 		{
 			
 			log_->trace("visitIsNullPredicate");
-
 			return process(node->getValue(), context);
 		}
 
 
 		virtual antlrcpp::Any visitSubqueryExpression(SubqueryExpression* node, antlr4::ParserRuleContext* context) override
 		{
-			
 			log_->trace("visitSubqueryExpression");
-
 			return process(node->getQuery(), context);
 		}
 
@@ -339,7 +356,6 @@ namespace centurion {
 		{
 			
 			log_->trace("visitOrderBy");
-
 			for (SortItem* sortItem : node->getSortItems()) {
 				process(sortItem, context);
 			}

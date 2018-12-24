@@ -45,4 +45,16 @@ namespace centurion {
 		}
 		return to;
 	}
+
+	inline void removeQuotes(std::string& value)
+	{
+		if (value.size() >= 2)
+		{
+			if (value.front() == '\'' && value.back() == '\'')
+			{
+				value.erase(value.size() - 1);
+				value.erase(0, 1);
+			}
+		}
+	}
 }

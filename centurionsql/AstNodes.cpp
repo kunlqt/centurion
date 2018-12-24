@@ -40,6 +40,10 @@ namespace centurion {
 		return visitor->visitLongLiteral(this, context);
 	}
 
+	antlrcpp::Any BooleanLiteral::accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) {
+		return visitor->visitBooleanLiteral(this, context);
+	}
+
 	antlrcpp::Any ArithmeticBinaryExpression::accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) {
 		return visitor->visitArithmeticBinary(this, context);
 	}

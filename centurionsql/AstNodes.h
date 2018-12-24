@@ -15,10 +15,10 @@ namespace centurion {
 
 public:
 		virtual std::optional<NodeLocation> getLocation() const { return location_; }
-		virtual std::vector<Node*> getChildren() = 0;
-		virtual int hashCode() = 0;
-		virtual bool equals(const Node& node) = 0;
-		virtual std::string toString() = 0;
+		virtual std::vector<Node*> getChildren()  const = 0;
+		virtual int hashCode() const = 0;
+		virtual bool equals(const Node& node) const = 0;
+		virtual std::string toString() const = 0;
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context);
 
@@ -36,7 +36,7 @@ public:
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::string toString() override {
+		virtual std::string toString() const override {
 			return "Expression";
 		}
 	};
@@ -76,20 +76,20 @@ public:
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::vector<Node*> getChildren() override {
+		virtual std::vector<Node*> getChildren() const override {
 			return std::vector<Node*>();
 		}
 
-		virtual int hashCode() override {
+		virtual int hashCode() const override {
 			return (int)std::hash_value(value_);
 		}
 
-		virtual bool equals(const Node& node) override {
+		virtual bool equals(const Node& node) const override {
 			//return getValue() == node.getValue();
 			return true;
 		}
 
-		virtual std::string toString() override {
+		virtual std::string toString() const override {
 			return "Identifier";
 		}
 
@@ -115,13 +115,13 @@ public:
 
 	public:
 		DereferenceExpression(Expression* base, Identifier* field)
-			: DereferenceExpression(std::nullopt, base, field)
+			: DereferenceExpression(std::optional<NodeLocation>(), base, field)
 		{
 
 		}
 
 		DereferenceExpression(NodeLocation location, Expression* base, Identifier* field)
-			: DereferenceExpression(std::optional<NodeLocation>(location), base, field)
+			: DereferenceExpression(std::make_optional(location), base, field)
 		{
 
 		}
@@ -133,19 +133,19 @@ public:
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::vector<Node*> getChildren() override {
+		virtual std::vector<Node*> getChildren() const override {
 			return std::vector<Node*>{ base_ };
 		}
 
-		virtual int hashCode() override {
+		virtual int hashCode() const override {
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) override {
+		virtual bool equals(const Node& node) const override {
 			return false;
 		}
 
-		virtual std::string toString() override {
+		virtual std::string toString() const override {
 			return "DereferenceExpression";
 		}
 
@@ -178,11 +178,11 @@ public:
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::string toString() override {
+		virtual std::string toString() const override {
 			return "Literal";
 		}
 
-		virtual std::vector<Node*> getChildren() override {
+		virtual std::vector<Node*> getChildren() const override {
 			return std::vector<Node*>();
 		}
 	};
@@ -203,16 +203,16 @@ public:
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::string toString() override {
+		virtual std::string toString() const override {
 			return "StringLiteral";
 		}
 
-		virtual int hashCode() override {
+		virtual int hashCode() const override {
 			std::hash<std::string> h;
 			return (int)h(value_);
 		}
 
-		virtual bool equals(const Node& node) override {
+		virtual bool equals(const Node& node) const override {
 			return false;
 		}
 
@@ -241,16 +241,16 @@ public:
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::string toString() override {
+		virtual std::string toString() const override {
 			return "DecimalLiteral";
 		}
 
-		virtual int hashCode() override {
+		virtual int hashCode() const override {
 			std::hash<std::string> h;
 			return (int)h(value_);
 		}
 
-		virtual bool equals(const Node& node) override {
+		virtual bool equals(const Node& node) const override {
 			return false;
 		}
 
@@ -273,12 +273,14 @@ public:
 		}
 
 		DoubleLiteral(std::optional<NodeLocation> location, const std::string& value) : Literal(location) {
-			value_ = std::atof(value.c_str());
+			value_ = std::stod(value);
 		}
+
+		DoubleLiteral(std::optional<NodeLocation> location, double value) : Literal(location), value_(value) { }
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::string toString() override {
+		virtual std::string toString() const override {
 			return "DoubleLiteral";
 		}
 
@@ -286,11 +288,11 @@ public:
 			return value_;
 		}
 
-		virtual int hashCode() override {
+		virtual int hashCode() const override {
 			return ((int)value_);
 		}
 
-		virtual bool equals(const Node& node) override {
+		virtual bool equals(const Node& node) const override {
 			return false;
 		}
 
@@ -315,7 +317,7 @@ public:
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::string toString() override {
+		virtual std::string toString() const override {
 			return "LongLiteral";
 		}
 
@@ -323,17 +325,55 @@ public:
 			return value_;
 		}
 
-		virtual int hashCode() override {
+		virtual int hashCode() const override {
 			return (value_);
 		}
 
-		virtual bool equals(const Node& node) override {
+		virtual bool equals(const Node& node) const override {
 			return false;
 		}
 
 
 	private:
 		long value_;
+	};
+
+
+	class BooleanLiteral : public Literal {
+	public:
+		BooleanLiteral(const std::string& value)
+			: BooleanLiteral(std::optional<NodeLocation>(), value) {
+		}
+
+		BooleanLiteral(const NodeLocation& location, const std::string& value)
+			: BooleanLiteral(std::make_optional(location), value) {
+		}
+
+		BooleanLiteral(std::optional<NodeLocation> location, const std::string& value) : Literal(location) {
+			value_ = toLowerCopy(value) == "true";
+		}
+
+		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
+
+		virtual std::string toString() const override {
+			return "BooleanLiteral";
+		}
+
+		bool getValue() const {
+			return value_;
+		}
+
+		virtual int hashCode() const override {
+			return (value_);
+		}
+
+		virtual bool equals(const Node& node) const override {
+			return false;
+		}
+
+
+	private:
+		bool value_;
 	};
 
 	class ArithmeticBinaryExpression : public Expression {
@@ -378,19 +418,19 @@ public:
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::string toString() override {
+		virtual std::string toString() const override {
 			return "ArithmeticBinaryExpression";
 		}
 
-		virtual std::vector<Node*> getChildren() override {
+		virtual std::vector<Node*> getChildren() const override {
 			return std::vector<Node*>{ left_, right_ };
 		}
 
-		virtual int hashCode() override {
+		virtual int hashCode() const override {
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) override {
+		virtual bool equals(const Node& node) const override {
 			return false;
 		}
 
@@ -427,19 +467,19 @@ public:
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::string toString() override {
+		virtual std::string toString() const override {
 			return "ArithmeticUnaryExpression";
 		}
 
-		virtual std::vector<Node*> getChildren() override {
+		virtual std::vector<Node*> getChildren() const override {
 			return std::vector<Node*>{ value_};
 		}
 
-		virtual int hashCode() override {
+		virtual int hashCode() const override {
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) override {
+		virtual bool equals(const Node& node) const override {
 			return false;
 		}
 
@@ -503,22 +543,22 @@ public:
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::string toString() override {
+		virtual std::string toString() const override {
 			return "ComparisonExpression";
 		}
 
-		virtual std::vector<Node*> getChildren() {
+		virtual std::vector<Node*> getChildren() const override {
 			std::vector<Node*> result;
 			result.push_back(left_);
 			result.push_back(right_);
 			return result;
 		}
 
-		virtual int hashCode() {
+		virtual int hashCode() const override {
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) {
+		virtual bool equals(const Node& node) const override {
 			return false;
 		}
 
@@ -548,7 +588,7 @@ public:
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::vector<Node*> getChildren() override
+		virtual std::vector<Node*> getChildren() const override
 		{
 			std::vector<Node*> result;
 			for (Expression* value : values_)
@@ -557,15 +597,15 @@ public:
 			}
 			return result;
 		}
-		virtual int hashCode()  override
+		virtual int hashCode() const  override
 		{
 			return 0;
 		}
-		virtual bool equals(const Node& node)  override
+		virtual bool equals(const Node& node) const override
 		{
 			return false;
 		}
-		virtual std::string toString()  override
+		virtual std::string toString() const override
 		{
 			return "InListExpression";
 		}
@@ -615,22 +655,22 @@ public:
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::string toString() override {
+		virtual std::string toString() const override {
 			return "LogicalBinaryExpression";
 		}
 
-		virtual std::vector<Node*> getChildren() {
+		virtual std::vector<Node*> getChildren() const override {
 			std::vector<Node*> result;
 			result.push_back(left_);
 			result.push_back(right_);
 			return result;
 		}
 
-		virtual int hashCode() {
+		virtual int hashCode() const override {
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) {
+		virtual bool equals(const Node& node) const override {
 			return false;
 		}
 
@@ -663,25 +703,25 @@ public:
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::string toString() override {
+		virtual std::string toString() const override {
 			return "NotExpression";
 		}
 
-		virtual std::vector<Node*> getChildren() {
+		virtual std::vector<Node*> getChildren() const override {
 			std::vector<Node*> result;
 			result.push_back(value_);
 			return result;
 		}
 
-		virtual int hashCode() {
+		virtual int hashCode() const override {
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) {
+		virtual bool equals(const Node& node) const override {
 			return false;
 		}
 
-		Expression* getValue() { return value_; }
+		Expression* getValue() const { return value_; }
 
 	private:
 		Expression* value_;
@@ -727,20 +767,20 @@ public:
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::vector<Node*> getChildren() {
+		virtual std::vector<Node*> getChildren() const override {
 			std::vector<Node*> result{ sortKey_ };
 			return result;
 		}
 
-		virtual int hashCode() {
+		virtual int hashCode() const override {
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) {
+		virtual bool equals(const Node& node) const override {
 			return false;
 		}
 
-		virtual std::string toString() {
+		virtual std::string toString() const override {
 			return "SortItem";
 		}
 
@@ -786,23 +826,23 @@ public:
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::vector<Node*> getChildren() override {
+		virtual std::vector<Node*> getChildren() const override {
 			std::vector<Node*> result;
 			for (const auto& sortItem : sortItems_) {
-				sortItems_.push_back(sortItem);
+				result.push_back(sortItem);
 			}
 			return result;
 		}
 
-		virtual int hashCode() override {
+		virtual int hashCode() const override {
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) override {
+		virtual bool equals(const Node& node) const override {
 			return false;
 		}
 
-		virtual std::string toString() override {
+		virtual std::string toString() const override {
 			return "OrderBy";
 		}
 
@@ -846,7 +886,7 @@ public:
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::vector<Node*> getChildren() override {
+		virtual std::vector<Node*> getChildren() const override {
 			std::vector<Node*> result;
 			if (with_.has_value()) {
 				result.push_back((Node*)with_.value());
@@ -857,15 +897,15 @@ public:
 			return result;
 		}
 
-		virtual int hashCode() override {
+		virtual int hashCode() const override {
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) override {
+		virtual bool equals(const Node& node) const override {
 			return false;
 		}
 
-		virtual std::string toString() override {
+		virtual std::string toString() const override {
 			return "Query";
 		}
 
@@ -919,19 +959,19 @@ public:
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::vector<Node*> getChildren() {
+		virtual std::vector<Node*> getChildren() const override {
 			return std::vector<Node*>{ query_ };
 		}
 
-		virtual int hashCode() override {
+		virtual int hashCode() const override {
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) override {
+		virtual bool equals(const Node& node) const override {
 			return false;
 		}
 
-		virtual std::string toString() override {
+		virtual std::string toString() const override {
 			return "WithQuery";
 		}
 
@@ -974,7 +1014,7 @@ public:
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::vector<Node*> getChildren() override {
+		virtual std::vector<Node*> getChildren() const override {
 			std::vector<Node*> result;
 			for (auto& item : queries_) {
 				result.push_back(item);
@@ -982,15 +1022,15 @@ public:
 			return result;
 		}
 
-		virtual int hashCode() override {
+		virtual int hashCode() const override {
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) override {
+		virtual bool equals(const Node& node) const override {
 			return false;
 		}
 
-		virtual std::string toString() override {
+		virtual std::string toString() const override {
 			return "With";
 		}
 
@@ -1018,19 +1058,19 @@ public:
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::string toString() override {
+		virtual std::string toString() const override {
 			return "SubqueryExpression";
 		}
 
-		virtual std::vector<Node*> getChildren() override {
+		virtual std::vector<Node*> getChildren() const override {
 			return std::vector<Node*>{ query_ };
 		}
 
-		virtual int hashCode() override {
+		virtual int hashCode() const override {
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) override {
+		virtual bool equals(const Node& node) const override {
 			return false;
 		}
 
@@ -1083,19 +1123,19 @@ public:
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::vector<Node*> getChildren() override {
+		virtual std::vector<Node*> getChildren() const override {
 			return std::vector<Node*>{ expression_ };
 		}
 
-		virtual int hashCode() override {
+		virtual int hashCode() const override {
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) override {
+		virtual bool equals(const Node& node) const override {
 			return false;
 		}
 
-		virtual std::string toString() override {
+		virtual std::string toString() const override {
 			return "SingleColumn";
 		}
 
@@ -1119,21 +1159,21 @@ public:
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::vector<Node*> getChildren() override {
+		virtual std::vector<Node*> getChildren() const override {
 			std::vector<Node*> result;
 			result.push_back(relation_);
 			return result;
 		}
 
-		virtual int hashCode() override {
+		virtual int hashCode() const override {
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) override {
+		virtual bool equals(const Node& node) const override {
 			return false;
 		}
 
-		virtual std::string toString() override {
+		virtual std::string toString() const override {
 			return "AliasedRelation";
 		}
 
@@ -1178,19 +1218,19 @@ public:
 
 		antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::vector<Node*> getChildren() override {
+		virtual std::vector<Node*> getChildren() const override {
 			return std::vector<Node*>();
 		}
 
-		virtual int hashCode() override {
+		virtual int hashCode() const override {
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) override {
+		virtual bool equals(const Node& node) const override {
 			return false;
 		}
 
-		virtual std::string toString() override {
+		virtual std::string toString() const override {
 			return "AllColumns";
 		}
 
@@ -1228,7 +1268,7 @@ public:
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::vector<Node*> getChildren() override {
+		virtual std::vector<Node*> getChildren() const override {
 			std::vector<Node*> result;
 			for (const auto& selectItem : groupingElements_) {
 				result.push_back(selectItem);
@@ -1236,15 +1276,15 @@ public:
 			return result;
 		}
 
-		virtual int hashCode() override {
+		virtual int hashCode() const override {
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) override {
+		virtual bool equals(const Node& node) const override {
 			return false;
 		}
 
-		virtual std::string toString() override {
+		virtual std::string toString() const override {
 			return "GroupBy";
 		}
 
@@ -1268,19 +1308,19 @@ public:
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::vector<Node*> getChildren() override {
+		virtual std::vector<Node*> getChildren() const override {
 			return std::vector<Node*>();
 		}
 
-		virtual int hashCode() override {
+		virtual int hashCode() const override {
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) override {
+		virtual bool equals(const Node& node) const override {
 			return false;
 		}
 
-		virtual std::string toString() override {
+		virtual std::string toString() const override {
 			return "GroupingOperation";
 		}
 
@@ -1306,22 +1346,22 @@ public:
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::vector<Node*> getChildren() override
+		virtual std::vector<Node*> getChildren() const override
 		{
 			return std::vector<Node*>{ value_, valueList_};
 		}
 
-		virtual int hashCode()  override
+		virtual int hashCode() const override
 		{
 			return 0;
 		}
 
-		virtual bool equals(const Node& node)  override
+		virtual bool equals(const Node& node) const override
 		{
 			return false;
 		}
 
-		virtual std::string toString()  override
+		virtual std::string toString() const override
 		{
 			return "InPredicate";
 		}
@@ -1353,7 +1393,7 @@ public:
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::vector<Node*> getChildren() override {
+		virtual std::vector<Node*> getChildren() const override {
 			std::vector<Node*> result;
 			for (const auto& selectItem : selectItems_) {
 				result.push_back(selectItem);
@@ -1361,15 +1401,15 @@ public:
 			return result;
 		}
 
-		virtual int hashCode() override {
+		virtual int hashCode() const override {
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) override {
+		virtual bool equals(const Node& node) const override {
 			return false;
 		}
 
-		virtual std::string toString() override {
+		virtual std::string toString() const override {
 			return "Select";
 		}
 
@@ -1400,19 +1440,19 @@ public:
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::vector<Node*> getChildren() override {
+		virtual std::vector<Node*> getChildren() const override {
 			return std::vector<Node*>{ value_ };
 		}
 
-		virtual int hashCode() override {
+		virtual int hashCode() const override {
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) override {
+		virtual bool equals(const Node& node) const override {
 			return false;
 		}
 
-		virtual std::string toString() override {
+		virtual std::string toString() const override {
 			return "IsNotNullPredicate";
 		}
 
@@ -1444,19 +1484,19 @@ public:
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::vector<Node*> getChildren() override {
+		virtual std::vector<Node*> getChildren() const override {
 			return std::vector<Node*>{ value_ };
 		}
 
-		virtual int hashCode() override {
+		virtual int hashCode() const override {
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) override {
+		virtual bool equals(const Node& node) const override {
 			return false;
 		}
 
-		virtual std::string toString() override {
+		virtual std::string toString() const override {
 			return "IsNullPredicate";
 		}
 
@@ -1477,19 +1517,19 @@ public:
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::vector<Node*> getChildren() override {
+		virtual std::vector<Node*> getChildren() const override {
 			return std::vector<Node*>();
 		}
 
-		virtual int hashCode() override {
+		virtual int hashCode() const override {
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) override {
+		virtual bool equals(const Node& node) const override {
 			return false;
 		}
 
-		virtual std::string toString() override {
+		virtual std::string toString() const override {
 			return "Table";
 		}
 
@@ -1536,7 +1576,7 @@ public:
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::vector<Node*> getChildren() override {
+		virtual std::vector<Node*> getChildren() const override {
 			std::vector<Node*> result{ left_, right_ };
 			if (criteria_.has_value()) {
 				const auto& nodes = criteria_.value()->getNodes();
@@ -1547,15 +1587,15 @@ public:
 			return result;
 		}
 
-		virtual int hashCode() override {
+		virtual int hashCode() const override {
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) override {
+		virtual bool equals(const Node& node) const override {
 			return false;
 		}
 
-		virtual std::string toString() override {
+		virtual std::string toString() const override {
 			return "Join";
 		}
 
@@ -1723,7 +1763,7 @@ public:
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::vector<Node*> getChildren() override {
+		virtual std::vector<Node*> getChildren() const override {
 			std::vector<Node*> result;
 			result.push_back(select_.value());
 			if (from_.has_value()) result.push_back(from_.value());
@@ -1734,15 +1774,15 @@ public:
 			return result;
 		}
 
-		virtual int hashCode() override {
+		virtual int hashCode() const override {
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) override {
+		virtual bool equals(const Node& node) const override {
 			return false;
 		}
 
-		virtual std::string toString() override {
+		virtual std::string toString() const override {
 			return "QuerySpecification";
 		}
 
@@ -1773,22 +1813,22 @@ public:
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual bool equals(const Node& obj) override
+		virtual bool equals(const Node& obj) const override
 		{
 			return false;
 		}
 
-		virtual int hashCode() override
+		virtual int hashCode() const override
 		{
 			return 0;
 		}
 
-		virtual std::string toString() override
+		virtual std::string toString() const override
 		{
 			return "ShowStats";
 		}
 
-		virtual std::vector<Node*> getChildren() override
+		virtual std::vector<Node*> getChildren() const override
 		{
 			return std::vector<Node*>{ relation_ };
 		}
@@ -1820,23 +1860,23 @@ public:
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::vector<Node*> getChildren() {
+		virtual std::vector<Node*> getChildren() const override {
 			std::vector<Node*> result;
 			for (const auto& column : columns_) result.push_back(column);
 			return result;
 		};
 
-		virtual int hashCode() {
+		virtual int hashCode() const override {
 			int result = 0;
 			//for (const auto& column : columns_) (column-> result.push_back(column);
 			return result;
 		}
 
-		virtual bool equals(const Node& node) {
+		virtual bool equals(const Node& node) const override {
 			return false;
 		}
 
-		virtual std::string toString() {
+		virtual std::string toString() const override {
 			return "SimpleGroupBy";
 		}
 
@@ -1848,5 +1888,51 @@ public:
 		std::vector<Expression*> columns_;
 	};
 
+	struct FieldIdentifier : public Node
+	{
+		FieldIdentifier(std::optional<NodeLocation> location, Identifier* base, Identifier* comp) : Node(location)
+		{
+			components_.push_back(base);
+			components_.push_back(comp);
+		}
+
+		FieldIdentifier* AddComponent(Identifier* comp)
+		{
+			components_.push_back(comp);
+			return this;
+		}
+
+		std::string toString() const override
+		{
+			std::stringstream result;
+			for (const auto& comp : components_)
+			{
+				result << "/";
+				result << comp->getValue();
+			}
+			return result.str();
+		}
+
+
+		virtual std::vector<Node*> getChildren() const override {
+			std::vector<Node*> result;
+			for (const auto& column : components_) result.push_back(column);
+			return result;
+		};
+
+		virtual int hashCode() const override {
+			int result = 0;
+			//for (const auto& column : columns_) (column-> result.push_back(column);
+			return result;
+		}
+
+		virtual bool equals(const Node& node) const override {
+			return false;
+		}
+
+
+	private:
+		std::vector<Identifier*> components_;
+	};
 
 }

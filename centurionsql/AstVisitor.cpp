@@ -159,17 +159,7 @@ namespace centurion {
 		return visitExpression((Expression*)node, context);
 	}
 
-	antlrcpp::Any AstVisitor::visitDoubleLiteral(DoubleLiteral* node, antlr4::ParserRuleContext* context)
-	{
-		log_->trace("visitDoubleLiteral");
-		return visitLiteral((Literal*)node, context);
-	}
 
-	antlrcpp::Any AstVisitor::visitDecimalLiteral(DecimalLiteral* node, antlr4::ParserRuleContext* context)
-	{
-		log_->trace("visitDecimalLiteral");
-		return visitLiteral((Literal*)node, context);
-	}
 
 	antlrcpp::Any AstVisitor::visitNotExpression(NotExpression* node, antlr4::ParserRuleContext* context)
 	{
@@ -189,9 +179,27 @@ namespace centurion {
 		return visitExpression((Expression*)node, context);
 	}
 
+	antlrcpp::Any AstVisitor::visitDoubleLiteral(DoubleLiteral* node, antlr4::ParserRuleContext* context)
+	{
+		log_->trace("visitDoubleLiteral");
+		return visitLiteral((Literal*)node, context);
+	}
+
+	antlrcpp::Any AstVisitor::visitDecimalLiteral(DecimalLiteral* node, antlr4::ParserRuleContext* context)
+	{
+		log_->trace("visitDecimalLiteral");
+		return visitLiteral((Literal*)node, context);
+	}
+
 	antlrcpp::Any AstVisitor::visitLongLiteral(LongLiteral* node, antlr4::ParserRuleContext* context)
 	{
 		log_->trace("visitLongLiteral");
+		return visitLiteral((Literal*)node, context);
+	}
+
+	antlrcpp::Any AstVisitor::visitBooleanLiteral(BooleanLiteral* node, antlr4::ParserRuleContext* context)
+	{
+		log_->trace("visitBooleanLiteral");
 		return visitLiteral((Literal*)node, context);
 	}
 
@@ -436,12 +444,6 @@ namespace centurion {
 	{
 		return visitLiteral(node, context);
 	}
-
-	antlrcpp::Any AstVisitor::visitBooleanLiteral(BooleanLiteral* node, antlr4::ParserRuleContext* context)
-	{
-		return visitLiteral(node, context);
-	}
-
 
 	antlrcpp::Any AstVisitor::visitNullIfExpression(NullIfExpression* node, antlr4::ParserRuleContext* context)
 	{

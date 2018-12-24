@@ -13,9 +13,7 @@ namespace centurion
 {
 	inline rocksdb::Slice buildStringSlice(IndexId indexId, const char* str, StringSizeType strSize, char* dst, size_t dstSize)
 	{		
-		SetIndexId(dst, indexId);
-		SetStringSize(dst, strSize);
-		SetStringData(dst, str, strSize);
+		CreateStringIndex(dst, indexId, str, strSize);
 		return { dst, dstSize };
 	}
 
@@ -96,7 +94,7 @@ namespace centurion
 		IndexId indexId() const { return indexId_; }
 
 	private:
-		StringValueSearchIterator(const StringValueIndexStore& store, IndexId indexId, const char* str, std::uint32_t strSize)
+		StringValueSearchIterator(const IndexedValuesStore& store, IndexId indexId, const char* str, std::uint32_t strSize)
 			:
 			store_(store),
 			indexId_(indexId),
@@ -110,7 +108,6 @@ namespace centurion
 			iterator_(nullptr),
 			currentDocumentId_(InvalidDocumentId)
 		{
-			auto console = spdlog::get("root");
 			opts_.iterate_lower_bound = &lowerBoundSlice_;
 			opts_.iterate_upper_bound = &upperBoundSlice_;
 		}
@@ -130,7 +127,7 @@ namespace centurion
 			}
 			return false;
 		}
-		const StringValueIndexStore& store_;
+		const IndexedValuesStore& store_;
 		IndexId indexId_;
 		StringSizeType strSize_;
 		size_t lowerSliceBufSize_;

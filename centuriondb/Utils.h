@@ -18,6 +18,10 @@ using StringSizeType = std::uint32_t;
 
 #define ExtractDocumentIdFromString(buffer) (*(DocumentId*)((std::uint8_t*)buffer + GetDocumentIdOffsetInString(GetStringSize(buffer))))
 
+#define ExtractDocumentIdFromDouble(buffer) (*(DocumentId*)((std::uint8_t*)buffer + sizeof(IndexId) + sizeof(double)))
+
+#define ExtractDocumentIdFromBoolean(buffer) (*(DocumentId*)((std::uint8_t*)buffer + sizeof(IndexId) + sizeof(std::uint8_t)))
+
 #define SetStringData(dst, str, strSize) if (strSize > 0) memcpy(dst + StringBufferOffset, str, strSize)
 
 #define CreateStringIndex(buffer, indexId, str, stringSize) \
@@ -28,6 +32,10 @@ using StringSizeType = std::uint32_t;
 #define CreateDoubleIndex(buffer, indexId, v) \
 	SetIndexId(buffer, indexId); \
 	*(double*)((std::uint8_t*)buffer + sizeof(IndexId)) = v
+
+#define CreateBooleanIndex(buffer, indexId, b) \
+	SetIndexId(buffer, indexId); \
+	*(std::uint8_t*)((std::uint8_t*)buffer + sizeof(IndexId)) = (b ? 1 : 0)
 
 #define CreateEmptytringIndex(buffer, indexId)  \
 	SetIndexId(buffer, indexId); \

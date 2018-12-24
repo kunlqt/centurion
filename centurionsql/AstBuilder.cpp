@@ -768,11 +768,15 @@ namespace centurion {
 	}
 
 	antlrcpp::Any AstBuilder::visitBasicStringLiteral(CentSqlParser::BasicStringLiteralContext *ctx) {
-		return new StringLiteral(getLocation(ctx), ctx->getText());
+		std::string value = ctx->getText();
+		removeQuotes(value);
+		return new StringLiteral(getLocation(ctx), value);
 	}
 
 	antlrcpp::Any AstBuilder::visitUnicodeStringLiteral(CentSqlParser::UnicodeStringLiteralContext *ctx) {
-		return new StringLiteral(getLocation(ctx), ctx->getText()); // todo: convert to unicode
+		std::string value = ctx->getText();
+		removeQuotes(value);
+		return new StringLiteral(getLocation(ctx), value);  // todo: convert to unicode
 	}
 
 	antlrcpp::Any AstBuilder::visitTimeZoneInterval(CentSqlParser::TimeZoneIntervalContext *ctx) {
@@ -792,7 +796,7 @@ namespace centurion {
 	}
 
 	antlrcpp::Any AstBuilder::visitBooleanValue(CentSqlParser::BooleanValueContext *ctx) {
-		return visitChildren(ctx);
+		return new BooleanLiteral(getLocation(ctx), ctx->getText());
 	}
 
 	antlrcpp::Any AstBuilder::visitInterval(CentSqlParser::IntervalContext *ctx) {

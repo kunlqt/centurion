@@ -11,7 +11,6 @@ namespace centurion
 {
 	inline rocksdb::Slice buildDoubleSlice(IndexId indexId, double value, char* dst, size_t dstSize)
 	{
-		SetIndexId(dst, indexId);
 		CreateDoubleIndex(dst, indexId, value);
 		return { dst, dstSize };
 	}
@@ -38,6 +37,16 @@ namespace centurion
 			return new DoubleValueSearchIterator(store, indexId, val + eps, std::numeric_limits<double>::max());
 		}
 
+		static DoubleValueSearchIterator* lte(const DoubleValueIndexStore& store, IndexId indexId, double val, double eps = DefaultComparisionPrecision)
+		{
+			return new DoubleValueSearchIterator(store, indexId, std::numeric_limits<double>::min(), val + (eps/2));
+		}
+
+		static DoubleValueSearchIterator* gte(const DoubleValueIndexStore& store, IndexId indexId, double val, double eps = DefaultComparisionPrecision)
+		{
+			return new DoubleValueSearchIterator(store, indexId, val - (eps/2), std::numeric_limits<double>::max());
+		}
+
 		static DoubleValueSearchIterator* between(const DoubleValueIndexStore& store, IndexId indexId, double lower, double upper, double eps = DefaultComparisionPrecision)
 		{
 			return new DoubleValueSearchIterator(store, indexId, lower + eps, upper - eps);
@@ -52,56 +61,62 @@ namespace centurion
 
 		void next() override
 		{
-			if (iterator_ == nullptr)
-			{
+			auto console = spdlog::get("root");
+			if (getState() == BeforeFirst) {
 				iterator_ = store_.newIterator(opts_);
 				iterator_->Seek(lowerBoundSlice_);
 				if (iterator_->Valid())
 				{
-					isValid_ = checkUpperBound();
+					if (checkUpperBound())
+					{
+						setState(First);
+						currentDocumentId_ = ExtractDocumentIdFromDouble(iterator_->key().data());
+					} else {
+						setState(AfterLast);
+						currentDocumentId_ = InvalidDocumentId;
+					}
 				} else {
-					auto console = spdlog::get("root");
-					console->error("Invalid DoubleValueSearchIterator when searching for double values between {0} and {1}", lowerBound_, upperBound_);
-					isValid_ = false;
+					console->error("Invalid Double search iterator");
+					setState(AfterLast);
+					currentDocumentId_ = InvalidDocumentId;
 				}
-				return;
-			}
-			if (isValid_ && iterator_->Valid()) {
+			} else if (valid() && iterator_->Valid()) {
 				iterator_->Next();
 				if (iterator_->Valid())
 				{
-					isValid_ = checkUpperBound();
-				} else
-				{
-					isValid_ = false;
+					if (checkUpperBound())
+					{
+						if (getState() == First)
+						{
+							setState(None);
+						}
+						currentDocumentId_ = ExtractDocumentIdFromDouble(iterator_->key().data());
+					} else {
+						setState(AfterLast);
+						currentDocumentId_ = InvalidDocumentId;
+					}
+				} else {
+					setState(AfterLast);
+					currentDocumentId_ = InvalidDocumentId;
 				}
 			} else {
-				isValid_ = false;
+				setState(AfterLast);
+				currentDocumentId_ = InvalidDocumentId;
 			}
+			console->trace("DoubleSearchIterator returned: {}", currentDocumentId_);
+
 		}
 
 		DocumentId current() const override
 		{
-			if (isValid_) {
-				return *(DocumentId*)(iterator_->key().data() + sizeof(indexId_) + sizeof(double));
-			} else {
-				auto console = spdlog::get("root");
-				console->trace("DoubleValueSearchIterator.current().valid()=false");
-			}
-			throw std::runtime_error("Invalid iterator");
+			return currentDocumentId_;
 		}
-
-		bool valid() const override
-		{
-			return isValid_;
-		}
-
+				
 		IndexId indexId() const { return indexId_; }
 
 	private:
-		DoubleValueSearchIterator(const DoubleValueIndexStore& store, IndexId indexId, double lowerBound, double upperBound)
+		DoubleValueSearchIterator(const IndexedValuesStore& store, IndexId indexId, double lowerBound, double upperBound)
 			:
-			iterator_(nullptr),
 			store_(store),
 			indexId_(indexId),
 			lowerBound_(lowerBound),
@@ -112,9 +127,7 @@ namespace centurion
 			upperSliceBufSize_(sizeof(indexId) + sizeof(double)),
 			upperSliceBuf_(new char[upperSliceBufSize_]),
 			upperBoundSlice_(buildDoubleSlice(indexId, upperBound_, upperSliceBuf_, upperSliceBufSize_))
-		, isValid_(true)
 		{
-			auto console = spdlog::get("root");
 			opts_.iterate_lower_bound = &lowerBoundSlice_;
 			opts_.iterate_upper_bound = &upperBoundSlice_;
 		}
@@ -130,7 +143,7 @@ namespace centurion
 			return false;
 		}
 
-		const DoubleValueIndexStore& store_;
+		const IndexedValuesStore& store_;
 		IndexId indexId_;
 		double lowerBound_;
 		size_t lowerSliceBufSize_;
@@ -142,7 +155,7 @@ namespace centurion
 		rocksdb::Slice upperBoundSlice_;
 		rocksdb::ReadOptions opts_;
 		rocksdb::Iterator* iterator_;
-		bool isValid_;
+		DocumentId currentDocumentId_;
 	};
 
 }
