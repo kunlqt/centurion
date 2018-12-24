@@ -67,16 +67,16 @@ namespace centurion {
 			antlrcpp::Any rightResult = process(comparisonExpr->getRight(), context);
 			FieldIdentifier* field;
 			antlrcpp::Any value;
-			if (leftResult.is<FieldIdentifier*>())
+			if (leftResult.is<FieldIdentifier*>() && rightResult.is<Literal*>())
 			{
 				field = leftResult.as<FieldIdentifier*>();
 				value = rightResult;
-			} else if (dynamic_cast<FieldIdentifier*>(comparisonExpr->getRight()) && dynamic_cast<Literal*>(comparisonExpr->getLeft()))
+			} else if (rightResult.is<FieldIdentifier*>())
 			{
 				field = rightResult.as<FieldIdentifier*>();
 				value = leftResult;
 			} else {
-				return antlrcpp::Any();
+				throw std::runtime_error("Unsupported Comparison");
 			}
 			const IndexId idx = dbm_.indexNameStore().getIndexId(field->toString());
 			if (comparisonExpr->getOperator() == ComparisonExpression::Operator::EQUAL)
