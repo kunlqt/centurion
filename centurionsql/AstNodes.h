@@ -1907,12 +1907,10 @@ public:
 			std::stringstream result;
 			for (const auto& comp : components_)
 			{
-				result << "/";
-				result << comp->getValue();
+				result << "/" << comp->getValue();
 			}
 			return result.str();
 		}
-
 
 		virtual std::vector<Node*> getChildren() const override {
 			std::vector<Node*> result;

@@ -45,8 +45,8 @@ struct ANTLR4CPP_PUBLIC Any
   }
 
   template<class U>
-  bool is() const {
-    auto derived = getDerived<U>(false);
+  bool is(bool checkCast = false) const {
+    auto derived = getDerived<U>(checkCast);
 
     return derived != nullptr;
   }
@@ -148,10 +148,9 @@ private:
 
     auto derived = dynamic_cast<Derived<T>*>(_ptr);
 
-    if (checkCast && !derived)
+    if (derived == nullptr && checkCast)
 		derived = static_cast<Derived<T>*>(_ptr);
-   //   throw std::bad_cast();
-
+   
     return derived;
   }
 

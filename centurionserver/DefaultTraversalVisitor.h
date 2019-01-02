@@ -64,22 +64,19 @@ namespace centurion {
 		{
 			log_->trace("visitComparisonExpression operation: {}", comparisonExpr->getOperator());
 			antlrcpp::Any leftResult = process(comparisonExpr->getLeft(), context);
-			antlrcpp::Any rightResult = process(comparisonExpr->getRight(), context);
-			FieldIdentifier* field;
-			antlrcpp::Any value;
-			if (leftResult.is<FieldIdentifier*>() && rightResult.is<Literal*>())
-			{
-				field = leftResult.as<FieldIdentifier*>();
-				value = rightResult;
-			} else if (rightResult.is<FieldIdentifier*>())
-			{
-				field = rightResult.as<FieldIdentifier*>();
-				value = leftResult;
+			antlrcpp::Any rightResult = process(comparisonExpr->getRight(), context);			
+			if (leftResult.is<FieldIdentifier*>(false) && rightResult.is<Literal*>(true)) {				
+				return visitFieldComparisonExpression(comparisonExpr->getOperator(), dbm_.indexNameStore().getIndexId(leftResult.as<FieldIdentifier*>()->toString()), rightResult);
+			} else if (leftResult.is<Literal*>(true) && rightResult.is<FieldIdentifier*>(false)) {
+				return visitFieldComparisonExpression(comparisonExpr->getOperator(), dbm_.indexNameStore().getIndexId(rightResult.as<FieldIdentifier*>()->toString()), leftResult);
 			} else {
-				throw std::runtime_error("Unsupported Comparison");
+				throw std::runtime_error("Unsupported Comparison, only supported comparison is comparison between field and literal");
 			}
-			const IndexId idx = dbm_.indexNameStore().getIndexId(field->toString());
-			if (comparisonExpr->getOperator() == ComparisonExpression::Operator::EQUAL)
+		}
+
+		antlrcpp::Any visitFieldComparisonExpression(const ComparisonExpression::Operator oper, const IndexId idx, const antlrcpp::Any& value) const
+		{
+			if (oper == ComparisonExpression::Operator::EQUAL)
 			{
 				if (value.is<StringLiteral*>())
 				{
@@ -97,7 +94,7 @@ namespace centurion {
 				{
 					return (SearchIterator*)(BooleanValueSearchIterator::eq(dbm_.ibvs(), idx, value.as<BooleanLiteral*>()->getValue()));
 				}
-			} else if (comparisonExpr->getOperator() == ComparisonExpression::Operator::GREATER_THAN)
+			} else if (oper == ComparisonExpression::Operator::GREATER_THAN)
 			{
 				if (value.is<DecimalLiteral*>())
 				{
@@ -109,7 +106,7 @@ namespace centurion {
 				{
 					return (SearchIterator*)(DoubleValueSearchIterator::gt(dbm_.idvs(), idx, value.as<LongLiteral*>()->getValue()));
 				}
-			} else if (comparisonExpr->getOperator() == ComparisonExpression::Operator::LESS_THAN)
+			} else if (oper == ComparisonExpression::Operator::LESS_THAN)
 			{
 				if (value.is<DecimalLiteral*>())
 				{
@@ -121,7 +118,7 @@ namespace centurion {
 				{
 					return (SearchIterator*)(DoubleValueSearchIterator::lt(dbm_.idvs(), idx, value.as<LongLiteral*>()->getValue()));
 				}
-			} else if (comparisonExpr->getOperator() == ComparisonExpression::Operator::GREATER_THAN_OR_EQUAL)
+			} else if (oper == ComparisonExpression::Operator::GREATER_THAN_OR_EQUAL)
 			{
 				if (value.is<DecimalLiteral*>())
 				{
@@ -133,7 +130,7 @@ namespace centurion {
 				{
 					return (SearchIterator*)(DoubleValueSearchIterator::gte(dbm_.idvs(), idx, value.as<LongLiteral*>()->getValue()));
 				}
-			} else if (comparisonExpr->getOperator() == ComparisonExpression::Operator::LESS_THAN_OR_EQUAL)
+			} else if (oper == ComparisonExpression::Operator::LESS_THAN_OR_EQUAL)
 			{
 				if (value.is<DecimalLiteral*>())
 				{
@@ -146,7 +143,7 @@ namespace centurion {
 					return (SearchIterator*)(DoubleValueSearchIterator::lte(dbm_.idvs(), idx, value.as<LongLiteral*>()->getValue()));
 				}
 			}
-			return antlrcpp::Any();
+			throw std::runtime_error("Unsupported Comparison, only supported comparison is comparison between field and literal where literal is string or number");
 		}
 
 		virtual antlrcpp::Any visitLogicalBinaryExpression(LogicalBinaryExpression* logicalExpr, antlr4::ParserRuleContext* context) override
@@ -211,8 +208,8 @@ namespace centurion {
 			auto result = new SelectedFields;
 			for (SelectItem* selectItem : select->getSelectItems()) {
 				auto processResult = process(selectItem, context);
-				if (processResult.is<std::string>()) {					
-					result->emplace_back(processResult.as<std::string>());
+				if (processResult.is<FieldIdentifier*>()) {					
+					result->emplace_back(processResult.as<FieldIdentifier*>()->toString());
 				}
 			}
 			return result;
@@ -253,8 +250,7 @@ namespace centurion {
 		virtual antlrcpp::Any visitSingleColumn(SingleColumn* node, antlr4::ParserRuleContext* context) override
 		{			
 			log_->trace("visitSingleColumn");
-			antlrcpp::Any result = "/" + process(node->getExpression(), context).as<std::string>();
-			return result;
+			return process(node->getExpression(), context);
 		}
 
 		virtual antlrcpp::Any visitGroupingOperation(GroupingOperation* node, antlr4::ParserRuleContext* context) override

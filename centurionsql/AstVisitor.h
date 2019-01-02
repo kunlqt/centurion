@@ -283,9 +283,7 @@ namespace centurion {
 		virtual antlrcpp::Any visitBinaryLiteral(BinaryLiteral* node, antlr4::ParserRuleContext* context)
 		{
 			return visitLiteral(node, context);
-		}
-
-		
+		}		
 
 		virtual antlrcpp::Any visitNullIfExpression(NullIfExpression* node, antlr4::ParserRuleContext* context)
 		{
