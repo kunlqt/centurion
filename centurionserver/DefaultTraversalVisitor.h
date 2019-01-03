@@ -163,10 +163,9 @@ namespace centurion {
 			return antlrcpp::Any();
 		}
 
-		virtual antlrcpp::Any visitQuery(Query* query, antlr4::ParserRuleContext* context) override {
-			
+		virtual antlrcpp::Any visitQuery(Query* query, antlr4::ParserRuleContext* context) override 
+		{			
 			log_->trace("visitQuery");
-
 			if (query->getWith().has_value()) {
 				process(query->getWith().value(), context);
 			}
@@ -178,10 +177,8 @@ namespace centurion {
 		}
 
 		virtual antlrcpp::Any visitWith(With* with, antlr4::ParserRuleContext* context) override
-		{
-			
+		{			
 			log_->trace("visitWith");
-
 			for (const auto& query : with->getQueries()) {
 				process(query, context);
 			}
@@ -192,7 +189,6 @@ namespace centurion {
 		{
 			
 			log_->trace("visitWithQuery");
-
 			return process(node->getQuery(), context);
 		}
 
@@ -216,15 +212,13 @@ namespace centurion {
 		}
 
 		virtual antlrcpp::Any visitStringLiteral(StringLiteral* node, antlr4::ParserRuleContext* context) override
-		{
-			
+		{			
 			log_->trace("visitStringLiteral: {}", node->getValue());
 			return node;
 		}
 
 		virtual antlrcpp::Any visitDoubleLiteral(DoubleLiteral* node, antlr4::ParserRuleContext* context) override
-		{
-			
+		{			
 			log_->trace("visitDoubleLiteral: {}", node->getValue());
 			return node;
 		}
@@ -289,54 +283,47 @@ namespace centurion {
 			throw std::runtime_error("missing base");
 		}
 
-		virtual antlrcpp::Any visitInListExpression(InListExpression* node, antlr4::ParserRuleContext* context) override
-		{
-			
-			log_->trace("visitInListExpression");
-
-			for (Expression* value : node->getValues()) {
-				process(value, context);
-			}
+		virtual antlrcpp::Any visitInPredicate(InPredicate* node, antlr4::ParserRuleContext* context) override
+		{			
+			log_->trace("visitInPredicate");
+			antlrcpp::Any identifier = process(node->getValue(), context);
+			antlrcpp::Any values = process(node->getValueList(), context);
 			return antlrcpp::Any();
-
 		}
 
-		virtual antlrcpp::Any visitInPredicate(InPredicate* node, antlr4::ParserRuleContext* context) override
+		virtual antlrcpp::Any visitInListExpression(InListExpression* node, antlr4::ParserRuleContext* context) override
 		{
-			
-			log_->trace("visitInPredicate");
-
-			process(node->getValue(), context);
-			process(node->getValueList(), context);
-			return antlrcpp::Any();
+			log_->trace("visitInListExpression");
+			std::vector<Literal*> result;
+			for (Expression* value : node->getValues()) {
+				antlrcpp::Any listExpression = process(value, context);
+				if (listExpression.is<Literal*>(true)) {
+					result.push_back(listExpression.as<Literal*>());
+				}
+			}
+			return result;
 		}
 
 		virtual antlrcpp::Any visitArithmeticUnary(ArithmeticUnaryExpression* node, antlr4::ParserRuleContext* context) override
-		{
-			
+		{			
 			log_->trace("visitArithmeticUnary");
-
 			return process(node->getValue(), context);
 		}
 
 		virtual antlrcpp::Any visitNotExpression(NotExpression* node, antlr4::ParserRuleContext* context) override
-		{
-			
+		{			
 			log_->trace("visitNotExpression");
-
 			return process(node->getValue(), context);
 		}
 
 		virtual antlrcpp::Any visitIsNotNullPredicate(IsNotNullPredicate* node, antlr4::ParserRuleContext* context) override
-		{
-			
+		{			
 			log_->trace("visitIsNotNullPredicate");
 			return process(node->getValue(), context);
 		}
 
 		virtual antlrcpp::Any visitIsNullPredicate(IsNullPredicate* node, antlr4::ParserRuleContext* context) override
-		{
-			
+		{			
 			log_->trace("visitIsNullPredicate");
 			return process(node->getValue(), context);
 		}
@@ -349,8 +336,7 @@ namespace centurion {
 		}
 
 		virtual antlrcpp::Any visitOrderBy(OrderBy* node, antlr4::ParserRuleContext* context) override
-		{
-			
+		{			
 			log_->trace("visitOrderBy");
 			for (SortItem* sortItem : node->getSortItems()) {
 				process(sortItem, context);
@@ -359,10 +345,8 @@ namespace centurion {
 		}
 
 		virtual antlrcpp::Any visitSortItem(SortItem* node, antlr4::ParserRuleContext* context) override
-		{
-			
+		{			
 			log_->trace("visitSortItem");
-
 			return process(node->getSortKey(), context);
 		}
 
@@ -390,21 +374,16 @@ namespace centurion {
 		}
 
 		virtual antlrcpp::Any visitAliasedRelation(AliasedRelation* node, antlr4::ParserRuleContext* context) override
-		{
-			
+		{			
 			log_->trace("visitAliasedRelation");
-
 			return process(node->getRelation(), context);
 		}
 
 		virtual antlrcpp::Any visitJoin(Join* node, antlr4::ParserRuleContext* context) override
-		{
-			
+		{			
 			log_->trace("visitJoin");
-
 			process(node->getLeft(), context);
 			process(node->getRight(), context);
-
 			if (node->getCriteria().has_value()) {
 				JoinOn* joinOn = dynamic_cast<JoinOn*>(node->getCriteria().value());
 				if (joinOn != nullptr)
@@ -416,10 +395,8 @@ namespace centurion {
 		}
 
 		virtual antlrcpp::Any visitGroupBy(GroupBy* node, antlr4::ParserRuleContext* context) override
-		{
-			
+		{			
 			log_->trace("visitGroupBy");
-
 			for (const auto& groupingElement : node->getGroupingElements()) {
 				process(groupingElement, context);
 			}
@@ -427,10 +404,8 @@ namespace centurion {
 		}
 
 		virtual antlrcpp::Any visitSimpleGroupBy(SimpleGroupBy* node, antlr4::ParserRuleContext* context) override
-		{
-			
+		{			
 			log_->trace("visitSimpleGroupBy");
-
 			for (const auto& expression : node->getExpressions()) {
 				process(expression, context);
 			}

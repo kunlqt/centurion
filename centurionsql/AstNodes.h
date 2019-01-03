@@ -43,33 +43,33 @@ public:
 
 	class Identifier : public Expression {
 	public:
-		Identifier(std::optional<NodeLocation> location, const std::string& value, bool delimited)
+		Identifier(std::optional<NodeLocation> location, std::string value, bool delimited)
 			:
 			Expression(location),
 			namePattern_("[a-zA-Z_]([a-zA-Z0-9_:@])*"),
 			location_(location),
-			value_(value),
+			value_(std::move(value)),
 			delimited_(delimited)
 		{
 
 		}
 
-		Identifier(NodeLocation location, const std::string& value, bool delimited)
+		Identifier(NodeLocation location, std::string value, bool delimited)
 			: Identifier(std::optional<NodeLocation>(location), value, delimited)
 		{
 
 		}
 
-		Identifier(const std::string& value, bool delimited)
+		Identifier(std::string value, bool delimited)
 			:
-			Identifier(std::nullopt, value, delimited)
+			Identifier(std::optional<NodeLocation>(), value, delimited)
 		{
 
 		}
 
-		Identifier(const std::string& value)
+		Identifier(std::string value)
 			:
-			Identifier(std::nullopt, value, false)
+			Identifier(std::optional<NodeLocation>(), value, false)
 		{
 			delimited_ = std::regex_match(value, namePattern_);
 		}
@@ -189,17 +189,15 @@ public:
 
 	class StringLiteral : public Literal {
 	public:
-		StringLiteral(const std::string& value)
-			: StringLiteral(std::optional<NodeLocation>(), value) {
-		}
+		StringLiteral(std::string value)
+			: StringLiteral(std::optional<NodeLocation>(), value) { }
 
-		StringLiteral(const NodeLocation& location, const std::string& value)
-			: StringLiteral(std::make_optional(location), value) {
-		}
+		StringLiteral(const NodeLocation& location, std::string value)
+			: StringLiteral(std::make_optional(location), value) { }
 
-		StringLiteral(std::optional<NodeLocation> location, const std::string& value) : Literal(location) {
-			value_ = value;
-		}
+		StringLiteral(std::optional<NodeLocation> location, std::string value) 
+		: Literal(location)
+		, value_(std::move(value)) { }
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
@@ -227,17 +225,13 @@ public:
 
 	class DecimalLiteral : public Literal {
 	public:
-		DecimalLiteral(const std::string& value)
-			: DecimalLiteral(std::optional<NodeLocation>(), value) {
-		}
+		DecimalLiteral(std::string value)
+			: DecimalLiteral(std::optional<NodeLocation>(), value) { }
 
-		DecimalLiteral(const NodeLocation& location, const std::string& value)
-			: DecimalLiteral(std::make_optional(location), value) {
-		}
+		DecimalLiteral(const NodeLocation& location, std::string value)
+			: DecimalLiteral(std::make_optional(location), value) { }
 
-		DecimalLiteral(std::optional<NodeLocation> location, const std::string& value) : Literal(location) {
-			value_ = value;
-		}
+		DecimalLiteral(std::optional<NodeLocation> location, std::string value) : Literal(location), value_(std::move(value)) { }
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
@@ -265,18 +259,18 @@ public:
 	class DoubleLiteral : public Literal {
 	public:
 		DoubleLiteral(const std::string& value)
-			: DoubleLiteral(std::optional<NodeLocation>(), value) {
-		}
+			: DoubleLiteral(std::optional<NodeLocation>(), value) { }
 
 		DoubleLiteral(const NodeLocation& location, const std::string& value)
-			: DoubleLiteral(std::make_optional(location), value) {
-		}
+			: DoubleLiteral(std::make_optional(location), value) { }
 
-		DoubleLiteral(std::optional<NodeLocation> location, const std::string& value) : Literal(location) {
-			value_ = std::stod(value);
-		}
+		DoubleLiteral(std::optional<NodeLocation> location, const std::string& value) 
+		: Literal(location)
+		, value_(std::stod(value)) { }
 
-		DoubleLiteral(std::optional<NodeLocation> location, double value) : Literal(location), value_(value) { }
+		DoubleLiteral(std::optional<NodeLocation> location, double value) 
+		: Literal(location)
+		, value_(value) { }
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
@@ -296,7 +290,6 @@ public:
 			return false;
 		}
 
-
 	private:
 		double value_;
 	};
@@ -311,9 +304,9 @@ public:
 			: LongLiteral(std::make_optional(location), value) {
 		}
 
-		LongLiteral(std::optional<NodeLocation> location, const std::string& value) : Literal(location) {
-			value_ = std::atol(value.c_str());
-		}
+		LongLiteral(std::optional<NodeLocation> location, const std::string& value) 
+		: Literal(location)
+		, value_(std::atol(value.c_str())) { }
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
@@ -349,9 +342,9 @@ public:
 			: BooleanLiteral(std::make_optional(location), value) {
 		}
 
-		BooleanLiteral(std::optional<NodeLocation> location, const std::string& value) : Literal(location) {
-			value_ = toLowerCopy(value) == "true";
-		}
+		BooleanLiteral(std::optional<NodeLocation> location, const std::string& value) 
+		: Literal(location)
+		, value_(toLowerCopy(value) == "true") { }
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
