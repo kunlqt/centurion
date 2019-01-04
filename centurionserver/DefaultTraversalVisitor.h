@@ -6,6 +6,7 @@
 #include "SearchIteratorAnd.h"
 #include "SearchIteratorOr.h"
 #include <fmt/ostream.h>
+#include "SearchIteratorIn.h"
 
 namespace centurion {
 	
@@ -287,19 +288,38 @@ namespace centurion {
 		{			
 			log_->trace("visitInPredicate");
 			antlrcpp::Any identifier = process(node->getValue(), context);
+			const auto idx = dbm_.indexNameStore().getIndexId(identifier.as<FieldIdentifier*>()->toString());
 			antlrcpp::Any values = process(node->getValueList(), context);
-			return antlrcpp::Any();
+			std::vector<SearchIterator*> iterators;
+			std::vector<antlrcpp::Any> literals = values.as<std::vector<antlrcpp::Any>>();
+			for (auto literal : literals)
+			{
+				if (literal.is<StringLiteral*>())
+				{
+					iterators.emplace_back((SearchIterator*)(StringValueSearchIterator::eq(dbm_.isvs(), idx, literal.as<StringLiteral*>()->getValue())));
+				} else if (literal.is<DecimalLiteral*>())
+				{
+					iterators.emplace_back((SearchIterator*)(DoubleValueSearchIterator::eq(dbm_.idvs(), idx, std::stod(literal.as<DecimalLiteral*>()->getValue()))));
+				} else if (literal.is<DoubleLiteral*>())
+				{
+					iterators.emplace_back((SearchIterator*)(DoubleValueSearchIterator::eq(dbm_.idvs(), idx, literal.as<DoubleLiteral*>()->getValue())));
+				} else if (literal.is<LongLiteral*>())
+				{
+					iterators.emplace_back((SearchIterator*)(DoubleValueSearchIterator::eq(dbm_.idvs(), idx, literal.as<LongLiteral*>()->getValue())));
+				} else if (literal.is<BooleanLiteral*>())
+				{
+					iterators.emplace_back((SearchIterator*)(BooleanValueSearchIterator::eq(dbm_.ibvs(), idx, literal.as<BooleanLiteral*>()->getValue())));
+				}
+			}			
+			return new SearchIteratorIn(iterators);
 		}
 
 		virtual antlrcpp::Any visitInListExpression(InListExpression* node, antlr4::ParserRuleContext* context) override
 		{
 			log_->trace("visitInListExpression");
-			std::vector<Literal*> result;
+			std::vector<antlrcpp::Any> result;
 			for (Expression* value : node->getValues()) {
-				antlrcpp::Any listExpression = process(value, context);
-				if (listExpression.is<Literal*>(true)) {
-					result.push_back(listExpression.as<Literal*>());
-				}
+				result.push_back(process(value, context));
 			}
 			return result;
 		}
