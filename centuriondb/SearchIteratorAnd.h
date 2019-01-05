@@ -17,7 +17,7 @@ namespace centurion
 			right_(right),
 			currentDocumentId_(InvalidDocumentId)
 		{
-			auto console = spdlog::get("root");			
+					
 		}
 
 		virtual ~SearchIteratorAnd() override
@@ -46,6 +46,13 @@ namespace centurion
 
 		virtual void next() override
 		{
+			if (getState() == AfterLast)
+			{
+				auto logger = spdlog::get("root");
+				logger->error("Trying to move iterator after last element");
+				currentDocumentId_ = InvalidDocumentId;
+				return;
+			}
 			if (valid()) {
 				left_->next();
 				if (!left_->valid())
