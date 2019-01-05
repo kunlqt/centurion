@@ -27,26 +27,30 @@ using StringSizeType = std::uint32_t;
 #define CreateStringIndex(buffer, indexId, str, stringSize) \
 	SetIndexId(buffer, indexId); \
 	SetStringSize(buffer, stringSize); \
-	if (stringSize && str) std::memcpy(((std::uint8_t*)buffer + StringBufferOffset), str, stringSize)
+	if (stringSize && str) std::memcpy(((std::uint8_t*)buffer + StringBufferOffset), str, stringSize); \
+	*(DocumentId*)((std::uint8_t*)buffer + StringBufferOffset + stringSize) = 0;
 
 #define CreateDoubleIndex(buffer, indexId, v) \
 	SetIndexId(buffer, indexId); \
-	*(double*)((std::uint8_t*)buffer + sizeof(IndexId)) = v
+	*(double*)((std::uint8_t*)buffer + sizeof(IndexId)) = v; \
+	*(DocumentId*)((std::uint8_t*)buffer + sizeof(IndexId) + sizeof(double)) = 0;
 
 #define CreateBooleanIndex(buffer, indexId, b) \
 	SetIndexId(buffer, indexId); \
-	*(std::uint8_t*)((std::uint8_t*)buffer + sizeof(IndexId)) = (b ? 1 : 0)
+	*(std::uint8_t*)((std::uint8_t*)buffer + sizeof(IndexId)) = (b ? 1 : 0); \
+	*(DocumentId*)((std::uint8_t*)buffer + sizeof(IndexId) + sizeof(std::uint8_t)) = 0;
 
 #define CreateEmptytringIndex(buffer, indexId)  \
 	SetIndexId(buffer, indexId); \
 	SetStringSize(buffer, 0);
 
 #define CreateStringIndexSlice(indexId, str, stringSize, slice) \
-	char slice##buffer[sizeof(IndexId) + sizeof(StringSizeType) + stringSize]; \
+	char slice##buffer[sizeof(IndexId) + sizeof(StringSizeType) + stringSize + sizeof(DocumentId)]; \
 	CreateStringIndex(slice##buffer, indexId, str, stringSize); \
 	slice = Slice(slice##buffer, sizeof(slice##buffer))
 
 #define CreateDoubleIndexSlice(indexId, v, slice) \
-	char slice##buffer[sizeof(IndexId) + sizeof(double)]; \
+	char slice##buffer[sizeof(IndexId) + sizeof(double) + sizeof(DocumentId)]; \
 	CreateDoubleIndex(slice##buffer, indexId, v); \
 	slice = Slice(slice##buffer, sizeof(slice##buffer))
+

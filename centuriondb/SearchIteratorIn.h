@@ -35,7 +35,7 @@ namespace centurion
 					for (auto it = iterators_.begin(); it != iterators_.end(); ) {
 						(*it)->next();
 						if (!(*it)->valid()) {
-							iterators_.erase(it);
+							it = iterators_.erase(it);
 						} else {
 							++it;
 						}

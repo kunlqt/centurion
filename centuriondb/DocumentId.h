@@ -9,7 +9,8 @@
 namespace centurion {
 	using DocumentId = std::uint64_t;
 	static const DocumentId InvalidDocumentId = 0;
-	inline std::ostream& operator<<(std::ostream& strm, DocumentId docId)
+	/*
+	inline std::ostream& operator<<(std::ostream& strm, const DocumentId docId)
 	{
 		DocumentId docIdPrint = docId;
 		for (size_t idx = 0; idx < sizeof docId; idx++)
@@ -19,6 +20,7 @@ namespace centurion {
 		}
 		return strm;
 	}
+	*/
 
 	struct DocumentIdHasher {
 		size_t operator()(const DocumentId& docId) const {

@@ -2,13 +2,15 @@
 #include "DocumentId.h"
 #include <string>
 #include <rocksdb/db.h>
-#include <random>
 #include <rapidjson/document.h>
 #include <rapidjson/rapidjson.h>
 #include <rapidjson/writer.h>
 #include <boost/filesystem/path.hpp>
+#include <mutex>
 
 namespace centurion {
+	inline const char* lastDocumentIdKey = "__last_document_id__";
+
 	class DocumentStore
 	{
 	public:
@@ -18,9 +20,9 @@ namespace centurion {
 		DocumentStore(boost::filesystem::path filename, bool dropIfExist = false)
 			:
 			db_(nullptr),
-			mte_(rd_()),
 			filename_(std::move(filename)),
-			dropIfExist_(dropIfExist)
+			dropIfExist_(dropIfExist),
+			maxDocumentId_(0)
 		{
 			rocksdb::Options opts;
 			opts.create_if_missing = true;
@@ -34,10 +36,12 @@ namespace centurion {
 			{
 				throw std::runtime_error("db error: " + s.ToString());
 			}
+			restoreMaxIndexId();
 		}
 
 		virtual ~DocumentStore()
 		{
+			storeMaxIndexId();
 			db_->FlushWAL(true);
 			db_->SyncWAL();
 			db_->Close();
@@ -47,29 +51,31 @@ namespace centurion {
 
 		DocumentId storeDocument(const rapidjson::Value& doc)
 		{
-			DocumentId documentId = dis_(mte_);
+			DocumentId documentId = ++maxDocumentId_;
 			rapidjson::StringBuffer buffer;
 			rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-			doc.Accept(writer);
-			auto putResult = db_->Put(
-				rocksdb::WriteOptions(),
-				rocksdb::Slice((char*)&documentId, sizeof(documentId)),
-				rocksdb::Slice(buffer.GetString(), buffer.GetSize()));
-			if (putResult.ok())
-			{
-				return documentId;
+			if (doc.Accept(writer)) {
+				auto putResult = db_->Put(
+					rocksdb::WriteOptions(),
+					rocksdb::Slice((char*)&documentId, sizeof(documentId)),
+					rocksdb::Slice(buffer.GetString(), buffer.GetSize()));
+				if (putResult.ok())
+				{
+					return documentId;
+				}
+				throw std::runtime_error(putResult.ToString());
 			}
-			throw std::runtime_error(putResult.ToString());
+			throw std::runtime_error("Empty document");			
 		}
 
-		bool findDocument(DocumentId documentId, rapidjson::Document& doc)
+		bool findDocument(DocumentId documentId, rapidjson::Document& doc) const
 		{
 			std::string documentPayload;
-			auto putResult = db_->Get(
+			auto getResult = db_->Get(
 				rocksdb::ReadOptions(),
 				rocksdb::Slice((char*)&documentId, sizeof(documentId)),
 				&documentPayload);
-			if (putResult.ok()) {
+			if (getResult.ok()) {
 				doc.Parse(documentPayload.c_str(), documentPayload.size());
 				return !doc.HasParseError();
 			}
@@ -77,12 +83,40 @@ namespace centurion {
 		}
 
 	private:
-		
+		void storeMaxIndexId()
+		{
+			std::lock_guard<std::mutex> guard(mutex_);
+			std::string s;
+			DocumentId currentDocId = 0;
+			if (db_->Get(rocksdb::ReadOptions(), lastDocumentIdKey, &s).ok())
+			{
+				currentDocId = *(reinterpret_cast<const DocumentId*>(s.data()));
+			}
+			DocumentId tmp = maxDocumentId_;
+			if (currentDocId < tmp) {
+				if (!db_->Put(rocksdb::WriteOptions(), lastDocumentIdKey, rocksdb::Slice(reinterpret_cast<const char*>(&tmp), sizeof tmp)).ok())
+				{
+					throw std::runtime_error("put __last_index_id__ error");
+				}
+			}
+		}
+
+		void restoreMaxIndexId()
+		{
+			std::lock_guard<std::mutex> guard(mutex_);
+			std::string s;
+			if (db_->Get(rocksdb::ReadOptions(), lastDocumentIdKey, &s).ok())
+			{
+				maxDocumentId_ = *(reinterpret_cast<const DocumentId*>(s.data()));
+			} else {
+				maxDocumentId_ = 0;
+			}
+		}
+
 		rocksdb::DB* db_;
-		std::random_device rd_;
-		std::mt19937 mte_;
-		std::uniform_int_distribution<DocumentId> dis_;
+		std::atomic<DocumentId> maxDocumentId_;
 		boost::filesystem::path filename_;
 		bool dropIfExist_;
+		std::mutex mutex_;
 	};
 }

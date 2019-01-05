@@ -3,6 +3,7 @@
 #include "DocumentId.h"
 #include "StringValueIndexComparator.h"
 #include "IndexedValuesStore.h"
+#include "Dumper.h"
 #include <rocksdb/db.h>
 #include <spdlog/spdlog.h>
 #include <string>
@@ -48,6 +49,18 @@ namespace centurion {
 			}
 			return true;
 		}
-		
+		/*
+		void dump()
+		{
+			rocksdb::Iterator* iterator = db_->NewIterator(rocksdb::ReadOptions());
+			iterator->SeekToFirst();
+			while (iterator->Valid())
+			{
+				DumpStringIndex(iterator->key());
+				iterator->Next();
+			}
+			delete iterator;
+		}
+		*/
 	};
 }

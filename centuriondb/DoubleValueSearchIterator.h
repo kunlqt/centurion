@@ -120,11 +120,11 @@ namespace centurion
 			store_(store),
 			indexId_(indexId),
 			lowerBound_(lowerBound),
-			lowerSliceBufSize_(sizeof(indexId) + sizeof(double)),
+			lowerSliceBufSize_(sizeof(indexId) + sizeof(double) + sizeof(DocumentId)),
 			lowerSliceBuf_(new char[lowerSliceBufSize_]),
 			lowerBoundSlice_(buildDoubleSlice(indexId, lowerBound_, lowerSliceBuf_, lowerSliceBufSize_)),
 			upperBound_(upperBound),
-			upperSliceBufSize_(sizeof(indexId) + sizeof(double)),
+			upperSliceBufSize_(sizeof(indexId) + sizeof(double) + sizeof(DocumentId)),
 			upperSliceBuf_(new char[upperSliceBufSize_]),
 			upperBoundSlice_(buildDoubleSlice(indexId, upperBound_, upperSliceBuf_, upperSliceBufSize_))
 		{

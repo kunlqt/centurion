@@ -29,12 +29,17 @@ namespace centurion {
 			
 		}
 
+		virtual ~DocumentIndexer()
+		{
+			
+		}
+
 		void indexDocument(const rapidjson::Value& doc)
 		{
 			auto documentId = documentStore_.storeDocument(doc);
 			const rapidjson::Pointer root;
 			extractPaths(doc, root, [&](const char* fieldName, size_t fieldNameSize, const rapidjson::Value& fieldValue) {
-				const auto indexId = indexNameStore_.getIndexId(fieldName, fieldNameSize);
+				const auto indexId = indexNameStore_.ensureIndexId(fieldName, fieldNameSize);
 				bool addResult;
 				if (fieldValue.IsArray()) {
 					const auto& arr = fieldValue.GetArray();

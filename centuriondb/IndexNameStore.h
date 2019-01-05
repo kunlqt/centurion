@@ -3,8 +3,11 @@
 #include <rocksdb/db.h>
 #include <boost/filesystem/path.hpp>
 #include <string>
+#include <mutex>
 
 namespace centurion {
+	inline const char* lastIndexIdKey = "__last_index_id__";
+		
 	class IndexNameStore
 	{
 	public:
@@ -61,12 +64,12 @@ namespace centurion {
 			throw std::runtime_error(ss.str());
 		}
 
-		IndexId getIndexId(const std::string& indexName)
+		IndexId ensureIndexId(const std::string& indexName)
 		{
-			return getIndexId(indexName.c_str(), indexName.size());
+			return ensureIndexId(indexName.c_str(), indexName.size());
 		}
 
-		IndexId getIndexId(const char* indexName, size_t indexNameSize)
+		IndexId ensureIndexId(const char* indexName, size_t indexNameSize)
 		{
 			std::string s;
 			const rocksdb::Slice slice(indexName, indexNameSize);
@@ -84,19 +87,29 @@ namespace centurion {
 		}
 
 	private:
-		void storeMaxIndexId() const
+		void storeMaxIndexId()
 		{
-			IndexId tmp = maxIndexId_;
-			if (!db_->Put(rocksdb::WriteOptions(), "__last_index_id__", rocksdb::Slice(reinterpret_cast<const char*>(&tmp), sizeof tmp)).ok())
+			std::lock_guard<std::mutex> guard(mutex_);
+			IndexId currentIndexId = 0;
+			std::string s;
+			if (db_->Get(rocksdb::ReadOptions(), lastIndexIdKey, &s).ok())
 			{
-				throw std::runtime_error("put __last_index_id__ error");
+				currentIndexId = *(reinterpret_cast<const IndexId*>(s.data()));
+			}
+			IndexId tmp = maxIndexId_;
+			if (currentIndexId < tmp) {
+				if (!db_->Put(rocksdb::WriteOptions(), lastIndexIdKey, rocksdb::Slice(reinterpret_cast<const char*>(&tmp), sizeof tmp)).ok())
+				{
+					throw std::runtime_error("put __last_index_id__ error");
+				}
 			}
 		}
 
 		void restoreMaxIndexId()
 		{
+			std::lock_guard<std::mutex> guard(mutex_);
 			std::string s;
-			if (db_->Get(rocksdb::ReadOptions(), "__last_index_id__", &s).ok())
+			if (db_->Get(rocksdb::ReadOptions(), lastIndexIdKey, &s).ok())
 			{
 				maxIndexId_ = *(reinterpret_cast<const IndexId*>(s.data()));
 			} else {
@@ -107,5 +120,6 @@ namespace centurion {
 		std::atomic<IndexId> maxIndexId_;
 		boost::filesystem::path fileName_;
 		bool dropIfExist_;
+		std::mutex mutex_;
 	};
 }

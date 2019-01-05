@@ -94,10 +94,10 @@ namespace centurion
 			store_(store),
 			indexId_(indexId),
 			lowerBoundVal_(val ? 1 : 0),
-			lowerSliceBufSize_(sizeof(indexId) + sizeof(std::uint8_t)),
+			lowerSliceBufSize_(sizeof(indexId) + sizeof(std::uint8_t) + sizeof(DocumentId)),
 			lowerSliceBuf_(new char[lowerSliceBufSize_]),
 			lowerBoundSlice_(buildBooleanSlice(indexId, val, lowerSliceBuf_, lowerSliceBufSize_)),
-			upperSliceBufSize_(sizeof(indexId) + sizeof(std::uint8_t)),
+			upperSliceBufSize_(sizeof(indexId) + sizeof(std::uint8_t) + sizeof(DocumentId)),
 			upperSliceBuf_(new char[upperSliceBufSize_]),
 			upperBoundSlice_(buildBooleanSlice(val ? indexId + 1: indexId, !val, upperSliceBuf_, upperSliceBufSize_))
 		{

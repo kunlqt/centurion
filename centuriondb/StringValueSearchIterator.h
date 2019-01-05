@@ -5,6 +5,7 @@
 #include "DocumentId.h"
 #include "SearchIterator.h"
 #include "StringValueIndexStore.h"
+#include "Dumper.h"
 #include <rocksdb/db.h>
 #include <spdlog/spdlog.h>
 #include <string>
@@ -99,10 +100,10 @@ namespace centurion
 			store_(store),
 			indexId_(indexId),
 			strSize_(strSize),
-			lowerSliceBufSize_(GetDocumentIdOffsetInString(strSize)),
+			lowerSliceBufSize_(GetDocumentIdOffsetInString(strSize) + sizeof(DocumentId)),
 			lowerSliceBuf_(new char[lowerSliceBufSize_]),
 			lowerBoundSlice_(buildStringSlice(indexId, str, strSize, lowerSliceBuf_, lowerSliceBufSize_)),
-			upperSliceBufSize_(StringBufferOffset),
+			upperSliceBufSize_(StringBufferOffset + sizeof(DocumentId)),
 			upperSliceBuf_(new char[upperSliceBufSize_]),
 			upperBoundSlice_(buildStringSlice(indexId + 1, nullptr, 0, upperSliceBuf_, upperSliceBufSize_)),
 			iterator_(nullptr),
