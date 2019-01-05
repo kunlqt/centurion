@@ -18,7 +18,7 @@ namespace centurion
 			currentDocumentId_(InvalidDocumentId),
 			prevDocumentId_(InvalidDocumentId)
 		{
-			auto console = spdlog::get("root");
+			
 		}
 
 		virtual ~SearchIteratorIn() override
@@ -41,9 +41,10 @@ namespace centurion
 				}
 				std::make_heap(iterators_.begin(), iterators_.end(), [](const auto& a, const auto& b) { return a->current() > b->current(); });
 			}
-			if (iterators_.empty())
-			{
+			if (iterators_.empty()) {
 				setState(AfterLast);
+			} else {
+				next();
 			}
 		}
 

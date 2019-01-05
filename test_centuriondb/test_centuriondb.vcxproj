@@ -101,6 +101,9 @@
     <ClCompile Include="TestIndexedDoubleValuesStore.cpp" />
     <ClCompile Include="TestIndexedStringValuesStore.cpp" />
     <ClCompile Include="TestIndexNameStore.cpp" />
+    <ClCompile Include="TestSearchIteratorAnd.cpp" />
+    <ClCompile Include="TestSearchIteratorIn.cpp" />
+    <ClCompile Include="TestSearchIteratorOr.cpp" />
     <ClCompile Include="TestStringIndexComparator.cpp" />
     <ClCompile Include="test_centuriondb.cpp" />
   </ItemGroup>

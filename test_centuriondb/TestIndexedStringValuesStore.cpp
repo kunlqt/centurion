@@ -1,7 +1,6 @@
 #include "gtest/gtest.h"
 #include "TestCommon.h"
 #include "DocumentIndexer.h"
-#include "IndexNameStore.h"
 #include "StringValueIndexStore.h"
 #include "StringValueSearchIterator.h"
 
@@ -14,12 +13,9 @@ namespace {
 
 	protected:
 		static void SetUpTestSuite() {
-			indexNameStore_ = new IndexNameStore(IndexNameStoreName, true);
 		}
 
 		static void TearDownTestSuite() {
-			delete indexNameStore_;
-			indexNameStore_ = nullptr;
 		}
 
 		void SetUp() override
@@ -33,11 +29,8 @@ namespace {
 			valueIndexStore_ = nullptr;
 		}
 
-		static IndexNameStore* indexNameStore_;
 		StringValueIndexStore* valueIndexStore_;
 	};
-
-	IndexNameStore* TestIndexedStringValueStore::indexNameStore_ = nullptr;
 
 	TEST_F(TestIndexedStringValueStore, FindSingleDocumentContainingString) {
 		const IndexId fieldIndexId = 4;
@@ -139,15 +132,18 @@ namespace {
 		searchIterator->seek(MinDocumentId);
 		ASSERT_TRUE(searchIterator->valid());
 		ASSERT_EQ(searchIterator->current(), indexedDocumentId1);
-		searchIterator->next();
-		
+
+		searchIterator->next();		
+		ASSERT_TRUE(searchIterator->valid());
 		ASSERT_EQ(searchIterator->current(), indexedDocumentId2);
-		searchIterator->next();
-		
+
+		searchIterator->next();		
+		ASSERT_TRUE(searchIterator->valid());
 		ASSERT_EQ(searchIterator->current(), indexedDocumentId3);
-		searchIterator->next();
-		
+
+		searchIterator->next();		
 		ASSERT_FALSE(searchIterator->valid());
+
 		delete searchIterator;
 	}
 

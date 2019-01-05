@@ -33,16 +33,33 @@ namespace centurion
 			if (!left_->valid())
 			{
 				setState(AfterLast);
+				return;
 			}
 			right_->seek(documentId);
 			if (!right_->valid())
 			{
 				setState(AfterLast);
+				return;
 			}
+			next();
 		}
 
 		virtual void next() override
 		{
+			if (valid()) {
+				left_->next();
+				if (!left_->valid())
+				{
+					setState(AfterLast);
+					return;
+				}
+				right_->next();
+				if (!right_->valid())
+				{
+					setState(AfterLast);
+					return;
+				}
+			}
 			while (true) {
 				while (left_->current() < right_->current()) {
 					left_->next();

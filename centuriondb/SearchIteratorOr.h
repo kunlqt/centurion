@@ -34,7 +34,9 @@ namespace centurion
 			if (!left_->valid() && !right_->valid())
 			{
 				setState(AfterLast);
+				return;
 			}
+			next();
 		}
 
 		virtual void next() override

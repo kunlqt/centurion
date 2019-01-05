@@ -1,7 +1,7 @@
 #pragma once
 #include <rocksdb/db.h>
 #include <spdlog/spdlog.h>
-#include <string>
+#include <boost/filesystem/path.hpp>
 
 namespace centurion {
 	class IndexedValuesStore
