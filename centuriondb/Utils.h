@@ -18,6 +18,8 @@ using StringSizeType = std::uint32_t;
 
 #define ExtractDocumentIdFromString(buffer) (*(DocumentId*)((std::uint8_t*)buffer + GetDocumentIdOffsetInString(GetStringSize(buffer))))
 
+#define ExtractDouble(buffer) (*(double*)((std::uint8_t*)buffer + sizeof(IndexId)))
+
 #define ExtractDocumentIdFromDouble(buffer) (*(DocumentId*)((std::uint8_t*)buffer + sizeof(IndexId) + sizeof(double)))
 
 #define ExtractDocumentIdFromBoolean(buffer) (*(DocumentId*)((std::uint8_t*)buffer + sizeof(IndexId) + sizeof(std::uint8_t)))

@@ -50,17 +50,7 @@ namespace centurion {
 			return true;
 		}
 		/*
-		void dump()
-		{
-			rocksdb::Iterator* iterator = db_->NewIterator(rocksdb::ReadOptions());
-			iterator->SeekToFirst();
-			while (iterator->Valid())
-			{
-				DumpStringIndex(iterator->key());
-				iterator->Next();
-			}
-			delete iterator;
-		}
+		
 		*/
 	};
 }

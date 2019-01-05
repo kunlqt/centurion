@@ -136,8 +136,16 @@ handle_request(
 					auto docsInserted = dbm->insertDocuments(ss);
 					http::response<http::string_body> res{ http::status::ok, req.version() };
 					res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
-					res.set(http::field::content_type, "text/html");
-					res.body() = "Inserted total: " + std::to_string(docsInserted) + " documents";
+					res.set(http::field::content_type, "application/json");
+					rapidjson::Document doc(rapidjson::kArrayType);
+					rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
+					for (auto documentid : docsInserted) {
+						doc.PushBack(documentid, allocator);
+					}
+					rapidjson::StringBuffer result;
+					rapidjson::Writer<rapidjson::StringBuffer> writer(result);
+					doc.Accept(writer);
+					res.body() = result.GetString();
 					res.keep_alive(req.keep_alive());
 					return send(std::move(res));
 				} catch (std::runtime_error& err)
@@ -158,12 +166,12 @@ handle_request(
 				try {					
 					log->trace("handling /query sql request");
 					centurion::SearchIteratorBuilder builder;
-					std::stringstream ss(req.body());
+					std::stringstream query(req.body());
 					log->trace("creating build query...");
-					const auto traversalVisitorResult = builder.buildQuery(*dbm, ss);
+					const auto traversalVisitorResult = builder.buildQuery(*dbm, query);
 					std::stringstream sss;
 					log->trace("creating search documents...");
-					auto docsFound = dbm->searchDocuments(traversalVisitorResult.get(), sss);
+					auto docsFound = dbm->searchDocuments(traversalVisitorResult.get(), sss, 0, 25);
 					log->trace("Search documents finished");
 					http::response<http::string_body> res{ http::status::ok, req.version() };
 					res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
@@ -174,6 +182,7 @@ handle_request(
 				}
 				catch (std::runtime_error& err)
 				{
+					log->error("An error while query db: {0}", err.what());
 					http::response<http::string_body> res{ http::status::bad_request, req.version() };
 					res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
 					res.set(http::field::content_type, "application/json");
@@ -190,6 +199,7 @@ handle_request(
 				}
 				catch (...)
 				{
+					log->error("Unknown error while query DB");
 					http::response<http::string_body> res{ http::status::internal_server_error, req.version() };
 					res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
 					res.set(http::field::content_type, "application/json");

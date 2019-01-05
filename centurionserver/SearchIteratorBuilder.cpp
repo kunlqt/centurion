@@ -22,14 +22,14 @@ namespace centurion {
 		CentSqlLexer lexer(&input);
 		antlr4::CommonTokenStream tokens(&lexer);
 		CentSqlParser parser(&tokens);
-		antlr4::ParserRuleContext* tree;
+		// antlr4::ParserRuleContext* tree;
 		const ParsingOptions options(ParsingOptions::AS_DECIMAL);
 		try {
 			parser.setErrorHandler(std::make_shared<antlr4::BailErrorStrategy>());
 			parser.getInterpreter<antlr4::atn::ParserATNSimulator>()->setPredictionMode(antlr4::atn::PredictionMode::SLL);
 			AstBuilder astBuilder(options);
 			console->trace("Visiting single sql statement");
-			tree = parser.singleStatement();
+			antlr4::ParserRuleContext* tree = parser.singleStatement();
 			auto statement = astBuilder.visitSingleStatement(dynamic_cast<CentSqlParser::SingleStatementContext*>(tree));
 			DefaultTraversalVisitor visitor(dbm);
 			StackableAstVisitor::StackableAstVisitorContext parserContext;
@@ -37,7 +37,7 @@ namespace centurion {
 			console->trace("Parsing done, returning results");
 			return res;
 		} catch (const antlr4::ParseCancellationException& exc) {
-			std::cout << exc.what() << std::endl;
+			console->error("SQL parse error: {}", exc.what());
 			throw;
 			/*
 			tokens.reset();

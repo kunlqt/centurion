@@ -10,5 +10,11 @@ namespace centurion {
 	struct TraversalVisitorResult {
 		SelectedFields* selectFields;
 		SearchIterator* searchRootIterator;
+
+		virtual ~TraversalVisitorResult()
+		{
+			delete selectFields;
+			delete searchRootIterator;
+		}
 	};
 }

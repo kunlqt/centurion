@@ -53,7 +53,7 @@ namespace centurion
 		}
 		*/
 
-		size_t searchDocuments(TraversalVisitorResult* visitorResult, std::ostream& strm)
+		size_t searchDocuments(TraversalVisitorResult* visitorResult, std::ostream& strm, DocumentId startFrom, size_t limit)
 		{
 			auto console = spdlog::get("root");
 			size_t totalDocumentsFound = 0;
@@ -76,7 +76,7 @@ namespace centurion
 				}
 			}
 			
-			while (true) {
+			for (size_t cnt = 0; cnt < limit; cnt++) {
 				visitorResult->searchRootIterator->next();
 				if (!visitorResult->searchRootIterator->valid())
 				{
@@ -123,8 +123,9 @@ namespace centurion
 		}
 
 
-		size_t insertDocuments(rapidjson::StringStream& is)
+		std::vector<DocumentId> insertDocuments(rapidjson::StringStream& is)
 		{
+			std::vector<DocumentId> result;
 			centurion::DocumentIndexer documentIndexer(documentStore_, indexNameStore_, isvs_, idvs_, ibvs_, savs_);
 
 			bool dropDatabase = false;
@@ -142,8 +143,8 @@ namespace centurion
 			}
 			if (rootDoc.IsObject())
 			{
-				documentIndexer.indexDocument(rootDoc);
-				return 1;
+				result.push_back(documentIndexer.indexDocument(rootDoc));
+				return result;
 			}
 			if (!rootDoc.IsArray())
 			{
@@ -157,7 +158,7 @@ namespace centurion
 			size_t cnt = 0;
 			for (const auto& doc : docs)
 			{
-				documentIndexer.indexDocument(doc);
+				result.push_back(documentIndexer.indexDocument(doc));
 				cnt++;
 				if ((cnt % 1000) == 0)
 				{
@@ -170,7 +171,7 @@ namespace centurion
 			const auto speed = docs.Size() / elapsed_seconds.count();
 			console->trace("Insertion done! Total elapsed time: {}s. Insertion speed: {} docs/sec", elapsed_seconds.count(), speed);
 			delete[] readBuffer;
-			return cnt;
+			return result;
 		}
 
 		const DocumentStore& documentStore() const { return documentStore_; };

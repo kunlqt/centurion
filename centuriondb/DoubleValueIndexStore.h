@@ -3,6 +3,7 @@
 #include "DocumentId.h"
 #include "DoubleIndexComparator.h"
 #include "IndexedValuesStore.h"
+#include "Dumper.h"
 #include <rocksdb/db.h>
 #include <string>
 
@@ -14,11 +15,13 @@ namespace centurion {
 			:
 			IndexedValuesStore(filename, new DoubleIndexComparator(), dropIfExist)
 		{
+			//dump();
 		}
 
 		virtual ~DoubleValueIndexStore()
 		{
 			delete comparator_;
+			
 		}
 
 		bool add(IndexId indexId, double value, DocumentId documentId) const
@@ -39,5 +42,16 @@ namespace centurion {
 			return true;
 		}
 
+		void dump()
+		{
+			rocksdb::Iterator* iterator = db_->NewIterator(rocksdb::ReadOptions());
+			iterator->SeekToFirst();
+			while (iterator->Valid())
+			{
+				DumpDoubleIndex(iterator->key());
+				iterator->Next();
+			}
+			delete iterator;
+		}
 	};
 }

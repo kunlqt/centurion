@@ -34,9 +34,9 @@ namespace centurion {
 			
 		}
 
-		void indexDocument(const rapidjson::Value& doc)
+		DocumentId indexDocument(const rapidjson::Value& doc)
 		{
-			auto documentId = documentStore_.storeDocument(doc);
+			DocumentId documentId = documentStore_.storeDocument(doc);
 			const rapidjson::Pointer root;
 			extractPaths(doc, root, [&](const char* fieldName, size_t fieldNameSize, const rapidjson::Value& fieldValue) {
 				const auto indexId = indexNameStore_.ensureIndexId(fieldName, fieldNameSize);
@@ -65,6 +65,7 @@ namespace centurion {
 					}
 				}
 			});
+			return documentId;
 		}
 
 	private:
