@@ -21,32 +21,8 @@
     <ClCompile Include="CityHash.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="TestIndexNameStore.cpp">
-      <Filter>Tests</Filter>
-    </ClCompile>
-    <ClCompile Include="TestDocumentIndexer.cpp">
-      <Filter>Tests</Filter>
-    </ClCompile>
-    <ClCompile Include="TestDocumentStore.cpp">
-      <Filter>Tests</Filter>
-    </ClCompile>
     <ClCompile Include="Sha2.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="TestStringIndexComparator.cpp">
-      <Filter>Tests</Filter>
-    </ClCompile>
-    <ClCompile Include="TestDoubleIndexComparator.cpp">
-      <Filter>Tests</Filter>
-    </ClCompile>
-    <ClCompile Include="TestIndexedStringValuesStore.cpp">
-      <Filter>Tests</Filter>
-    </ClCompile>
-    <ClCompile Include="TestIndexedDoubleValuesStore.cpp">
-      <Filter>Tests</Filter>
-    </ClCompile>
-    <ClCompile Include="TestIndexedBooleanValuesStore.cpp">
-      <Filter>Tests</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

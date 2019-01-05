@@ -89,15 +89,15 @@ namespace centurion {
 			antlrcpp::Any leftResult = process(comparisonExpr->getLeft(), context);
 			antlrcpp::Any rightResult = process(comparisonExpr->getRight(), context);
 			if (leftResult.is<FieldIdentifier*>(false) && rightResult.is<Literal*>(true)) {
-				return visitFieldComparisonExpression(comparisonExpr->getOperator(), dbm_.indexNameStore().getIndexId(leftResult.as<FieldIdentifier*>()->getValue()), rightResult);
+				return visitFieldComparisonExpression(comparisonExpr->getOperator(), dbm_.indexNameStore().findIndexId(leftResult.as<FieldIdentifier*>()->getValue()), rightResult);
 			} else if (leftResult.is<Literal*>(true) && rightResult.is<FieldIdentifier*>(false)) {
-				return visitFieldComparisonExpression(comparisonExpr->getOperator(), dbm_.indexNameStore().getIndexId(rightResult.as<FieldIdentifier*>()->getValue()), leftResult);
+				return visitFieldComparisonExpression(comparisonExpr->getOperator(), dbm_.indexNameStore().findIndexId(rightResult.as<FieldIdentifier*>()->getValue()), leftResult);
 			} else if (leftResult.is<Identifier*>(false) && rightResult.is<Literal*>(true)) {
 				auto ident = leftResult.as<Identifier*>();
-				return visitFieldComparisonExpression(comparisonExpr->getOperator(), dbm_.indexNameStore().getIndexId(FieldIdentifier(ident->getLocation(), ident).getValue()), rightResult);
+				return visitFieldComparisonExpression(comparisonExpr->getOperator(), dbm_.indexNameStore().findIndexId(FieldIdentifier(ident->getLocation(), ident).getValue()), rightResult);
 			} else if (leftResult.is<Literal*>(true) && rightResult.is<Identifier*>(false)) {
 				auto ident = rightResult.as<Identifier*>();
-				return visitFieldComparisonExpression(comparisonExpr->getOperator(), dbm_.indexNameStore().getIndexId(FieldIdentifier(ident->getLocation(), ident).getValue()), leftResult);
+				return visitFieldComparisonExpression(comparisonExpr->getOperator(), dbm_.indexNameStore().findIndexId(FieldIdentifier(ident->getLocation(), ident).getValue()), leftResult);
 			} else {
 				throw std::runtime_error("Unsupported Comparison, only supported comparison is comparison between field and literal");
 			}
@@ -105,6 +105,10 @@ namespace centurion {
 
 		antlrcpp::Any visitFieldComparisonExpression(const ComparisonExpression::Operator oper, const IndexId idx, const antlrcpp::Any& value) const
 		{
+			if (idx == InvalidIndexId)
+			{
+				throw std::runtime_error("Comparison field not found");
+			}
 			if (oper == ComparisonExpression::Operator::EQUAL)
 			{
 				if (value.is<StringLiteral*>())
@@ -302,15 +306,17 @@ namespace centurion {
 		{
 			log_->trace("visitInPredicate");
 			antlrcpp::Any identifier = process(node->getValue(), context);
-			IndexId idx;
+			IndexId idx = InvalidIndexId;
 			if (identifier.is<FieldIdentifier*>()) {
-				idx = dbm_.indexNameStore().getIndexId(identifier.as<FieldIdentifier*>()->getValue());
+				idx = dbm_.indexNameStore().findIndexId(identifier.as<FieldIdentifier*>()->getValue());
 			} else if (identifier.is<Identifier*>()) {
 				auto ident = identifier.as<Identifier*>();
-				idx = dbm_.indexNameStore().getIndexId(FieldIdentifier(ident->getLocation(), ident).getValue());
-			} else
-			{
-				throw std::runtime_error("Unsupported identifier for IN");
+				idx = dbm_.indexNameStore().findIndexId(FieldIdentifier(ident->getLocation(), ident).getValue());
+			} else {
+				throw std::runtime_error("Unsupported identifier for IN predicate");
+			}
+			if (idx == InvalidIndexId) {
+				throw std::runtime_error("Field not found");
 			}
 			antlrcpp::Any values = process(node->getValueList(), context);
 			std::vector<SearchIterator*> iterators;

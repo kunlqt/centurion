@@ -10,27 +10,11 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="DefaultTraversalVisitor.h" />
-    <ClInclude Include="HttpSession.hpp" />
-    <ClInclude Include="Listener.hpp" />
-    <ClInclude Include="SearchIteratorBuilder.h" />
-    <ClInclude Include="SharedState.hpp" />
-    <ClInclude Include="WebsocketSession.hpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="HttpSession.cpp" />
-    <ClCompile Include="Listener.cpp" />
-    <ClCompile Include="Main.cpp" />
-    <ClCompile Include="SearchIteratorBuilder.cpp" />
-    <ClCompile Include="SharedState.cpp" />
-    <ClCompile Include="WebsocketSession.cpp" />
-  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
-    <ProjectGuid>{718BFA6E-15D6-49A1-8736-7C73F5D87A67}</ProjectGuid>
+    <ProjectGuid>{40D417D4-F056-43AE-8178-CC378D720792}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>centurionserver</RootNamespace>
+    <RootNamespace>testcenturiondb</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -71,10 +55,10 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_WIN32_WINNT=0x0A00;_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS;ANTLR4CPP_STATIC;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WIN32_WINNT=0x0A00;_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)antlr4cpp-runtime\src;$(SolutionDir)centuriondb;$(SolutionDir)centurionsql;$(VCPKG_ROOT)\installed\x64-windows-static\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)centuriondb;$(VCPKG_ROOT)\installed\x64-windows-static\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
@@ -82,7 +66,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(VCPKG_ROOT)\installed\x64-windows-static\Debug\lib;$(TargetDir)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>antlr4-runtime.lib;centurionsql.lib;boost_filesystem-vc140-mt-gd.lib;boost_system-vc140-mt-gd.lib;fmtd.lib;lz4d.lib;zlibd.lib;snappyd.lib;rocksdbd.lib;Shlwapi.lib;Rpcrt4.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>boost_filesystem-vc140-mt-gd.lib;boost_system-vc140-mt-gd.lib;fmtd.lib;gtestd.lib;lz4d.lib;zlibd.lib;snappyd.lib;rocksdbd.lib;Shlwapi.lib;Rpcrt4.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -93,10 +77,10 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_WIN32_WINNT=0x0A00;_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS;ANTLR4CPP_STATIC;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WIN32_WINNT=0x0A00;_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)antlr4cpp-runtime\src;$(SolutionDir)centuriondb;$(SolutionDir)centurionsql;$(VCPKG_ROOT)\installed\x64-windows-static\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)centuriondb;$(VCPKG_ROOT)\installed\x64-windows-static\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
@@ -106,9 +90,23 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(VCPKG_ROOT)\installed\x64-windows-static\lib;$(TargetDir)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>antlr4-runtime.lib;centurionsql.lib;boost_filesystem-vc140-mt.lib;boost_system-vc140-mt.lib;fmt.lib;lz4.lib;zlib.lib;snappy.lib;rocksdb.lib;Shlwapi.lib;Rpcrt4.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>boost_filesystem-vc140-mt.lib;boost_system-vc140-mt.lib;fmt.lib;gtest.lib;lz4.lib;zlib.lib;snappy.lib;rocksdb.lib;Shlwapi.lib;Rpcrt4.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="TestDocumentIndexer.cpp" />
+    <ClCompile Include="TestDocumentStore.cpp" />
+    <ClCompile Include="TestDoubleIndexComparator.cpp" />
+    <ClCompile Include="TestIndexedBooleanValuesStore.cpp" />
+    <ClCompile Include="TestIndexedDoubleValuesStore.cpp" />
+    <ClCompile Include="TestIndexedStringValuesStore.cpp" />
+    <ClCompile Include="TestIndexNameStore.cpp" />
+    <ClCompile Include="TestStringIndexComparator.cpp" />
+    <ClCompile Include="test_centuriondb.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="TestCommon.h" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

@@ -4,6 +4,7 @@
 #include <boost/filesystem/path.hpp>
 #include <string>
 #include <mutex>
+#include <spdlog/spdlog.h>
 
 namespace centurion {
 	inline const char* lastIndexIdKey = "__last_index_id__";
@@ -46,12 +47,12 @@ namespace centurion {
 			if (dropIfExist_) rocksdb::DestroyDB(fileName_.string(), rocksdb::Options());
 		}
 
-		const IndexId getIndexId(const std::string& indexName) const
+		IndexId findIndexId(const std::string& indexName) const
 		{
-			return getIndexId(indexName.c_str(), indexName.size());
+			return findIndexId(indexName.c_str(), indexName.size());
 		}
 
-		const IndexId getIndexId(const char* indexName, size_t indexNameSize) const
+		IndexId findIndexId(const char* indexName, size_t indexNameSize) const
 		{
 			std::string s;
 			const rocksdb::Slice slice(indexName, indexNameSize);
@@ -59,9 +60,9 @@ namespace centurion {
 			{
 				return *(reinterpret_cast<const IndexId*>(s.data()));
 			}
-			std::stringstream ss;
-			ss << "Field: " << indexName << " not found";
-			throw std::runtime_error(ss.str());
+			auto logger = spdlog::get("root");
+			logger->error("Field name: {} not found", indexName);
+			return InvalidIndexId;
 		}
 
 		IndexId ensureIndexId(const std::string& indexName)

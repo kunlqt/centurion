@@ -36,8 +36,7 @@ namespace centurion {
 			}
 		}
 
-		virtual ~IndexedValuesStore()
-		{
+		virtual ~IndexedValuesStore() {
 			log_->trace("Releasing index value store!");
 			db_->FlushWAL(true);
 			db_->SyncWAL();

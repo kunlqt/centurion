@@ -26,20 +26,23 @@ namespace centurion
 			delete right_;
 		}
 
-		virtual void next() override
+
+		void seek(DocumentId documentId) override
 		{
-			left_->next();
+			left_->seek(documentId);
 			if (!left_->valid())
 			{
 				setState(AfterLast);
-				return;
 			}
-			right_->next();
+			right_->seek(documentId);
 			if (!right_->valid())
 			{
 				setState(AfterLast);
-				return;
 			}
+		}
+
+		virtual void next() override
+		{
 			while (true) {
 				while (left_->current() < right_->current()) {
 					left_->next();

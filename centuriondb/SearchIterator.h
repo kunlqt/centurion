@@ -30,8 +30,8 @@ namespace centurion
 		SearchIterator() : stateFlags_(BeforeFirst) {}
 		virtual ~SearchIterator() {};
 		virtual DocumentId current() const = 0;
+		virtual void seek(DocumentId documentId) = 0;
 		virtual void next() = 0;
-		// virtual State getState() = 0;
 
 		virtual bool valid() const 
 		{

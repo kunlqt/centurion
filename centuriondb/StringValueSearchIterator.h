@@ -40,28 +40,31 @@ namespace centurion
 			delete iterator_;
 		}
 
-		void next() override
+		void seek(DocumentId documentId) override
 		{
 			auto console = spdlog::get("root");
-			if (getState() == BeforeFirst) {
-				iterator_ = store_.newIterator(opts_);
-				iterator_->Seek(lowerBoundSlice_);
-				if (iterator_->Valid())
+			iterator_ = store_.newIterator(opts_);
+			iterator_->Seek(lowerBoundSlice_);
+			if (iterator_->Valid())
+			{
+				if (checkUpperBound())
 				{
-					if (checkUpperBound())
-					{
-						setState(First);
-						currentDocumentId_ = ExtractDocumentIdFromString(iterator_->key().data());
-					} else {
-						setState(AfterLast);
-						currentDocumentId_ = InvalidDocumentId;
-					}
-				} else {					
-					console->error("Invalid string search iterator");
+					setState(First);
+					currentDocumentId_ = ExtractDocumentIdFromString(iterator_->key().data());
+				} else {
 					setState(AfterLast);
 					currentDocumentId_ = InvalidDocumentId;
 				}
-			} else if (valid() && iterator_->Valid()) {
+			} else {
+				console->error("Invalid string search iterator");
+				setState(AfterLast);
+				currentDocumentId_ = InvalidDocumentId;
+			}
+		}
+
+		void next() override
+		{
+			 if (valid() && iterator_->Valid()) {
 				iterator_->Next();
 				if (iterator_->Valid())
 				{
@@ -84,6 +87,7 @@ namespace centurion
 				setState(AfterLast);
 				currentDocumentId_ = InvalidDocumentId;
 			}
+			 auto console = spdlog::get("root");
 			console->trace("StringSearchIterator returned: {}", currentDocumentId_);
 		}
 

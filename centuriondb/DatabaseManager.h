@@ -75,9 +75,9 @@ namespace centurion
 					selectAllFields = false;
 				}
 			}
-			
-			for (size_t cnt = 0; cnt < limit; cnt++) {
-				visitorResult->searchRootIterator->next();
+
+			visitorResult->searchRootIterator->seek(MinDocumentId);
+			for (size_t cnt = 0; cnt < limit; cnt++) {				
 				if (!visitorResult->searchRootIterator->valid())
 				{
 					break;
@@ -116,6 +116,7 @@ namespace centurion
 				} else {
 					throw std::runtime_error("Document not found in the document store");
 				}
+				visitorResult->searchRootIterator->next();
 			}
 			strm << "]";
 			console->trace("Total: {} documents found", totalDocumentsFound);
@@ -229,7 +230,11 @@ namespace centurion
 			}
 
 			std::string field = searchTerm["path"].GetString();
-			const auto indexId = indexNameStore_.getIndexId(field);
+			const auto indexId = indexNameStore_.findIndexId(field);
+			if (indexId == InvalidIndexId)
+			{
+				throw std::runtime_error("field not found");
+			}
 			std::string op = searchTerm["op"].GetString();
 			const auto& val = searchTerm["value"];
 			if (val.IsString())

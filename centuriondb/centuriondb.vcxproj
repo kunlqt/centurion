@@ -163,14 +163,6 @@
   <ItemGroup>
     <ClCompile Include="CityHash.cpp" />
     <ClCompile Include="Sha2.cpp" />
-    <ClCompile Include="TestDocumentIndexer.cpp" />
-    <ClCompile Include="TestDocumentStore.cpp" />
-    <ClCompile Include="TestDoubleIndexComparator.cpp" />
-    <ClCompile Include="TestIndexedBooleanValuesStore.cpp" />
-    <ClCompile Include="TestIndexedDoubleValuesStore.cpp" />
-    <ClCompile Include="TestIndexedStringValuesStore.cpp" />
-    <ClCompile Include="TestIndexNameStore.cpp" />
-    <ClCompile Include="TestStringIndexComparator.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BooleanIndexComparator.h" />

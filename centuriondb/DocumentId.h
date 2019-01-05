@@ -9,6 +9,9 @@
 namespace centurion {
 	using DocumentId = std::uint64_t;
 	static const DocumentId InvalidDocumentId = 0;
+	static const DocumentId MinDocumentId = 0;
+	static const DocumentId MaxDocumentId = std::numeric_limits<std::uint64_t>::max();
+
 	/*
 	inline std::ostream& operator<<(std::ostream& strm, const DocumentId docId)
 	{

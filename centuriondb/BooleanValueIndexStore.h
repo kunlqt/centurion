@@ -19,6 +19,7 @@ namespace centurion {
 		virtual ~BooleanValueIndexStore()
 		{
 			delete comparator_;
+			
 		}
 
 		bool add(IndexId indexId, bool b, DocumentId documentId) const

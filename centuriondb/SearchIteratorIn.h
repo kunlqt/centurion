@@ -28,21 +28,27 @@ namespace centurion
 			}
 		}
 
-		virtual void next() override
-		{
-			if (getState() == BeforeFirst) {				
-				if (!iterators_.empty()) {
-					for (auto it = iterators_.begin(); it != iterators_.end(); ) {
-						(*it)->next();
-						if (!(*it)->valid()) {
-							it = iterators_.erase(it);
-						} else {
-							++it;
-						}
-					}				
-					std::make_heap(iterators_.begin(), iterators_.end(), [](const auto& a, const auto& b) { return a->current() > b->current(); });
+		void seek(DocumentId documentId) override
+		{			
+			if (!iterators_.empty()) {
+				for (auto it = iterators_.begin(); it != iterators_.end(); ) {
+					(*it)->seek(documentId);
+					if (!(*it)->valid()) {
+						it = iterators_.erase(it);
+					} else {
+						++it;
+					}
 				}
+				std::make_heap(iterators_.begin(), iterators_.end(), [](const auto& a, const auto& b) { return a->current() > b->current(); });
 			}
+			if (iterators_.empty())
+			{
+				setState(AfterLast);
+			}
+		}
+
+		virtual void next() override
+		{			
 			do {
 				if (iterators_.empty())
 				{

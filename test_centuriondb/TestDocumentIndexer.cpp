@@ -14,10 +14,11 @@ TEST(TestDocumentIndexer, TestInsertDocuments) {
 
 	centurion::IndexNameStore indexNameStore("instore", true);
 	centurion::StringValueIndexStore isvs("ivstore", true);
-	centurion::IndexedDoubleValuesStore idvs("ivstore", true);
-	centurion::IndexedBooleanValuesStore ibvs("ivstore", true);
+	centurion::DoubleValueIndexStore idvs("ivstore", true);
+	centurion::BooleanValueIndexStore ibvs("ivstore", true);
+	centurion::StringArrayValueIndexStore savis("ivstore", true);
 	centurion::DocumentStore documentStore("docstore", true);
-	centurion::DocumentIndexer documentIndexer(documentStore, indexNameStore, isvs, idvs, ibvs);
+	centurion::DocumentIndexer documentIndexer(documentStore, indexNameStore, isvs, idvs, ibvs, savis);
 
 	FILE* fp;
 	console->trace("Loading sample file");
