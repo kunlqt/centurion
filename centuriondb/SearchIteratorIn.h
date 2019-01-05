@@ -15,7 +15,8 @@ namespace centurion
 		SearchIteratorIn(std::vector<SearchIterator*> iterators)
 			:
 			iterators_(std::move(iterators)),
-			currentDocumentId_(InvalidDocumentId)
+			currentDocumentId_(InvalidDocumentId),
+			prevDocumentId_(InvalidDocumentId)
 		{
 			auto console = spdlog::get("root");
 		}
@@ -30,25 +31,36 @@ namespace centurion
 		virtual void next() override
 		{
 			if (getState() == BeforeFirst) {				
-				for (auto it = iterators_.begin(); it != iterators_.end(); ) {
-					(*it)->next();
-					if (!(*it)->valid()) {
-						iterators_.erase(it);
-					} else {
-						++it;
-					}
+				if (!iterators_.empty()) {
+					for (auto it = iterators_.begin(); it != iterators_.end(); ) {
+						(*it)->next();
+						if (!(*it)->valid()) {
+							iterators_.erase(it);
+						} else {
+							++it;
+						}
+					}				
+					std::make_heap(iterators_.begin(), iterators_.end(), [](const auto& a, const auto& b) { return a->current() > b->current(); });
 				}
-				if (iterators_.empty()) {
+			}
+			do {
+				if (iterators_.empty())
+				{
 					setState(AfterLast);
 					return;
 				}
-			}
-			std::make_heap(iterators_.begin(), iterators_.end(), [](const auto& a, const auto& b) { return a->current() > b->current(); });
-			while (true) {
-				
+				std::pop_heap(iterators_.begin(), iterators_.end(), [](const auto& a, const auto& b) { return a->current() > b->current(); });
+				SearchIterator* it = iterators_.back();
+				prevDocumentId_ = currentDocumentId_;
+				currentDocumentId_ = it->current();
+				it->next();
+				if (it->valid()) {
+					std::push_heap(iterators_.begin(), iterators_.end(), [](const auto& a, const auto& b) { return a->current() > b->current(); });
+				} else {
+					iterators_.pop_back();
+				}
 				setState(None);
-				return;
-			}
+			} while (currentDocumentId_ == prevDocumentId_);
 		}
 
 		virtual DocumentId current() const override
@@ -60,5 +72,6 @@ namespace centurion
 	private:
 		std::vector<SearchIterator*> iterators_;
 		DocumentId currentDocumentId_;
+		DocumentId prevDocumentId_;
 	};
 }

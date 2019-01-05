@@ -93,7 +93,7 @@ public:
 			return "Identifier";
 		}
 
-		std::string getValue() const {
+		virtual std::string getValue() const {
 			return value_;
 		}
 
@@ -1881,11 +1881,15 @@ public:
 		std::vector<Expression*> columns_;
 	};
 
-	struct FieldIdentifier : public Node
+	struct FieldIdentifier : public Identifier
 	{
-		FieldIdentifier(std::optional<NodeLocation> location, Identifier* base, Identifier* comp) : Node(location)
-		{
-			components_.push_back(base);
+		FieldIdentifier(std::optional<NodeLocation> location, Identifier* base, Identifier* comp) : FieldIdentifier(location, base)
+		{			
+			components_.push_back(comp);
+		}
+
+		FieldIdentifier(std::optional<NodeLocation> location, Identifier* comp) : Identifier(location, "", true)
+		{			
 			components_.push_back(comp);
 		}
 
@@ -1895,14 +1899,18 @@ public:
 			return this;
 		}
 
-		std::string toString() const override
-		{
+		virtual std::string getValue() const override {
 			std::stringstream result;
 			for (const auto& comp : components_)
 			{
 				result << "/" << comp->getValue();
 			}
 			return result.str();
+		}
+
+		std::string toString() const override
+		{
+			return "FieldIdentifier";
 		}
 
 		virtual std::vector<Node*> getChildren() const override {
