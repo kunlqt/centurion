@@ -18,8 +18,6 @@ namespace centurion
 
 		virtual ~DoubleValueRangeSearchIterator()
 		{
-			delete[] lowerSliceBuf_;
-			delete[] upperSliceBuf_;
 			
 		}
 
@@ -50,9 +48,15 @@ namespace centurion
 
 		void seek(DocumentId documentId) override
 		{
-			lowerBoundSlice_ = (buildDoubleSlice(indexId_, lowerBound_, lowerSliceBuf_, lowerSliceBufSize_));
-			upperBoundSlice_ = (buildDoubleSlice(indexId_, upperBound_, upperSliceBuf_, upperSliceBufSize_));
+			size_t lowerSliceBufSize_ = (sizeof(IndexId) + sizeof(double) + sizeof(DocumentId));
+			char* lowerSliceBuf_ = (new char[lowerSliceBufSize_]);
+			size_t upperSliceBufSize_ = (sizeof(IndexId) + sizeof(double) + sizeof(DocumentId));
+			char* upperSliceBuf_ = (new char[upperSliceBufSize_]);
 
+			rocksdb::Slice lowerBoundSlice_ = (buildDoubleSlice(indexId_, lowerBound_, lowerSliceBuf_, lowerSliceBufSize_));
+			rocksdb::Slice upperBoundSlice_ = (buildDoubleSlice(indexId_, upperBound_, upperSliceBuf_, upperSliceBufSize_));
+
+			rocksdb::ReadOptions opts_;
 			opts_.iterate_lower_bound = &lowerBoundSlice_;
 			opts_.iterate_upper_bound = &upperBoundSlice_;
 
@@ -68,6 +72,9 @@ namespace centurion
 				}
 			}
 			delete iterator;
+			delete[] lowerSliceBuf_;
+			delete[] upperSliceBuf_;
+
 			if (documentBuffer_.empty())
 			{
 				setState(AfterLast);
@@ -109,17 +116,12 @@ namespace centurion
 			store_(store),
 			indexId_(indexId),
 			lowerBound_(lowerBound),
-			lowerSliceBufSize_(sizeof(indexId) + sizeof(double) + sizeof(DocumentId)),
-			lowerSliceBuf_(new char[lowerSliceBufSize_]),
 			upperBound_(upperBound),
-			upperSliceBufSize_(sizeof(indexId) + sizeof(double) + sizeof(DocumentId)),
-			upperSliceBuf_(new char[upperSliceBufSize_]),
 			currentDocumentId_(InvalidDocumentId)
 		{
 
 		}
-
-
+		
 		inline rocksdb::Slice buildDoubleSlice(IndexId indexId, double value, char* dst, size_t dstSize)
 		{
 			CreateDoubleIndex(dst, indexId, value);
@@ -139,14 +141,7 @@ namespace centurion
 		const IndexedValuesStore& store_;
 		IndexId indexId_;
 		double lowerBound_;
-		size_t lowerSliceBufSize_;
-		char* lowerSliceBuf_;
-		rocksdb::Slice lowerBoundSlice_;
 		double upperBound_;
-		size_t upperSliceBufSize_;
-		char* upperSliceBuf_;
-		rocksdb::Slice upperBoundSlice_;
-		rocksdb::ReadOptions opts_;
 		std::vector<DocumentId> documentBuffer_;
 		size_t documentBufferPos_;
 		DocumentId currentDocumentId_;
