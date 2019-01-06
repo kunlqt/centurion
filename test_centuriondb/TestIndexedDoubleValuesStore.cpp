@@ -3,6 +3,8 @@
 #include "DocumentIndexer.h"
 #include "DoubleValueIndexStore.h"
 #include "DoubleValueSearchIterator.h"
+#include "DoubleValueRangeSearchIterator.h"
+#include "DoubleValueRangeSearchIterator.h"
 
 namespace {
 	using namespace centurion;
@@ -146,5 +148,135 @@ namespace {
 
 		delete searchIterator;
 	}
+
+	TEST_F(TestIndexedDoubleValueStore, GreaterThanDescDocumentId) {
+		const IndexId fieldIndexId = 4;
+
+		const double indexedValue1 = 35;
+		const DocumentId indexedDocumentId1 = 12;
+		ASSERT_TRUE(valueIndexStore_->add(fieldIndexId, indexedValue1, indexedDocumentId1));
+
+		const double indexedValue2 = 38;
+		const DocumentId indexedDocumentId2 = 11;
+		ASSERT_TRUE(valueIndexStore_->add(fieldIndexId, indexedValue2, indexedDocumentId2));
+
+		auto searchIterator = DoubleValueRangeSearchIterator::gt(*valueIndexStore_, fieldIndexId, indexedValue1);
+
+		searchIterator->seek(MinDocumentId);
+		ASSERT_TRUE(searchIterator->valid());
+		ASSERT_EQ(searchIterator->current(), indexedDocumentId2);
+
+		searchIterator->next();
+		ASSERT_FALSE(searchIterator->valid());
+
+		delete searchIterator;
+	}
+
+	TEST_F(TestIndexedDoubleValueStore, GreaterThanAscDocumentId) {
+		const IndexId fieldIndexId = 4;
+
+		const double indexedValue1 = 35;
+		const DocumentId indexedDocumentId1 = 11;
+		ASSERT_TRUE(valueIndexStore_->add(fieldIndexId, indexedValue1, indexedDocumentId1));
+
+		const double indexedValue2 = 38;
+		const DocumentId indexedDocumentId2 = 12;
+		ASSERT_TRUE(valueIndexStore_->add(fieldIndexId, indexedValue2, indexedDocumentId2));
+
+		auto searchIterator = DoubleValueRangeSearchIterator::gt(*valueIndexStore_, fieldIndexId, indexedValue1);
+
+		searchIterator->seek(MinDocumentId);
+		ASSERT_TRUE(searchIterator->valid());
+		ASSERT_EQ(searchIterator->current(), indexedDocumentId2);
+
+		searchIterator->next();
+		ASSERT_FALSE(searchIterator->valid());
+
+		delete searchIterator;
+	}
+
+	TEST_F(TestIndexedDoubleValueStore, LessThanDescDocumentId) {
+		const IndexId fieldIndexId = 4;
+
+		const double indexedValue1 = 35;
+		const DocumentId indexedDocumentId1 = 12;
+		ASSERT_TRUE(valueIndexStore_->add(fieldIndexId, indexedValue1, indexedDocumentId1));
+
+		const double indexedValue2 = 38;
+		const DocumentId indexedDocumentId2 = 11;
+		ASSERT_TRUE(valueIndexStore_->add(fieldIndexId, indexedValue2, indexedDocumentId2));
+
+		auto searchIterator = DoubleValueRangeSearchIterator::lt(*valueIndexStore_, fieldIndexId, indexedValue2);
+
+		searchIterator->seek(MinDocumentId);
+		ASSERT_TRUE(searchIterator->valid());
+		ASSERT_EQ(searchIterator->current(), indexedDocumentId1);
+
+		searchIterator->next();
+		ASSERT_FALSE(searchIterator->valid());
+
+		delete searchIterator;
+	}
+
+	TEST_F(TestIndexedDoubleValueStore, LessThanAscDocumentId) {
+		const IndexId fieldIndexId = 4;
+
+		const double indexedValue1 = 35;
+		const DocumentId indexedDocumentId1 = 11;
+		ASSERT_TRUE(valueIndexStore_->add(fieldIndexId, indexedValue1, indexedDocumentId1));
+
+		const double indexedValue2 = 38;
+		const DocumentId indexedDocumentId2 = 12;
+		ASSERT_TRUE(valueIndexStore_->add(fieldIndexId, indexedValue2, indexedDocumentId2));
+
+		auto searchIterator = DoubleValueRangeSearchIterator::lt(*valueIndexStore_, fieldIndexId, indexedValue2);
+
+		searchIterator->seek(MinDocumentId);
+		ASSERT_TRUE(searchIterator->valid());
+		ASSERT_EQ(searchIterator->current(), indexedDocumentId1);
+
+		searchIterator->next();
+		ASSERT_FALSE(searchIterator->valid());
+
+		delete searchIterator;
+	}
+
+	TEST_F(TestIndexedDoubleValueStore, GreaterThanAscDocumentIdReverseInsert) {
+		const IndexId fieldIndexId = 4;
+		ASSERT_TRUE(valueIndexStore_->add(fieldIndexId, 37.0, 14));
+		ASSERT_TRUE(valueIndexStore_->add(fieldIndexId, 37.0, 12));
+		ASSERT_TRUE(valueIndexStore_->add(fieldIndexId, 37.0, 11));
+		ASSERT_TRUE(valueIndexStore_->add(fieldIndexId, 38.0, 10));
+		ASSERT_TRUE(valueIndexStore_->add(fieldIndexId, 38.0, 13));
+		ASSERT_TRUE(valueIndexStore_->add(fieldIndexId, 39.0, 11));
+		ASSERT_TRUE(valueIndexStore_->add(fieldIndexId, 39.0, 7));
+		ASSERT_TRUE(valueIndexStore_->add(fieldIndexId, 39.0, 13));
+		auto searchIterator = DoubleValueRangeSearchIterator::gt(*valueIndexStore_, fieldIndexId, 35.0);
+
+		searchIterator->seek(MinDocumentId);
+		ASSERT_TRUE(searchIterator->valid());
+		ASSERT_EQ(searchIterator->current(), 7.0);
+
+		searchIterator->next();
+		ASSERT_EQ(searchIterator->current(), 10.0);
+
+		searchIterator->next();
+		ASSERT_EQ(searchIterator->current(), 11.0);
+
+		searchIterator->next();
+		ASSERT_EQ(searchIterator->current(), 12.0);
+
+		searchIterator->next();
+		ASSERT_EQ(searchIterator->current(), 13.0);
+
+		searchIterator->next();
+		ASSERT_EQ(searchIterator->current(), 14.0);
+
+		searchIterator->next();
+		ASSERT_FALSE(searchIterator->valid());
+
+		delete searchIterator;
+	}
+
 
 };

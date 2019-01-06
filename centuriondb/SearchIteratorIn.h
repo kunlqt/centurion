@@ -34,6 +34,7 @@ namespace centurion
 				for (auto it = iterators_.begin(); it != iterators_.end(); ) {
 					(*it)->seek(documentId);
 					if (!(*it)->valid()) {
+						delete *it;
 						it = iterators_.erase(it);
 					} else {
 						++it;
@@ -64,6 +65,7 @@ namespace centurion
 				if (it->valid()) {
 					std::push_heap(iterators_.begin(), iterators_.end(), [](const auto& a, const auto& b) { return a->current() > b->current(); });
 				} else {
+					delete iterators_.back();
 					iterators_.pop_back();
 				}
 				setState(None);

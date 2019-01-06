@@ -5,7 +5,7 @@
 int main(int argc, char* argv[])
 {
 	auto rootLogger = spdlog::stdout_color_mt("root");
-	rootLogger->set_level(spdlog::level::trace);
+	rootLogger->set_level(spdlog::level::err);
 
 	::testing::InitGoogleTest(&argc, argv);
 	return RUN_ALL_TESTS();

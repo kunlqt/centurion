@@ -5,8 +5,9 @@
 #include "StringValueSearchIterator.h"
 #include "SearchIteratorAnd.h"
 #include "SearchIteratorOr.h"
-#include <fmt/ostream.h>
 #include "SearchIteratorIn.h"
+#include "DoubleValueRangeSearchIterator.h"
+#include <fmt/ostream.h>
 
 namespace centurion {
 
@@ -131,49 +132,49 @@ namespace centurion {
 			{
 				if (value.is<DecimalLiteral*>())
 				{
-					return (SearchIterator*)(DoubleValueSearchIterator::gt(dbm_.idvs(), idx, std::stod(value.as<DecimalLiteral*>()->getValue())));
+					return (SearchIterator*)(DoubleValueRangeSearchIterator::gt(dbm_.idvs(), idx, std::stod(value.as<DecimalLiteral*>()->getValue())));
 				} else if (value.is<DoubleLiteral*>())
 				{
-					return (SearchIterator*)(DoubleValueSearchIterator::gt(dbm_.idvs(), idx, value.as<DoubleLiteral*>()->getValue()));
+					return (SearchIterator*)(DoubleValueRangeSearchIterator::gt(dbm_.idvs(), idx, value.as<DoubleLiteral*>()->getValue()));
 				} else if (value.is<LongLiteral*>())
 				{
-					return (SearchIterator*)(DoubleValueSearchIterator::gt(dbm_.idvs(), idx, value.as<LongLiteral*>()->getValue()));
+					return (SearchIterator*)(DoubleValueRangeSearchIterator::gt(dbm_.idvs(), idx, value.as<LongLiteral*>()->getValue()));
 				}
 			} else if (oper == ComparisonExpression::Operator::LESS_THAN)
 			{
 				if (value.is<DecimalLiteral*>())
 				{
-					return (SearchIterator*)(DoubleValueSearchIterator::lt(dbm_.idvs(), idx, std::stod(value.as<DecimalLiteral*>()->getValue())));
+					return (SearchIterator*)(DoubleValueRangeSearchIterator::lt(dbm_.idvs(), idx, std::stod(value.as<DecimalLiteral*>()->getValue())));
 				} else if (value.is<DoubleLiteral*>())
 				{
-					return (SearchIterator*)(DoubleValueSearchIterator::lt(dbm_.idvs(), idx, value.as<DoubleLiteral*>()->getValue()));
+					return (SearchIterator*)(DoubleValueRangeSearchIterator::lt(dbm_.idvs(), idx, value.as<DoubleLiteral*>()->getValue()));
 				} else if (value.is<LongLiteral*>())
 				{
-					return (SearchIterator*)(DoubleValueSearchIterator::lt(dbm_.idvs(), idx, value.as<LongLiteral*>()->getValue()));
+					return (SearchIterator*)(DoubleValueRangeSearchIterator::lt(dbm_.idvs(), idx, value.as<LongLiteral*>()->getValue()));
 				}
 			} else if (oper == ComparisonExpression::Operator::GREATER_THAN_OR_EQUAL)
 			{
 				if (value.is<DecimalLiteral*>())
 				{
-					return (SearchIterator*)(DoubleValueSearchIterator::gte(dbm_.idvs(), idx, std::stod(value.as<DecimalLiteral*>()->getValue())));
+					return (SearchIterator*)(DoubleValueRangeSearchIterator::gte(dbm_.idvs(), idx, std::stod(value.as<DecimalLiteral*>()->getValue())));
 				} else if (value.is<DoubleLiteral*>())
 				{
-					return (SearchIterator*)(DoubleValueSearchIterator::gte(dbm_.idvs(), idx, value.as<DoubleLiteral*>()->getValue()));
+					return (SearchIterator*)(DoubleValueRangeSearchIterator::gte(dbm_.idvs(), idx, value.as<DoubleLiteral*>()->getValue()));
 				} else if (value.is<LongLiteral*>())
 				{
-					return (SearchIterator*)(DoubleValueSearchIterator::gte(dbm_.idvs(), idx, value.as<LongLiteral*>()->getValue()));
+					return (SearchIterator*)(DoubleValueRangeSearchIterator::gte(dbm_.idvs(), idx, value.as<LongLiteral*>()->getValue()));
 				}
 			} else if (oper == ComparisonExpression::Operator::LESS_THAN_OR_EQUAL)
 			{
 				if (value.is<DecimalLiteral*>())
 				{
-					return (SearchIterator*)(DoubleValueSearchIterator::lte(dbm_.idvs(), idx, std::stod(value.as<DecimalLiteral*>()->getValue())));
+					return (SearchIterator*)(DoubleValueRangeSearchIterator::lte(dbm_.idvs(), idx, std::stod(value.as<DecimalLiteral*>()->getValue())));
 				} else if (value.is<DoubleLiteral*>())
 				{
-					return (SearchIterator*)(DoubleValueSearchIterator::lte(dbm_.idvs(), idx, value.as<DoubleLiteral*>()->getValue()));
+					return (SearchIterator*)(DoubleValueRangeSearchIterator::lte(dbm_.idvs(), idx, value.as<DoubleLiteral*>()->getValue()));
 				} else if (value.is<LongLiteral*>())
 				{
-					return (SearchIterator*)(DoubleValueSearchIterator::lte(dbm_.idvs(), idx, value.as<LongLiteral*>()->getValue()));
+					return (SearchIterator*)(DoubleValueRangeSearchIterator::lte(dbm_.idvs(), idx, value.as<LongLiteral*>()->getValue()));
 				}
 			}
 			throw std::runtime_error("Unsupported Comparison, only supported comparison is comparison between field and literal where literal is string or number");

@@ -173,6 +173,7 @@
     <ClInclude Include="DocumentIndexer.h" />
     <ClInclude Include="DocumentStore.h" />
     <ClInclude Include="DoubleIndexComparator.h" />
+    <ClInclude Include="DoubleValueRangeSearchIterator.h" />
     <ClInclude Include="DoubleValueSearchIterator.h" />
     <ClInclude Include="BooleanValueIndexStore.h" />
     <ClInclude Include="DoubleValueIndexStore.h" />

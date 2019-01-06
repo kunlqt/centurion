@@ -27,30 +27,6 @@ namespace centurion
 			return new DoubleValueSearchIterator(store, indexId, val - eps, val + eps);
 		}
 
-		static DoubleValueSearchIterator* lt(const DoubleValueIndexStore& store, IndexId indexId, double val, double eps = DefaultComparisionPrecision)
-		{
-			return new DoubleValueSearchIterator(store, indexId, std::numeric_limits<double>::min(), val - eps);
-		}
-
-		static DoubleValueSearchIterator* gt(const DoubleValueIndexStore& store, IndexId indexId, double val, double eps = DefaultComparisionPrecision)
-		{
-			return new DoubleValueSearchIterator(store, indexId, val + eps, std::numeric_limits<double>::max());
-		}
-
-		static DoubleValueSearchIterator* lte(const DoubleValueIndexStore& store, IndexId indexId, double val, double eps = DefaultComparisionPrecision)
-		{
-			return new DoubleValueSearchIterator(store, indexId, std::numeric_limits<double>::min(), val + (eps/2));
-		}
-
-		static DoubleValueSearchIterator* gte(const DoubleValueIndexStore& store, IndexId indexId, double val, double eps = DefaultComparisionPrecision)
-		{
-			return new DoubleValueSearchIterator(store, indexId, val - (eps/2), std::numeric_limits<double>::max());
-		}
-
-		static DoubleValueSearchIterator* between(const DoubleValueIndexStore& store, IndexId indexId, double lower, double upper, double eps = DefaultComparisionPrecision)
-		{
-			return new DoubleValueSearchIterator(store, indexId, lower + eps, upper - eps);
-		}
 
 		virtual ~DoubleValueSearchIterator()
 		{
@@ -61,7 +37,6 @@ namespace centurion
 
 		void seek(DocumentId documentId) override
 		{
-			auto console = spdlog::get("root");
 			iterator_ = store_.newIterator(opts_);
 			iterator_->Seek(lowerBoundSlice_);
 			if (iterator_->Valid())
@@ -75,7 +50,8 @@ namespace centurion
 					currentDocumentId_ = InvalidDocumentId;
 				}
 			} else {
-				console->error("Invalid Double search iterator");
+				auto logger = spdlog::get("root");
+				logger->error("Invalid Double search iterator");
 				setState(AfterLast);
 				currentDocumentId_ = InvalidDocumentId;
 			}

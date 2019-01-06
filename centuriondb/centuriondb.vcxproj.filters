@@ -113,5 +113,8 @@
     <ClInclude Include="Dumper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="DoubleValueRangeSearchIterator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
