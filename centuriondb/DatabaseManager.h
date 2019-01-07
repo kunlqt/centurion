@@ -53,14 +53,10 @@ namespace centurion
 		}
 		*/
 
-		size_t searchDocuments(TraversalVisitorResult* visitorResult, std::ostream& strm, DocumentId startFrom, size_t limit)
+		inline std::vector<std::string> createSelectedFields(SelectedFields* selectFields)
 		{
-			auto console = spdlog::get("root");
-			size_t totalDocumentsFound = 0;
-			rapidjson::Document documentFound;
-			bool isFirst = true;
-			strm << "[";
-			auto fields = visitorResult->selectFields;
+			std::vector<std::string> result;
+			auto fields = selectFields;
 			bool selectAllFields = true;
 			if (!fields->empty()) {
 				for (auto fieldIter = fields->begin();
@@ -69,60 +65,53 @@ namespace centurion
 				{
 					if (*fieldIter == "/")
 					{
-						selectAllFields = true;
-						break;
+						return std::vector<std::string>();
 					}
-					selectAllFields = false;
+					result.push_back(fieldIter->c_str());
 				}
 			}
+			return result;
+		}
 
+		size_t searchDocuments(TraversalVisitorResult* visitorResult, rapidjson::Document& results, DocumentId startFrom, size_t limit)
+		{
+			auto console = spdlog::get("root");
+			auto selectFields = createSelectedFields(visitorResult->selectFields);
 			visitorResult->searchRootIterator->seek(MinDocumentId);
+			results.SetArray();
+			rapidjson::Value::AllocatorType& allocator = results.GetAllocator();
+			results.Reserve(limit, allocator);
+			size_t totalDocumentsFound = 0;
 			for (size_t cnt = 0; cnt < limit; cnt++) {				
-				if (!visitorResult->searchRootIterator->valid())
-				{
+				if (!visitorResult->searchRootIterator->valid()) {
 					break;
 				}
 				const auto documentId = visitorResult->searchRootIterator->current();
 				console->trace("Found document id: {}", documentId);
 				totalDocumentsFound++;
-				if (documentStore_.findDocument(documentId, documentFound)) {
-					rapidjson::Document resultDocument(rapidjson::kObjectType);
-					if (selectAllFields)
-					{
-						resultDocument.Swap(documentFound);
+				auto result = documentStore_.findDocument(documentId, allocator);
+				if (result.IsNull()) {
+					console->error("Document with id: {} not found in database", documentId);
+				} else  {
+					if (selectFields.empty()) {
+						results.PushBack(result, allocator);
 					} else {
-						for (auto fieldIter = fields->begin();
-							fieldIter != fields->end();
-							++fieldIter)
+						rapidjson::Document resultFitered(rapidjson::kObjectType);
+						for (auto selectField : selectFields)
 						{
-							rapidjson::Value* selectedFieldValue = rapidjson::Pointer(fieldIter->data()).Get(documentFound);
+							rapidjson::Value* selectedFieldValue = rapidjson::Pointer(selectField.c_str()).Get(result);
 							if (selectedFieldValue != nullptr) {
-								rapidjson::Pointer(fieldIter->data()).Swap(resultDocument, *selectedFieldValue);
+								rapidjson::Pointer(selectField.c_str()).Set(resultFitered, *selectedFieldValue, allocator);
 							}
 						}
+						results.PushBack(resultFitered, allocator);
 					}
-					rapidjson::StringBuffer result;
-					rapidjson::Writer<rapidjson::StringBuffer> writer(result);
-					if (resultDocument.Accept(writer)) {
-						if (isFirst)
-						{
-							isFirst = false;
-						} else
-						{
-							strm << ",";
-						}
-						strm << result.GetString();
-					}
-				} else {
-					throw std::runtime_error("Document not found in the document store");
 				}
 				visitorResult->searchRootIterator->next();
 			}
-			strm << "]";
 			console->trace("Total: {} documents found", totalDocumentsFound);
 			return totalDocumentsFound;
 		}
-
 
 		std::vector<DocumentId> insertDocuments(rapidjson::StringStream& is)
 		{

@@ -169,14 +169,18 @@ handle_request(
 					std::stringstream query(req.body());
 					log->trace("creating build query...");
 					const auto traversalVisitorResult = builder.buildQuery(*dbm, query);
-					std::stringstream sss;
 					log->trace("creating search documents...");
-					auto docsFound = dbm->searchDocuments(traversalVisitorResult.get(), sss, 0, 25);
+					rapidjson::Document results;
+					auto docsFound = dbm->searchDocuments(traversalVisitorResult.get(), results, 0, 25);
 					log->trace("Search documents finished");
 					http::response<http::string_body> res{ http::status::ok, req.version() };
 					res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
 					res.set(http::field::content_type, "application/json");
-					res.body() = sss.str();
+					rapidjson::StringBuffer resultsString;
+					rapidjson::Writer<rapidjson::StringBuffer> writer(resultsString);
+					if (results.Accept(writer)) {
+						res.body() = resultsString.GetString();
+					}
 					res.keep_alive(req.keep_alive());
 					return send(std::move(res));
 				}

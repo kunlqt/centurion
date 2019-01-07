@@ -68,7 +68,7 @@ namespace centurion {
 			throw std::runtime_error("Empty document");			
 		}
 
-		bool findDocument(DocumentId documentId, rapidjson::Document& doc) const
+		rapidjson::Value findDocument(DocumentId documentId, rapidjson::Document::AllocatorType& allocator) const
 		{
 			std::string documentPayload;
 			auto getResult = db_->Get(
@@ -76,10 +76,11 @@ namespace centurion {
 				rocksdb::Slice((char*)&documentId, sizeof(documentId)),
 				&documentPayload);
 			if (getResult.ok()) {
+				rapidjson::Document doc;
 				doc.Parse(documentPayload.c_str(), documentPayload.size());
-				return !doc.HasParseError();
+				return rapidjson::Value(doc, allocator);
 			}
-			return false;
+			return rapidjson::Value(rapidjson::kNullType);
 		}
 
 	private:
