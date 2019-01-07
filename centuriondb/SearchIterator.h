@@ -1,7 +1,9 @@
 #pragma once
 
 #include "DocumentId.h"
+#include "IndexId.h"
 #include <iterator>
+#include <functional>
 
 namespace centurion
 {
@@ -13,6 +15,7 @@ namespace centurion
 		First = 2,
 		AfterLast = 8
 	};
+
 	inline StateFlags operator | (StateFlags lhs, StateFlags rhs)
 	{
 		using T = std::underlying_type_t <StateFlags>;
@@ -24,13 +27,13 @@ namespace centurion
 		lhs = lhs | rhs;
 		return lhs;
 	}
-
+	   
 	struct SearchIterator
 	{		
 		SearchIterator() : stateFlags_(BeforeFirst) {}
 		virtual ~SearchIterator() {};
 		virtual DocumentId current() const = 0;
-		virtual void seek(DocumentId documentId) = 0;
+		virtual void seek(std::function<IndexId(const std::string&)> fieldNameResolver, DocumentId documentId) = 0;
 		virtual void next() = 0;
 
 		virtual bool valid() const 

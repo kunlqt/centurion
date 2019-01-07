@@ -54,13 +54,13 @@ namespace {
 
 		SearchIterator* searchIterator = new SearchIteratorIn(
 			std::vector<SearchIterator*> {
-				StringValueSearchIterator::eq(*valueIndexStore_, fieldIndexId, indexedValue1),
-				StringValueSearchIterator::eq(*valueIndexStore_, fieldIndexId, indexedValue2),
-				StringValueSearchIterator::eq(*valueIndexStore_, fieldIndexId, indexedValue3)
+				StringValueSearchIterator::eq(*valueIndexStore_, "field1", indexedValue1),
+				StringValueSearchIterator::eq(*valueIndexStore_, "field1", indexedValue2),
+				StringValueSearchIterator::eq(*valueIndexStore_, "field1", indexedValue3)
 			}
 		);
 
-		searchIterator->seek(MinDocumentId);
+		searchIterator->seek([fieldIndexId](const std::string&) { return fieldIndexId; }, MinDocumentId);
 		ASSERT_TRUE(searchIterator->valid());
 		ASSERT_EQ(searchIterator->current(), indexedDocumentId1);
 

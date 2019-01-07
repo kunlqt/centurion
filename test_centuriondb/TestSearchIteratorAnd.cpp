@@ -53,10 +53,10 @@ namespace {
 		ASSERT_TRUE(valueIndexStore_->add(fieldIndexId, indexedValue3, indexedDocumentId3));
 
 		SearchIterator* searchIterator = new SearchIteratorAnd(
-			StringValueSearchIterator::eq(*valueIndexStore_, fieldIndexId, indexedValue1), 
-			StringValueSearchIterator::eq(*valueIndexStore_, fieldIndexId, indexedValue2));
+			StringValueSearchIterator::eq(*valueIndexStore_, "field1", indexedValue1),
+			StringValueSearchIterator::eq(*valueIndexStore_, "field1", indexedValue2));
 
-		searchIterator->seek(MinDocumentId);
+		searchIterator->seek([fieldIndexId](const std::string&) { return fieldIndexId; }, MinDocumentId);
 		ASSERT_TRUE(searchIterator->valid());
 		ASSERT_EQ(searchIterator->current(), indexedDocumentId1);
 

@@ -92,91 +92,87 @@ namespace centurion {
 			antlrcpp::Any leftResult = process(comparisonExpr->getLeft(), context);
 			antlrcpp::Any rightResult = process(comparisonExpr->getRight(), context);
 			if (leftResult.is<FieldIdentifier*>(false) && rightResult.is<Literal*>(true)) {
-				return visitFieldComparisonExpression(comparisonExpr->getOperator(), dbm_.indexNameStore().findIndexId(leftResult.as<FieldIdentifier*>()->getValue()), rightResult);
+				return visitFieldComparisonExpression(comparisonExpr->getOperator(), (leftResult.as<FieldIdentifier*>()->getValue()), rightResult);
 			} else if (leftResult.is<Literal*>(true) && rightResult.is<FieldIdentifier*>(false)) {
-				return visitFieldComparisonExpression(comparisonExpr->getOperator(), dbm_.indexNameStore().findIndexId(rightResult.as<FieldIdentifier*>()->getValue()), leftResult);
+				return visitFieldComparisonExpression(comparisonExpr->getOperator(), (rightResult.as<FieldIdentifier*>()->getValue()), leftResult);
 			} else if (leftResult.is<Identifier*>(false) && rightResult.is<Literal*>(true)) {
 				auto ident = leftResult.as<Identifier*>();
-				return visitFieldComparisonExpression(comparisonExpr->getOperator(), dbm_.indexNameStore().findIndexId(FieldIdentifier(ident->getLocation(), ident).getValue()), rightResult);
+				return visitFieldComparisonExpression(comparisonExpr->getOperator(), (FieldIdentifier(ident->getLocation(), ident).getValue()), rightResult);
 			} else if (leftResult.is<Literal*>(true) && rightResult.is<Identifier*>(false)) {
 				auto ident = rightResult.as<Identifier*>();
-				return visitFieldComparisonExpression(comparisonExpr->getOperator(), dbm_.indexNameStore().findIndexId(FieldIdentifier(ident->getLocation(), ident).getValue()), leftResult);
+				return visitFieldComparisonExpression(comparisonExpr->getOperator(), (FieldIdentifier(ident->getLocation(), ident).getValue()), leftResult);
 			} else {
 				throw std::runtime_error("Unsupported Comparison, only supported comparison is comparison between field and literal");
 			}
 		}
 
-		antlrcpp::Any visitFieldComparisonExpression(const ComparisonExpression::Operator oper, const IndexId idx, const antlrcpp::Any& value) const
-		{
-			if (idx == InvalidIndexId)
-			{
-				throw std::runtime_error("Comparison field not found");
-			}
+		antlrcpp::Any visitFieldComparisonExpression(const ComparisonExpression::Operator oper, std::string fieldName, const antlrcpp::Any& value) const
+		{			
 			if (oper == ComparisonExpression::Operator::EQUAL)
 			{
 				if (value.is<StringLiteral*>())
 				{
-					return (SearchIterator*)(StringValueSearchIterator::eq(dbm_.isvs(), idx, value.as<StringLiteral*>()->getValue()));
+					return (SearchIterator*)(StringValueSearchIterator::eq(dbm_.isvs(), fieldName, value.as<StringLiteral*>()->getValue()));
 				} else if (value.is<DecimalLiteral*>())
 				{
-					return (SearchIterator*)(DoubleValueSearchIterator::eq(dbm_.idvs(), idx, std::stod(value.as<DecimalLiteral*>()->getValue())));
+					return (SearchIterator*)(DoubleValueSearchIterator::eq(dbm_.idvs(), fieldName, std::stod(value.as<DecimalLiteral*>()->getValue())));
 				} else if (value.is<DoubleLiteral*>())
 				{
-					return (SearchIterator*)(DoubleValueSearchIterator::eq(dbm_.idvs(), idx, value.as<DoubleLiteral*>()->getValue()));
+					return (SearchIterator*)(DoubleValueSearchIterator::eq(dbm_.idvs(), fieldName, value.as<DoubleLiteral*>()->getValue()));
 				} else if (value.is<LongLiteral*>())
 				{
-					return (SearchIterator*)(DoubleValueSearchIterator::eq(dbm_.idvs(), idx, value.as<LongLiteral*>()->getValue()));
+					return (SearchIterator*)(DoubleValueSearchIterator::eq(dbm_.idvs(), fieldName, value.as<LongLiteral*>()->getValue()));
 				} else if (value.is<BooleanLiteral*>())
 				{
-					return (SearchIterator*)(BooleanValueSearchIterator::eq(dbm_.ibvs(), idx, value.as<BooleanLiteral*>()->getValue()));
+					return (SearchIterator*)(BooleanValueSearchIterator::eq(dbm_.ibvs(), fieldName, value.as<BooleanLiteral*>()->getValue()));
 				}
 			} else if (oper == ComparisonExpression::Operator::GREATER_THAN)
 			{
 				if (value.is<DecimalLiteral*>())
 				{
-					return (SearchIterator*)(DoubleValueRangeSearchIterator::gt(dbm_.idvs(), idx, std::stod(value.as<DecimalLiteral*>()->getValue())));
+					return (SearchIterator*)(DoubleValueRangeSearchIterator::gt(dbm_.idvs(), fieldName, std::stod(value.as<DecimalLiteral*>()->getValue())));
 				} else if (value.is<DoubleLiteral*>())
 				{
-					return (SearchIterator*)(DoubleValueRangeSearchIterator::gt(dbm_.idvs(), idx, value.as<DoubleLiteral*>()->getValue()));
+					return (SearchIterator*)(DoubleValueRangeSearchIterator::gt(dbm_.idvs(), fieldName, value.as<DoubleLiteral*>()->getValue()));
 				} else if (value.is<LongLiteral*>())
 				{
-					return (SearchIterator*)(DoubleValueRangeSearchIterator::gt(dbm_.idvs(), idx, value.as<LongLiteral*>()->getValue()));
+					return (SearchIterator*)(DoubleValueRangeSearchIterator::gt(dbm_.idvs(), fieldName, value.as<LongLiteral*>()->getValue()));
 				}
 			} else if (oper == ComparisonExpression::Operator::LESS_THAN)
 			{
 				if (value.is<DecimalLiteral*>())
 				{
-					return (SearchIterator*)(DoubleValueRangeSearchIterator::lt(dbm_.idvs(), idx, std::stod(value.as<DecimalLiteral*>()->getValue())));
+					return (SearchIterator*)(DoubleValueRangeSearchIterator::lt(dbm_.idvs(), fieldName, std::stod(value.as<DecimalLiteral*>()->getValue())));
 				} else if (value.is<DoubleLiteral*>())
 				{
-					return (SearchIterator*)(DoubleValueRangeSearchIterator::lt(dbm_.idvs(), idx, value.as<DoubleLiteral*>()->getValue()));
+					return (SearchIterator*)(DoubleValueRangeSearchIterator::lt(dbm_.idvs(), fieldName, value.as<DoubleLiteral*>()->getValue()));
 				} else if (value.is<LongLiteral*>())
 				{
-					return (SearchIterator*)(DoubleValueRangeSearchIterator::lt(dbm_.idvs(), idx, value.as<LongLiteral*>()->getValue()));
+					return (SearchIterator*)(DoubleValueRangeSearchIterator::lt(dbm_.idvs(), fieldName, value.as<LongLiteral*>()->getValue()));
 				}
 			} else if (oper == ComparisonExpression::Operator::GREATER_THAN_OR_EQUAL)
 			{
 				if (value.is<DecimalLiteral*>())
 				{
-					return (SearchIterator*)(DoubleValueRangeSearchIterator::gte(dbm_.idvs(), idx, std::stod(value.as<DecimalLiteral*>()->getValue())));
+					return (SearchIterator*)(DoubleValueRangeSearchIterator::gte(dbm_.idvs(), fieldName, std::stod(value.as<DecimalLiteral*>()->getValue())));
 				} else if (value.is<DoubleLiteral*>())
 				{
-					return (SearchIterator*)(DoubleValueRangeSearchIterator::gte(dbm_.idvs(), idx, value.as<DoubleLiteral*>()->getValue()));
+					return (SearchIterator*)(DoubleValueRangeSearchIterator::gte(dbm_.idvs(), fieldName, value.as<DoubleLiteral*>()->getValue()));
 				} else if (value.is<LongLiteral*>())
 				{
-					return (SearchIterator*)(DoubleValueRangeSearchIterator::gte(dbm_.idvs(), idx, value.as<LongLiteral*>()->getValue()));
+					return (SearchIterator*)(DoubleValueRangeSearchIterator::gte(dbm_.idvs(), fieldName, value.as<LongLiteral*>()->getValue()));
 				}
 			} else if (oper == ComparisonExpression::Operator::LESS_THAN_OR_EQUAL)
 			{
 				if (value.is<DecimalLiteral*>())
 				{
-					return (SearchIterator*)(DoubleValueRangeSearchIterator::lte(dbm_.idvs(), idx, std::stod(value.as<DecimalLiteral*>()->getValue())));
+					return (SearchIterator*)(DoubleValueRangeSearchIterator::lte(dbm_.idvs(), fieldName, std::stod(value.as<DecimalLiteral*>()->getValue())));
 				} else if (value.is<DoubleLiteral*>())
 				{
-					return (SearchIterator*)(DoubleValueRangeSearchIterator::lte(dbm_.idvs(), idx, value.as<DoubleLiteral*>()->getValue()));
+					return (SearchIterator*)(DoubleValueRangeSearchIterator::lte(dbm_.idvs(), fieldName, value.as<DoubleLiteral*>()->getValue()));
 				} else if (value.is<LongLiteral*>())
 				{
-					return (SearchIterator*)(DoubleValueRangeSearchIterator::lte(dbm_.idvs(), idx, value.as<LongLiteral*>()->getValue()));
+					return (SearchIterator*)(DoubleValueRangeSearchIterator::lte(dbm_.idvs(), fieldName, value.as<LongLiteral*>()->getValue()));
 				}
 			}
 			throw std::runtime_error("Unsupported Comparison, only supported comparison is comparison between field and literal where literal is string or number");
@@ -309,18 +305,15 @@ namespace centurion {
 		{
 			log_->trace("visitInPredicate");
 			antlrcpp::Any identifier = process(node->getValue(), context);
-			IndexId idx = InvalidIndexId;
+			std::string fieldName;
 			if (identifier.is<FieldIdentifier*>()) {
-				idx = dbm_.indexNameStore().findIndexId(identifier.as<FieldIdentifier*>()->getValue());
+				fieldName = (identifier.as<FieldIdentifier*>()->getValue());
 			} else if (identifier.is<Identifier*>()) {
 				auto ident = identifier.as<Identifier*>();
-				idx = dbm_.indexNameStore().findIndexId(FieldIdentifier(ident->getLocation(), ident).getValue());
+				fieldName = (FieldIdentifier(ident->getLocation(), ident).getValue());
 			} else {
 				throw std::runtime_error("Unsupported identifier for IN predicate");
-			}
-			if (idx == InvalidIndexId) {
-				throw std::runtime_error("Field not found");
-			}
+			}			
 			antlrcpp::Any values = process(node->getValueList(), context);
 			std::vector<SearchIterator*> iterators;
 			std::vector<antlrcpp::Any> literals = values.as<std::vector<antlrcpp::Any>>();
@@ -328,19 +321,19 @@ namespace centurion {
 			{
 				if (literal.is<StringLiteral*>())
 				{
-					iterators.emplace_back((SearchIterator*)(StringValueSearchIterator::eq(dbm_.isvs(), idx, literal.as<StringLiteral*>()->getValue())));
+					iterators.emplace_back((SearchIterator*)(StringValueSearchIterator::eq(dbm_.isvs(), fieldName, literal.as<StringLiteral*>()->getValue())));
 				} else if (literal.is<DecimalLiteral*>())
 				{
-					iterators.emplace_back((SearchIterator*)(DoubleValueSearchIterator::eq(dbm_.idvs(), idx, std::stod(literal.as<DecimalLiteral*>()->getValue()))));
+					iterators.emplace_back((SearchIterator*)(DoubleValueSearchIterator::eq(dbm_.idvs(), fieldName, std::stod(literal.as<DecimalLiteral*>()->getValue()))));
 				} else if (literal.is<DoubleLiteral*>())
 				{
-					iterators.emplace_back((SearchIterator*)(DoubleValueSearchIterator::eq(dbm_.idvs(), idx, literal.as<DoubleLiteral*>()->getValue())));
+					iterators.emplace_back((SearchIterator*)(DoubleValueSearchIterator::eq(dbm_.idvs(), fieldName, literal.as<DoubleLiteral*>()->getValue())));
 				} else if (literal.is<LongLiteral*>())
 				{
-					iterators.emplace_back((SearchIterator*)(DoubleValueSearchIterator::eq(dbm_.idvs(), idx, literal.as<LongLiteral*>()->getValue())));
+					iterators.emplace_back((SearchIterator*)(DoubleValueSearchIterator::eq(dbm_.idvs(), fieldName, literal.as<LongLiteral*>()->getValue())));
 				} else if (literal.is<BooleanLiteral*>())
 				{
-					iterators.emplace_back((SearchIterator*)(BooleanValueSearchIterator::eq(dbm_.ibvs(), idx, literal.as<BooleanLiteral*>()->getValue())));
+					iterators.emplace_back((SearchIterator*)(BooleanValueSearchIterator::eq(dbm_.ibvs(), fieldName, literal.as<BooleanLiteral*>()->getValue())));
 				} else
 				{
 					throw std::runtime_error("Unsupported literal for IN operation");

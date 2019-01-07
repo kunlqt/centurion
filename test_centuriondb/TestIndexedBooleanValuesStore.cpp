@@ -39,9 +39,9 @@ namespace {
 
 		ASSERT_TRUE(valueIndexStore_->add(fieldIndexId, indexedValue, indexedDocumentId));
 
-		auto searchIterator = BooleanValueSearchIterator::eq(*valueIndexStore_, fieldIndexId, indexedValue);
+		auto searchIterator = BooleanValueSearchIterator::eq(*valueIndexStore_, "field1", indexedValue);
 
-		searchIterator->seek(MinDocumentId);
+		searchIterator->seek([fieldIndexId](const std::string&) { return fieldIndexId; }, MinDocumentId);
 		ASSERT_TRUE(searchIterator->valid());
 		ASSERT_EQ(searchIterator->current(), indexedDocumentId);
 
@@ -63,9 +63,9 @@ namespace {
 		ASSERT_TRUE(valueIndexStore_->add(fieldIndexId, indexedValue, indexedDocumentId2));
 		ASSERT_TRUE(valueIndexStore_->add(fieldIndexId, indexedValue, indexedDocumentId3));
 
-		auto searchIterator = BooleanValueSearchIterator::eq(*valueIndexStore_, fieldIndexId, indexedValue);
+		auto searchIterator = BooleanValueSearchIterator::eq(*valueIndexStore_, "field1", indexedValue);
 
-		searchIterator->seek(MinDocumentId);
+		searchIterator->seek([fieldIndexId](const std::string&) { return fieldIndexId; }, MinDocumentId);
 		ASSERT_TRUE(searchIterator->valid());
 		ASSERT_EQ(searchIterator->current(), indexedDocumentId1);
 
@@ -93,9 +93,9 @@ namespace {
 		ASSERT_TRUE(valueIndexStore_->add(fieldIndexId, indexedValue2, indexedDocumentId));
 		ASSERT_TRUE(valueIndexStore_->add(fieldIndexId, indexedValue3, indexedDocumentId));
 
-		auto searchIterator = BooleanValueSearchIterator::eq(*valueIndexStore_, fieldIndexId, indexedValue2);
+		auto searchIterator = BooleanValueSearchIterator::eq(*valueIndexStore_, "field1", indexedValue2);
 
-		searchIterator->seek(MinDocumentId);
+		searchIterator->seek([fieldIndexId](const std::string&) { return fieldIndexId; }, MinDocumentId);
 		ASSERT_TRUE(searchIterator->valid());
 		ASSERT_EQ(searchIterator->current(), indexedDocumentId);
 
@@ -125,9 +125,9 @@ namespace {
 		ASSERT_TRUE(valueIndexStore_->add(fieldIndexId, indexedValue2, indexedDocumentId3));
 		ASSERT_TRUE(valueIndexStore_->add(fieldIndexId, indexedValue3, indexedDocumentId3));
 
-		auto searchIterator = BooleanValueSearchIterator::eq(*valueIndexStore_, fieldIndexId, indexedValue2);
+		auto searchIterator = BooleanValueSearchIterator::eq(*valueIndexStore_, "field1", indexedValue2);
 
-		searchIterator->seek(MinDocumentId);
+		searchIterator->seek([fieldIndexId](const std::string&) { return fieldIndexId; }, MinDocumentId);
 		ASSERT_TRUE(searchIterator->valid());
 		ASSERT_EQ(searchIterator->current(), indexedDocumentId1);
 

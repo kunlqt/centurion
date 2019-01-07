@@ -31,7 +31,7 @@ using StringSizeType = std::uint32_t;
 #define CreateStringIndex(buffer, indexId, str, stringSize) \
 	SetIndexId(buffer, indexId); \
 	SetStringSize(buffer, stringSize); \
-	if (stringSize && str) std::memcpy(((std::uint8_t*)buffer + StringBufferOffset), str, stringSize); \
+	if (str && (stringSize > 0)) std::memcpy(((std::uint8_t*)buffer + StringBufferOffset), str, stringSize); \
 	*(DocumentId*)((std::uint8_t*)buffer + StringBufferOffset + stringSize) = 0;
 
 #define CreateDoubleIndex(buffer, indexId, v) \

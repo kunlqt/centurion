@@ -20,9 +20,9 @@ namespace centurion
 		DoubleValueSearchIterator(const DoubleValueSearchIterator&) = delete;
 		DoubleValueSearchIterator(DoubleValueSearchIterator&& other) = delete;
 
-		static DoubleValueSearchIterator* eq(const DoubleValueIndexStore& store, IndexId indexId, double val, double eps = DefaultComparisionPrecision)
+		static DoubleValueSearchIterator* eq(const DoubleValueIndexStore& store, std::string fieldName, double val, double eps = DefaultComparisionPrecision)
 		{
-			return new DoubleValueSearchIterator(store, indexId, val - eps, val + eps);
+			return new DoubleValueSearchIterator(store, fieldName, val - eps, val + eps);
 		}
 
 
@@ -33,8 +33,31 @@ namespace centurion
 			delete iterator_;
 		}
 
-		void seek(DocumentId documentId) override
-		{
+		void seek(std::function<IndexId(const std::string&)> fieldNameResolver, DocumentId documentId) override
+		{	
+			auto console = spdlog::get("root");
+			delete[] lowerSliceBuf_;
+			lowerSliceBuf_ = nullptr;
+			delete[] upperSliceBuf_;
+			upperSliceBuf_ = nullptr;
+			delete iterator_;
+			iterator_ = nullptr;
+			indexId_ = fieldNameResolver(fieldName_);
+			if (indexId_ == InvalidIndexId)
+			{
+				console->error("Field name: {0} not found", fieldName_);
+				setState(AfterLast);
+				currentDocumentId_ = InvalidDocumentId;
+				return;
+			}
+			const size_t lowerSliceBufSize = (sizeof(indexId_) + sizeof(double) + sizeof(DocumentId));			
+			lowerSliceBuf_ = (new char[lowerSliceBufSize]);
+			lowerBoundSlice_ = (buildDoubleSlice(indexId_, lowerBound_, lowerSliceBuf_, lowerSliceBufSize));
+			const size_t upperSliceBufSize = (sizeof(indexId_) + sizeof(double) + sizeof(DocumentId));			
+			upperSliceBuf_ = (new char[upperSliceBufSize]);
+			upperBoundSlice_ = (buildDoubleSlice(indexId_, upperBound_, upperSliceBuf_, upperSliceBufSize));
+			opts_.iterate_lower_bound = &lowerBoundSlice_;
+			opts_.iterate_upper_bound = &upperBoundSlice_;			
 			iterator_ = store_.newIterator(opts_);
 			iterator_->Seek(lowerBoundSlice_);
 			if (iterator_->Valid())
@@ -93,25 +116,19 @@ namespace centurion
 		IndexId indexId() const { return indexId_; }
 
 	private:
-		DoubleValueSearchIterator(const IndexedValuesStore& store, IndexId indexId, double lowerBound, double upperBound)
+		DoubleValueSearchIterator(const IndexedValuesStore& store, std::string fieldName, double lowerBound, double upperBound)
 			:
 			store_(store),
-			indexId_(indexId),
+			fieldName_(fieldName),			
+			indexId_(InvalidIndexId),
 			lowerBound_(lowerBound),
-			lowerSliceBufSize_(sizeof(indexId) + sizeof(double) + sizeof(DocumentId)),
-			lowerSliceBuf_(new char[lowerSliceBufSize_]),
-			lowerBoundSlice_(buildDoubleSlice(indexId, lowerBound_, lowerSliceBuf_, lowerSliceBufSize_)),
+			lowerSliceBuf_(nullptr),
 			upperBound_(upperBound),
-			upperSliceBufSize_(sizeof(indexId) + sizeof(double) + sizeof(DocumentId)),
-			upperSliceBuf_(new char[upperSliceBufSize_]),
-			upperBoundSlice_(buildDoubleSlice(indexId, upperBound_, upperSliceBuf_, upperSliceBufSize_))
-		{
-			opts_.iterate_lower_bound = &lowerBoundSlice_;
-			opts_.iterate_upper_bound = &upperBoundSlice_;
+			upperSliceBuf_(nullptr),
+			iterator_(nullptr) {
 		}
 
-		bool checkUpperBound() const
-		{
+		bool checkUpperBound() const {
 			const char* kd = iterator_->key().data();
 			const IndexId idxA = GetIndexId(kd);
 			if (idxA == indexId_) {
@@ -120,15 +137,13 @@ namespace centurion
 			}
 			return false;
 		}
-
+		std::string fieldName_;
 		const IndexedValuesStore& store_;
 		IndexId indexId_;
 		double lowerBound_;
-		size_t lowerSliceBufSize_;
 		char* lowerSliceBuf_;
 		rocksdb::Slice lowerBoundSlice_;
-		double upperBound_;
-		size_t upperSliceBufSize_;
+		double upperBound_;		
 		char* upperSliceBuf_;
 		rocksdb::Slice upperBoundSlice_;
 		rocksdb::ReadOptions opts_;

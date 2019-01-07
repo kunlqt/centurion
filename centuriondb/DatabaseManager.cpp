@@ -40,7 +40,7 @@ namespace centurion {
 	{
 		auto console = spdlog::get("root");
 		auto selectFields = createSelectedFields(visitorResult->selectFields);
-		visitorResult->searchRootIterator->seek(MinDocumentId);
+		visitorResult->searchRootIterator->seek([this](const std::string& fieldName) { return indexNameStore_.findIndexId(fieldName); },  MinDocumentId);
 		results.SetArray();
 		rapidjson::Value::AllocatorType& allocator = results.GetAllocator();
 		results.Reserve(limit, allocator);
@@ -173,24 +173,19 @@ namespace centurion {
 		}
 
 		std::string field = searchTerm["path"].GetString();
-		const auto indexId = indexNameStore_.findIndexId(field);
-		if (indexId == InvalidIndexId)
-		{
-			throw std::runtime_error("field not found");
-		}
 		std::string op = searchTerm["op"].GetString();
 		const auto& val = searchTerm["value"];
 		if (val.IsString())
 		{
-			return(StringValueSearchIterator::eq(isvs_, indexId, val.GetString()));
+			return(StringValueSearchIterator::eq(isvs_, field, val.GetString()));
 		} else if (val.IsNumber())
 		{
 			if (op == "eq") {
-				return(DoubleValueSearchIterator::eq(idvs_, indexId, val.GetDouble()));
+				return(DoubleValueSearchIterator::eq(idvs_, field, val.GetDouble()));
 			}
 		} else if (val.IsBool()) {
 			if (op == "eq") {
-				return(BooleanValueSearchIterator::eq(ibvs_, indexId, val.GetBool()));
+				return(BooleanValueSearchIterator::eq(ibvs_, field, val.GetBool()));
 			}
 		}
 		throw std::runtime_error("error");

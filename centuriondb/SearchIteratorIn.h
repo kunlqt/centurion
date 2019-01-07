@@ -28,11 +28,11 @@ namespace centurion
 			}
 		}
 
-		void seek(DocumentId documentId) override
+		void seek(std::function<IndexId(const std::string&)> fieldNameResolver, DocumentId documentId) override
 		{			
 			if (!iterators_.empty()) {
 				for (auto it = iterators_.begin(); it != iterators_.end(); ) {
-					(*it)->seek(documentId);
+					(*it)->seek(fieldNameResolver, documentId);
 					if (!(*it)->valid()) {
 						delete *it;
 						it = iterators_.erase(it);

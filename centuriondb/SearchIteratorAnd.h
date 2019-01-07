@@ -25,17 +25,16 @@ namespace centurion
 			delete left_;
 			delete right_;
 		}
-
-
-		void seek(DocumentId documentId) override
+		
+		void seek(std::function<IndexId(const std::string&)> fieldNameResolver, DocumentId documentId) override
 		{
-			left_->seek(documentId);
+			left_->seek(fieldNameResolver, documentId);
 			if (!left_->valid())
 			{
 				setState(AfterLast);
 				return;
 			}
-			right_->seek(documentId);
+			right_->seek(fieldNameResolver, documentId);
 			if (!right_->valid())
 			{
 				setState(AfterLast);

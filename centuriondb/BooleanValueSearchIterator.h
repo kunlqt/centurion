@@ -21,9 +21,9 @@ namespace centurion
 		BooleanValueSearchIterator(const BooleanValueSearchIterator&) = delete;
 		BooleanValueSearchIterator(BooleanValueSearchIterator&& other) = delete;
 
-		static BooleanValueSearchIterator* eq(const BooleanValueIndexStore& store, IndexId indexId, bool val)
+		static BooleanValueSearchIterator* eq(const BooleanValueIndexStore& store, std::string fieldName, bool value)
 		{
-			return new BooleanValueSearchIterator(store, indexId, val);
+			return new BooleanValueSearchIterator(store, fieldName, value);
 		}
 
 		virtual ~BooleanValueSearchIterator() override
@@ -33,15 +33,36 @@ namespace centurion
 			delete iterator_;
 		}
 
-		void seek(DocumentId documentId) override
-		{
+		void seek(std::function<IndexId(const std::string&)> fieldNameResolver, DocumentId documentId) override
+		{	
 			auto console = spdlog::get("root");
+			delete[] lowerSliceBuf_;
+			lowerSliceBuf_ = nullptr;
+			delete[] upperSliceBuf_;
+			upperSliceBuf_ = nullptr;
+			delete iterator_;
+			iterator_ = nullptr;
+			indexId_ = fieldNameResolver(fieldName_);
+			if (indexId_ == InvalidIndexId)
+			{
+				console->error("Field name: {0} not found", fieldName_);
+				setState(AfterLast);
+				currentDocumentId_ = InvalidDocumentId;
+				return;
+			}
+			lowerBoundVal_ = (value_ ? 1 : 0);
+			size_t lowerSliceBufSize_ = (sizeof(indexId_) + sizeof(std::uint8_t) + sizeof(DocumentId));			
+			lowerSliceBuf_ = (new char[lowerSliceBufSize_]);
+			lowerBoundSlice_ = (buildBooleanSlice(indexId_, value_, lowerSliceBuf_, lowerSliceBufSize_));
+			size_t upperSliceBufSize_ = (sizeof(indexId_) + sizeof(std::uint8_t) + sizeof(DocumentId));			
+			upperSliceBuf_ = (new char[upperSliceBufSize_]);
+			upperBoundSlice_ = (buildBooleanSlice(value_ ? indexId_ + 1 : indexId_, !value_, upperSliceBuf_, upperSliceBufSize_));
+			opts_.iterate_lower_bound = &lowerBoundSlice_;
+			opts_.iterate_upper_bound = &upperBoundSlice_;			
 			iterator_ = store_.newIterator(opts_);
 			iterator_->Seek(lowerBoundSlice_);
-			if (iterator_->Valid())
-			{
-				if (checkUpperBound())
-				{
+			if (iterator_->Valid()) {
+				if (checkUpperBound()) {
 					setState(First);
 					currentDocumentId_ = ExtractDocumentIdFromBoolean(iterator_->key().data());
 				} else {
@@ -49,6 +70,7 @@ namespace centurion
 					currentDocumentId_ = InvalidDocumentId;
 				}
 			} else {
+				auto console = spdlog::get("root");
 				console->error("Invalid Boolean search iterator");
 				setState(AfterLast);
 				currentDocumentId_ = InvalidDocumentId;
@@ -59,12 +81,9 @@ namespace centurion
 		{
 			if (valid() && iterator_->Valid()) {
 				iterator_->Next();
-				if (iterator_->Valid())
-				{
-					if (checkUpperBound())
-					{
-						if (getState() == First)
-						{
+				if (iterator_->Valid()) {
+					if (checkUpperBound()) {
+						if (getState() == First) {
 							setState(None);
 						}
 						currentDocumentId_ = ExtractDocumentIdFromBoolean(iterator_->key().data());
@@ -93,20 +112,17 @@ namespace centurion
 		IndexId indexId() const { return indexId_; }
 
 	private:
-		BooleanValueSearchIterator(const IndexedValuesStore& store, IndexId indexId, bool val)
+		BooleanValueSearchIterator(const IndexedValuesStore& store, std::string fieldName, bool value)
 			:
 			store_(store),
-			indexId_(indexId),
-			lowerBoundVal_(val ? 1 : 0),
-			lowerSliceBufSize_(sizeof(indexId) + sizeof(std::uint8_t) + sizeof(DocumentId)),
-			lowerSliceBuf_(new char[lowerSliceBufSize_]),
-			lowerBoundSlice_(buildBooleanSlice(indexId, val, lowerSliceBuf_, lowerSliceBufSize_)),
-			upperSliceBufSize_(sizeof(indexId) + sizeof(std::uint8_t) + sizeof(DocumentId)),
-			upperSliceBuf_(new char[upperSliceBufSize_]),
-			upperBoundSlice_(buildBooleanSlice(val ? indexId + 1: indexId, !val, upperSliceBuf_, upperSliceBufSize_))
+			fieldName_(fieldName),			
+			indexId_(InvalidIndexId),
+			value_(value),
+			lowerSliceBuf_(nullptr),
+			upperSliceBuf_(nullptr),
+			iterator_(nullptr)
 		{
-			opts_.iterate_lower_bound = &lowerBoundSlice_;
-			opts_.iterate_upper_bound = &upperBoundSlice_;
+		
 		}
 
 		bool checkUpperBound() const
@@ -121,18 +137,17 @@ namespace centurion
 		}
 
 		const IndexedValuesStore& store_;
+		std::string fieldName_;
 		IndexId indexId_;
-		std::uint8_t lowerBoundVal_;
-		size_t lowerSliceBufSize_;
+		bool value_;
+		std::uint8_t lowerBoundVal_;		
 		char* lowerSliceBuf_;
-		rocksdb::Slice lowerBoundSlice_;
-		size_t upperSliceBufSize_;
+		rocksdb::Slice lowerBoundSlice_;		
 		char* upperSliceBuf_;
 		rocksdb::Slice upperBoundSlice_;
 		rocksdb::ReadOptions opts_;
 		rocksdb::Iterator* iterator_;
 		DocumentId currentDocumentId_;
-
 	};
 
 }
