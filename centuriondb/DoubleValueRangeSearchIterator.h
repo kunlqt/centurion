@@ -10,9 +10,9 @@
 #include <spdlog/spdlog.h>
 
 namespace centurion
-{
+{	
 	struct DoubleValueRangeSearchIterator : SearchIterator
-	{
+	{				
 		DoubleValueRangeSearchIterator(const DoubleValueRangeSearchIterator&) = delete;
 		DoubleValueRangeSearchIterator(DoubleValueRangeSearchIterator&& other) = delete;
 

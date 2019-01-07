@@ -15,8 +15,6 @@ namespace centurion
 		return { dst, dstSize };
 	}
 
-	static const double DefaultComparisionPrecision = 10e-8;
-
 	struct DoubleValueSearchIterator : SearchIterator
 	{
 		DoubleValueSearchIterator(const DoubleValueSearchIterator&) = delete;

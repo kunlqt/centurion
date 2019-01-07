@@ -2,6 +2,8 @@
 #include <cstdint>
 #include <cstring>
 
+static double DefaultComparisionPrecision = 10e-8;
+
 using StringSizeType = std::uint32_t;
 
 #define SetIndexId(buffer, indexId) *(IndexId*)buffer = indexId

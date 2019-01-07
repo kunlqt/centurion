@@ -2,11 +2,13 @@
 
 #include "TraversalVisitorResult.h"
 #include "StackableAstVisitor.h"
-#include "StringValueSearchIterator.h"
 #include "SearchIteratorAnd.h"
 #include "SearchIteratorOr.h"
 #include "SearchIteratorIn.h"
+#include "StringValueSearchIterator.h"
+#include "DoubleValueSearchIterator.h"
 #include "DoubleValueRangeSearchIterator.h"
+#include "BooleanValueSearchIterator.h"
 #include <fmt/ostream.h>
 
 namespace centurion {
@@ -457,7 +459,7 @@ namespace centurion {
 				return true;
 			}
 			if (val.is<DecimalLiteral*>()) {
-				std::stod(val.as<DecimalLiteral*>()->getValue());
+				target = std::stod(val.as<DecimalLiteral*>()->getValue());
 				return true;
 			}
 			if (val.is<LongLiteral*>()) {

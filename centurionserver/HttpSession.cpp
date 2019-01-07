@@ -1,9 +1,10 @@
 #include "HttpSession.hpp"
 #include "WebsocketSession.hpp"
-#include "SearchIteratorBuilder.h"
+#include "QueryDocumentHandler.h"
 #include <boost/config.hpp>
 #include <boost/algorithm/string.hpp>
 #include <iostream>
+
 
 #define BOOST_NO_CXX14_GENERIC_LAMBDAS
 
@@ -139,8 +140,8 @@ handle_request(
 					res.set(http::field::content_type, "application/json");
 					rapidjson::Document doc(rapidjson::kArrayType);
 					rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
-					for (auto documentid : docsInserted) {
-						doc.PushBack(documentid, allocator);
+					for (auto documentId : docsInserted) {
+						doc.PushBack(documentId, allocator);
 					}
 					rapidjson::StringBuffer result;
 					rapidjson::Writer<rapidjson::StringBuffer> writer(result);
@@ -165,19 +166,14 @@ handle_request(
 			if (req[http::field::content_type] == "application/sql") {
 				try {					
 					log->trace("handling /query sql request");
-					centurion::SearchIteratorBuilder builder;
-					std::stringstream query(req.body());
-					log->trace("creating build query...");
-					const auto traversalVisitorResult = builder.buildQuery(*dbm, query);
-					log->trace("creating search documents...");
-					rapidjson::Document results;
-					auto docsFound = dbm->searchDocuments(traversalVisitorResult.get(), results, 0, 25);
-					log->trace("Search documents finished");
 					http::response<http::string_body> res{ http::status::ok, req.version() };
 					res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
 					res.set(http::field::content_type, "application/json");
+					centurion::QueryDocumentHandler queryDocumentHandler;
 					rapidjson::StringBuffer resultsString;
 					rapidjson::Writer<rapidjson::StringBuffer> writer(resultsString);
+					rapidjson::Document results;
+					queryDocumentHandler.handle(*dbm, req.body(), results);
 					if (results.Accept(writer)) {
 						res.body() = resultsString.GetString();
 					}

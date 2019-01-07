@@ -4,7 +4,7 @@
 #include "DatabaseManager.h"
 #include <boost/asio.hpp>
 #include <boost/beast.hpp>
-#include <cstdlib>
+#include <spdlog/logger.h>
 #include <memory>
 
 namespace net = boost::asio;                    // from <boost/asio.hpp>

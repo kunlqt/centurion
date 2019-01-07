@@ -162,6 +162,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CityHash.cpp" />
+    <ClCompile Include="DatabaseManager.cpp" />
     <ClCompile Include="Sha2.cpp" />
   </ItemGroup>
   <ItemGroup>
