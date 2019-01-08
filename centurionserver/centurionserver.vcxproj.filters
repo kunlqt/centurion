@@ -36,6 +36,12 @@
     <ClInclude Include="QueryDocumentHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="HttpRequestHandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MimeTypes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="HttpSession.cpp">

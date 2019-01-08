@@ -20,8 +20,7 @@ class http_session : public std::enable_shared_from_this<http_session>
 	std::shared_ptr<spdlog::logger> log_;
     tcp::socket socket_;
     beast::flat_buffer buffer_;
-    std::shared_ptr<shared_state> state_;
-    // http::request<http::string_body> req_;
+    std::shared_ptr<shared_state> state_;    
 	http::request_parser<http::string_body> parser_;
 	std::shared_ptr<centurion::DatabaseManager> dbm_;
 

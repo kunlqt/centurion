@@ -12,8 +12,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DefaultTraversalVisitor.h" />
+    <ClInclude Include="HttpRequestHandler.h" />
     <ClInclude Include="HttpSession.hpp" />
     <ClInclude Include="Listener.hpp" />
+    <ClInclude Include="MimeTypes.h" />
     <ClInclude Include="QueryDocumentHandler.h" />
     <ClInclude Include="SearchIteratorBuilder.h" />
     <ClInclude Include="SharedState.hpp" />
