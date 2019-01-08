@@ -80,11 +80,15 @@ template<class Body, class Allocator, class Send>
 					http::response<http::string_body> res{ http::status::ok, req.version() };
 					res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
 					res.set(http::field::content_type, "application/json");
-					rapidjson::Document doc(rapidjson::kArrayType);
+					rapidjson::Document doc(rapidjson::kObjectType);
+					doc.AddMember(rapidjson::StringRef("operation"), rapidjson::StringRef("insert"), doc.GetAllocator());
+					rapidjson::Value documentIds(rapidjson::kArrayType);
 					rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
+					documentIds.Reserve(docsInserted.size(), allocator);					
 					for (auto documentId : docsInserted) {
-						doc.PushBack(documentId, allocator);
+						documentIds.PushBack(documentId, allocator);
 					}
+					doc.AddMember(rapidjson::StringRef("documents"), documentIds, doc.GetAllocator());
 					rapidjson::StringBuffer result;
 					rapidjson::Writer<rapidjson::StringBuffer> writer(result);
 					doc.Accept(writer);
