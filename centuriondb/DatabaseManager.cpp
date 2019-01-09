@@ -3,6 +3,7 @@
 #include "DoubleValueSearchIterator.h"
 #include "BooleanValueSearchIterator.h"
 
+
 namespace centurion {
 
 	DatabaseManager::DatabaseManager(boost::filesystem::path databaseRootDir)
@@ -32,6 +33,7 @@ namespace centurion {
 				}
 				result.push_back(fieldIter->c_str());
 			}
+			mergeOverlappingFields(result);
 		}
 		return result;
 	}

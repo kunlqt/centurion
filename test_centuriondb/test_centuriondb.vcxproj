@@ -105,6 +105,7 @@
     <ClCompile Include="TestSearchIteratorIn.cpp" />
     <ClCompile Include="TestSearchIteratorOr.cpp" />
     <ClCompile Include="TestStringIndexComparator.cpp" />
+    <ClCompile Include="TestUtils.cpp" />
     <ClCompile Include="test_centuriondb.cpp" />
   </ItemGroup>
   <ItemGroup>

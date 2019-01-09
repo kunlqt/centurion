@@ -51,6 +51,9 @@
     <ClCompile Include="TestSearchIteratorIn.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="TestUtils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TestCommon.h">

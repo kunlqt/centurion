@@ -1082,7 +1082,7 @@ public:
 	class SingleColumn : public SelectItem {
 	public:
 		SingleColumn(Expression* expression)
-			: SingleColumn(std::nullopt, expression, std::nullopt)
+			: SingleColumn(std::optional<NodeLocation>(), expression, std::optional<Identifier*>())
 		{
 		}
 
@@ -1090,7 +1090,7 @@ public:
 			Expression* expression,
 			std::optional<Identifier*> alias)
 			:
-			SingleColumn(std::nullopt, expression, std::optional<Identifier*>(alias))
+			SingleColumn(std::optional<NodeLocation>(), expression, std::optional<Identifier*>(alias))
 		{
 		}
 
@@ -1184,25 +1184,25 @@ public:
 	class AllColumns : public SelectItem {
 	public:
 		AllColumns()
-			:
-			SelectItem(std::nullopt),
-			prefix_(std::nullopt)
+			: SelectItem(std::optional<NodeLocation>())
+			, prefix_(std::optional<QualifiedName>())
 		{
 		}
 
 		AllColumns(const NodeLocation& location)
-			:
-			SelectItem(std::optional<NodeLocation>(location)),
-			prefix_(std::nullopt)
+			: SelectItem(std::optional<NodeLocation>(location))
+			, prefix_(std::optional<QualifiedName>())
 		{
 		}
 
 		AllColumns(const QualifiedName& prefix)
-			: AllColumns(std::nullopt, prefix) {
+			: AllColumns(std::optional<NodeLocation>() , prefix) 
+		{
 		}
 
 		AllColumns(const NodeLocation& location, const QualifiedName& prefix)
-			: AllColumns(std::optional<NodeLocation>(location), prefix) {
+			: AllColumns(std::optional<NodeLocation>(location), prefix) 
+		{
 		}
 
 		AllColumns(std::optional<NodeLocation> location, const QualifiedName& prefix)
@@ -1900,10 +1900,14 @@ public:
 		}
 
 		virtual std::string getValue() const override {
-			std::stringstream result;
+			std::stringstream result;			
 			for (const auto& comp : components_)
 			{
-				result << "/" << comp->getValue();
+				if (components_.size() > 1 && comp->getValue() == "*") {
+					// ignore field.* components
+				} else {
+					result << "/" << comp->getValue();
+				}
 			}
 			return result.str();
 		}
