@@ -24,16 +24,14 @@ namespace centurion {
 	struct KeyHash {
 		std::size_t operator()(const ExpressionRef& k) const
 		{
-			return 0;
-			//return std::hash<std::string>()(k.expr()->) ^
-			//	(std::hash<std::string>()(k.second) << 1);
+			return k.expr()->hashCode();			
 		}
 	};
 
 	struct KeyEqual {
 		bool operator()(const ExpressionRef& lhs, const ExpressionRef& rhs) const
 		{
-			return true; // lhs.first == rhs.first && lhs.second == rhs.second;
+			return lhs.expr() == rhs.expr();
 		}
 	};
 

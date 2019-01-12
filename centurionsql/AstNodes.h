@@ -16,7 +16,7 @@ namespace centurion {
 public:
 		virtual std::optional<NodeLocation> getLocation() const { return location_; }
 		virtual std::vector<Node*> getChildren()  const = 0;
-		virtual int hashCode() const = 0;
+		virtual size_t hashCode() const = 0;
 		virtual bool equals(const Node& node) const = 0;
 		virtual std::string toString() const = 0;
 
@@ -80,7 +80,7 @@ public:
 			return std::vector<Node*>();
 		}
 
-		virtual int hashCode() const override {
+		virtual size_t hashCode() const override {
 			return (int)std::hash_value(value_);
 		}
 
@@ -137,7 +137,7 @@ public:
 			return std::vector<Node*>{ base_ };
 		}
 
-		virtual int hashCode() const override {
+		virtual size_t hashCode() const override {
 			return 0;
 		}
 
@@ -231,7 +231,7 @@ public:
 			return "StringLiteral";
 		}
 
-		virtual int hashCode() const override {
+		virtual size_t hashCode() const override {
 			std::hash<std::string> h;
 			return (int)h(value_);
 		}
@@ -265,7 +265,7 @@ public:
 			return "DecimalLiteral";
 		}
 
-		virtual int hashCode() const override {
+		virtual size_t hashCode() const override {
 			std::hash<std::string> h;
 			return (int)h(value_);
 		}
@@ -308,7 +308,7 @@ public:
 			return value_;
 		}
 
-		virtual int hashCode() const override {
+		virtual size_t hashCode() const override {
 			return ((int)value_);
 		}
 
@@ -344,7 +344,7 @@ public:
 			return value_;
 		}
 
-		virtual int hashCode() const override {
+		virtual size_t hashCode() const override {
 			return (value_);
 		}
 
@@ -382,7 +382,7 @@ public:
 			return value_;
 		}
 
-		virtual int hashCode() const override {
+		virtual size_t hashCode() const override {
 			return (value_);
 		}
 
@@ -445,7 +445,7 @@ public:
 			return std::vector<Node*>{ left_, right_ };
 		}
 
-		virtual int hashCode() const override {
+		virtual size_t hashCode() const override {
 			return 0;
 		}
 
@@ -494,7 +494,7 @@ public:
 			return std::vector<Node*>{ value_};
 		}
 
-		virtual int hashCode() const override {
+		virtual size_t hashCode() const override {
 			return 0;
 		}
 
@@ -573,7 +573,7 @@ public:
 			return result;
 		}
 
-		virtual int hashCode() const override {
+		virtual size_t hashCode() const override {
 			return 0;
 		}
 
@@ -616,7 +616,7 @@ public:
 			}
 			return result;
 		}
-		virtual int hashCode() const  override
+		virtual size_t hashCode() const  override
 		{
 			return 0;
 		}
@@ -685,7 +685,7 @@ public:
 			return result;
 		}
 
-		virtual int hashCode() const override {
+		virtual size_t hashCode() const override {
 			return 0;
 		}
 
@@ -732,7 +732,7 @@ public:
 			return result;
 		}
 
-		virtual int hashCode() const override {
+		virtual size_t hashCode() const override {
 			return 0;
 		}
 
@@ -791,7 +791,7 @@ public:
 			return result;
 		}
 
-		virtual int hashCode() const override {
+		virtual size_t hashCode() const override {
 			return 0;
 		}
 
@@ -853,7 +853,7 @@ public:
 			return result;
 		}
 
-		virtual int hashCode() const override {
+		virtual size_t hashCode() const override {
 			return 0;
 		}
 
@@ -916,7 +916,7 @@ public:
 			return result;
 		}
 
-		virtual int hashCode() const override {
+		virtual size_t hashCode() const override {
 			return 0;
 		}
 
@@ -982,7 +982,7 @@ public:
 			return std::vector<Node*>{ query_ };
 		}
 
-		virtual int hashCode() const override {
+		virtual size_t hashCode() const override {
 			return 0;
 		}
 
@@ -1041,7 +1041,7 @@ public:
 			return result;
 		}
 
-		virtual int hashCode() const override {
+		virtual size_t hashCode() const override {
 			return 0;
 		}
 
@@ -1085,7 +1085,7 @@ public:
 			return std::vector<Node*>{ query_ };
 		}
 
-		virtual int hashCode() const override {
+		virtual size_t hashCode() const override {
 			return 0;
 		}
 
@@ -1146,7 +1146,7 @@ public:
 			return std::vector<Node*>{ expression_ };
 		}
 
-		virtual int hashCode() const override {
+		virtual size_t hashCode() const override {
 			return 0;
 		}
 
@@ -1184,7 +1184,7 @@ public:
 			return result;
 		}
 
-		virtual int hashCode() const override {
+		virtual size_t hashCode() const override {
 			return 0;
 		}
 
@@ -1241,7 +1241,7 @@ public:
 			return std::vector<Node*>();
 		}
 
-		virtual int hashCode() const override {
+		virtual size_t hashCode() const override {
 			return 0;
 		}
 
@@ -1295,7 +1295,7 @@ public:
 			return result;
 		}
 
-		virtual int hashCode() const override {
+		virtual size_t hashCode() const override {
 			return 0;
 		}
 
@@ -1331,7 +1331,7 @@ public:
 			return std::vector<Node*>();
 		}
 
-		virtual int hashCode() const override {
+		virtual size_t hashCode() const override {
 			return 0;
 		}
 
@@ -1370,7 +1370,7 @@ public:
 			return std::vector<Node*>{ value_, valueList_};
 		}
 
-		virtual int hashCode() const override
+		virtual size_t hashCode() const override
 		{
 			return 0;
 		}
@@ -1420,7 +1420,7 @@ public:
 			return result;
 		}
 
-		virtual int hashCode() const override {
+		virtual size_t hashCode() const override {
 			return 0;
 		}
 
@@ -1463,7 +1463,7 @@ public:
 			return std::vector<Node*>{ value_ };
 		}
 
-		virtual int hashCode() const override {
+		virtual size_t hashCode() const override {
 			return 0;
 		}
 
@@ -1507,7 +1507,7 @@ public:
 			return std::vector<Node*>{ value_ };
 		}
 
-		virtual int hashCode() const override {
+		virtual size_t hashCode() const override {
 			return 0;
 		}
 
@@ -1550,7 +1550,7 @@ public:
 			return std::vector<Node*>{ value_, pattern_ };
 		}
 
-		virtual int hashCode() const override {
+		virtual size_t hashCode() const override {
 			return 0;
 		}
 
@@ -1603,7 +1603,7 @@ public:
 			return std::vector<Node*>{ value_, min_, max_ };
 		}
 
-		virtual int hashCode() const override {
+		virtual size_t hashCode() const override {
 			return 0;
 		}
 
@@ -1646,7 +1646,7 @@ public:
 			return std::vector<Node*>();
 		}
 
-		virtual int hashCode() const override {
+		virtual size_t hashCode() const override {
 			return 0;
 		}
 
@@ -1668,7 +1668,7 @@ public:
 	class JoinCriteria {
 	public:
 		virtual bool equals(const JoinCriteria& obj) = 0;
-		virtual int hashCode() = 0;
+		virtual size_t hashCode() = 0;
 		virtual std::string toString() = 0;
 		virtual std::vector<Node*> getNodes() const = 0;
 	};
@@ -1712,7 +1712,7 @@ public:
 			return result;
 		}
 
-		virtual int hashCode() const override {
+		virtual size_t hashCode() const override {
 			return 0;
 		}
 
@@ -1746,7 +1746,7 @@ public:
 			return false;
 		}
 
-		virtual int hashCode() override
+		virtual size_t hashCode() override
 		{
 			return 0;
 		}
@@ -1778,7 +1778,7 @@ public:
 			return false;
 		}
 
-		virtual int hashCode() override
+		virtual size_t hashCode() override
 		{
 			return 0;
 		}
@@ -1808,7 +1808,7 @@ public:
 			return false;
 		}
 
-		virtual int hashCode() override
+		virtual size_t hashCode() override
 		{
 			return 0;
 		}
@@ -1899,7 +1899,7 @@ public:
 			return result;
 		}
 
-		virtual int hashCode() const override {
+		virtual size_t hashCode() const override {
 			return 0;
 		}
 
@@ -1943,7 +1943,7 @@ public:
 			return false;
 		}
 
-		virtual int hashCode() const override
+		virtual size_t hashCode() const override
 		{
 			return 0;
 		}
@@ -1991,7 +1991,7 @@ public:
 			return result;
 		};
 
-		virtual int hashCode() const override {
+		virtual size_t hashCode() const override {
 			int result = 0;
 			//for (const auto& column : columns_) (column-> result.push_back(column);
 			return result;
@@ -2055,7 +2055,7 @@ public:
 			return result;
 		};
 
-		virtual int hashCode() const override {
+		virtual size_t hashCode() const override {
 			int result = 0;
 			//for (const auto& column : columns_) (column-> result.push_back(column);
 			return result;
