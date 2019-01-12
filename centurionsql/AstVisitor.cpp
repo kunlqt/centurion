@@ -78,7 +78,7 @@ namespace centurion {
 	antlrcpp::Any AstVisitor::visitNode(Node* node, antlr4::ParserRuleContext* context)
 	{
 		log_->trace("visitNode");
-		return nullptr;
+		return node;
 	}
 
 	antlrcpp::Any AstVisitor::visitDereferenceExpression(DereferenceExpression* node, antlr4::ParserRuleContext* context)
@@ -158,9 +158,7 @@ namespace centurion {
 		log_->trace("visitLiteral");
 		return visitExpression((Expression*)node, context);
 	}
-
-
-
+	   
 	antlrcpp::Any AstVisitor::visitNotExpression(NotExpression* node, antlr4::ParserRuleContext* context)
 	{
 		log_->trace("visitNotExpression");
@@ -269,6 +267,18 @@ namespace centurion {
 		return visitExpression((Expression*)node, context);
 	}
 
+	antlrcpp::Any AstVisitor::visitLikePredicate(LikePredicate* node, antlr4::ParserRuleContext* context)
+	{
+		log_->trace("visitLikePredicate");
+		return visitExpression(node, context);
+	}
+
+	antlrcpp::Any AstVisitor::visitBetweenPredicate(BetweenPredicate* node, antlr4::ParserRuleContext* context)
+	{
+		log_->trace("visitBetweenPredicate");
+		return visitExpression(node, context);
+	}
+
 	/*
 	antlrcpp::Any AstVisitor::visitCurrentTime(CurrentTime* node, antlr4::ParserRuleContext* context)
 	{
@@ -280,10 +290,6 @@ namespace centurion {
 		return visitExpression(node, context);
 	}
 
-	antlrcpp::Any AstVisitor::visitBetweenPredicate(BetweenPredicate* node, antlr4::ParserRuleContext* context)
-	{
-		return visitExpression(node, context);
-	}
 
 	antlrcpp::Any AstVisitor::visitCoalesceExpression(CoalesceExpression* node, antlr4::ParserRuleContext* context)
 	{
@@ -465,10 +471,6 @@ namespace centurion {
 		return visitExpression(node, context);
 	}
 
-	antlrcpp::Any AstVisitor::visitLikePredicate(LikePredicate* node, antlr4::ParserRuleContext* context)
-	{
-		return visitExpression(node, context);
-	}
 
 	antlrcpp::Any AstVisitor::visitArrayConstructor(ArrayConstructor* node, antlr4::ParserRuleContext* context)
 	{

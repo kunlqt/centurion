@@ -8,16 +8,18 @@
 #include "CaseInsensitiveStream.h"
 #include "AstBuilder.h"
 #include "ParsingOptions.h"
-#include "AstVisitor.h"
+#include "QualifiedNameBuilderVisitor.h"
 
 using namespace std;
 
 
 
 int main(int argc, const char * argv[]) {
+	auto rootLogger = spdlog::stdout_color_mt("root");
+	rootLogger->set_level(spdlog::level::err);
 	using namespace centurion;
 	std::stringstream stream;
-	stream << "SELeCT a.b.c.d.* FROM supercategory WHERE a.b.c.d.e.f='vasko' and person.age = 39";
+	stream << "SELeCT field1.subfield2.*, field3.subfield4, * FROM supercategory WHERE term1.subterm2='vasko' and term3.sub4.sub5.sub6=39 and field>34 or fieldx<50";
 	antlr4::CaseInsensitiveStream input(stream);
 	CentSqlLexer lexer(&input);
 	antlr4::CommonTokenStream tokens(&lexer);
@@ -29,10 +31,12 @@ int main(int argc, const char * argv[]) {
 		parser.getInterpreter<antlr4::atn::ParserATNSimulator>()->setPredictionMode(antlr4::atn::PredictionMode::SLL);
 		AstBuilder astBuilder(options);
 		tree = parser.singleStatement();
+		// std::wstring s = antlrcpp::s2ws(tree->toStringTree(&parser));
+		//std::wcout << s << std::endl;
 		auto statement = astBuilder.visitSingleStatement(dynamic_cast<CentSqlParser::SingleStatementContext*>(tree));
-		AstVisitor visitor;
-		visitor.process(statement);
-
+		QualifiedNameBuilderVisitor visitor;
+		antlrcpp::Any result = visitor.process(statement);
+		std::cout << result.isNull();
 	} catch (const antlr4::ParseCancellationException& exc) {
 		std::cout << exc.what() << std::endl;
 		tokens.reset();

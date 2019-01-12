@@ -109,6 +109,10 @@ namespace centurion {
 
 		virtual antlrcpp::Any visitInPredicate(InPredicate* node, antlr4::ParserRuleContext* context);
 
+		virtual antlrcpp::Any visitLikePredicate(LikePredicate* node, antlr4::ParserRuleContext* context);
+
+		virtual antlrcpp::Any visitBetweenPredicate(BetweenPredicate* node, antlr4::ParserRuleContext* context);
+
 		/*
 		virtual antlrcpp::Any visitCurrentTime(CurrentTime* node, antlr4::ParserRuleContext* context)
 		{
@@ -120,10 +124,6 @@ namespace centurion {
 			return visitExpression(node, context);
 		}
 
-		virtual antlrcpp::Any visitBetweenPredicate(BetweenPredicate* node, antlr4::ParserRuleContext* context)
-		{
-			return visitExpression(node, context);
-		}
 
 		virtual antlrcpp::Any visitCoalesceExpression(CoalesceExpression* node, antlr4::ParserRuleContext* context)
 		{
@@ -301,11 +301,6 @@ namespace centurion {
 		}
 
 		virtual antlrcpp::Any visitSearchedCaseExpression(SearchedCaseExpression* node, antlr4::ParserRuleContext* context)
-		{
-			return visitExpression(node, context);
-		}
-
-		virtual antlrcpp::Any visitLikePredicate(LikePredicate* node, antlr4::ParserRuleContext* context)
 		{
 			return visitExpression(node, context);
 		}

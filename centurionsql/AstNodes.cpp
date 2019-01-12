@@ -164,6 +164,14 @@ namespace centurion {
 		return visitor->visitSimpleGroupBy(this, context);
 	}
 
+	antlrcpp::Any LikePredicate::accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) {
+		return visitor->visitLikePredicate(this, context);
+	}
+
+	antlrcpp::Any BetweenPredicate::accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) {
+		return visitor->visitBetweenPredicate(this, context);
+	}
+
 	LogicalBinaryExpression::Operator LogicalBinaryExpression::Operator::AND(And, "AND");
 	LogicalBinaryExpression::Operator LogicalBinaryExpression::Operator::OR(Or, "OR");
 

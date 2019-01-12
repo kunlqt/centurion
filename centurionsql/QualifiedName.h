@@ -19,6 +19,11 @@ namespace centurion {
 			}
 		}
 
+		QualifiedName(const std::string originalPart) {
+			parts_.push_back(toLowerCopy(originalPart));
+			originalParts_.push_back(originalPart);
+		}
+
 		QualifiedName(const QualifiedName& other) {
 			for (const auto& s : other.getParts()) parts_.push_back(s);
 			for (const auto& s : other.getOriginalParts()) originalParts_.push_back(s);

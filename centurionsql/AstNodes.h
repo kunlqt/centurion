@@ -149,6 +149,32 @@ public:
 			return "DereferenceExpression";
 		}
 
+		static QualifiedName* getQualifiedName(DereferenceExpression* expression)
+		{
+			std::vector<std::string> parts = tryParseParts(expression->getBase(), toLowerCopy(expression->getField()->getValue()));
+			if (parts.empty())
+				return nullptr;
+			return new QualifiedName(parts);
+		}
+
+		static std::vector<std::string> tryParseParts(Expression* base, std::string fieldName)
+		{
+			Identifier* identifier = dynamic_cast<Identifier*>(base);
+			if (identifier) {
+				return std::vector<std::string> { identifier->getValue() };
+			} 
+			DereferenceExpression* dereferenceExpression = dynamic_cast<DereferenceExpression*>(base);
+			if (dereferenceExpression) {
+				QualifiedName* baseQualifiedName = getQualifiedName(dereferenceExpression);
+				if (baseQualifiedName != nullptr) {
+					auto newList = baseQualifiedName->getParts();
+					newList.push_back(fieldName);
+					return newList;
+				}
+			}
+			return std::vector<std::string>();
+		}
+
 		static Expression* from(const QualifiedName& name) {
 			Expression* result = nullptr;
 			for (const auto& part : name.getParts()) {
@@ -1499,6 +1525,112 @@ public:
 
 	private:
 		Expression* value_;
+	};
+
+	class LikePredicate : public Expression {
+	public:
+		LikePredicate(Expression* value, Expression* pattern, Expression* escape)
+			: LikePredicate(std::optional<NodeLocation>(), value, pattern, std::make_optional(escape)) {
+		}
+
+		LikePredicate(NodeLocation location, Expression* value, Expression* pattern, std::optional<Expression*> escape)
+			: LikePredicate(std::make_optional(location), value, pattern, escape) {
+		}
+
+		LikePredicate(std::optional<NodeLocation> location, Expression* value, Expression* pattern, std::optional<Expression*> escape)
+			: Expression(location)
+			, value_(value)
+			, pattern_(pattern)
+			, escape_(escape) {
+		}
+
+		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
+
+		virtual std::vector<Node*> getChildren() const override {
+			return std::vector<Node*>{ value_, pattern_ };
+		}
+
+		virtual int hashCode() const override {
+			return 0;
+		}
+
+		virtual bool equals(const Node& node) const override {
+			return false;
+		}
+
+		virtual std::string toString() const override {
+			return "LikePredicate";
+		}
+
+		Expression* getValue() const {
+			return value_;
+		}
+
+		Expression* getPattern() const {
+			return pattern_;
+		}
+
+		std::optional<Expression*> getEscape() const {
+			return escape_;
+		}
+
+	private:
+		Expression* value_;
+		Expression* pattern_;
+		std::optional<Expression*> escape_;
+	};
+
+	class BetweenPredicate: public Expression {
+	public:
+		BetweenPredicate(Expression* value, Expression* min, Expression* max)
+			: BetweenPredicate(std::optional<NodeLocation>(), value, min, max) {
+		}
+
+		BetweenPredicate(NodeLocation location, Expression* value, Expression* min, Expression* max)
+			: BetweenPredicate(std::make_optional(location), value, min, max) {
+		}
+
+		BetweenPredicate(std::optional<NodeLocation> location, Expression* value, Expression* min, Expression* max)
+			: Expression(location)
+			, value_(value)
+			, min_(min)
+			, max_(max) {
+		}
+
+		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
+
+		virtual std::vector<Node*> getChildren() const override {
+			return std::vector<Node*>{ value_, min_, max_ };
+		}
+
+		virtual int hashCode() const override {
+			return 0;
+		}
+
+		virtual bool equals(const Node& node) const override {
+			return false;
+		}
+
+		virtual std::string toString() const override {
+			return "BetweenPredicate";
+		}
+
+		Expression* getValue() const {
+			return value_;
+		}
+
+		Expression* getMin() const {
+			return min_;
+		}
+
+		Expression* getMax() const {
+			return max_;
+		}
+
+	private:
+		Expression* value_;
+		Expression* min_;
+		Expression* max_;
 	};
 
 	class Table : public QueryBody {
