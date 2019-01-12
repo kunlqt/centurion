@@ -760,9 +760,9 @@ namespace centurion {
 	antlrcpp::Any AstBuilder::visitGroupingOperation(CentSqlParser::GroupingOperationContext *ctx) {
 		
 		const auto& list = ctx->qualifiedName();
-		std::vector<QualifiedName> arguments;
+		std::vector<QualifiedName*> arguments;
 		for (const auto& listItem : list) {
-			arguments.emplace_back(getQualifiedName(listItem));
+			arguments.push_back(getQualifiedName(listItem));
 		}
 		return new GroupingOperation(std::make_optional(getLocation(ctx)), arguments);
 	}
@@ -955,7 +955,7 @@ namespace centurion {
 		return visitChildren(ctx);
 	}
 		
-	QualifiedName AstBuilder::getQualifiedName(CentSqlParser::QualifiedNameContext* ctx) {
+	QualifiedName* AstBuilder::getQualifiedName(CentSqlParser::QualifiedNameContext* ctx) {
 		auto idcp = ctx->identifier();
 		std::vector<antlr4::ParserRuleContext*> contexts;
 		for (auto& idcpItem : idcp) {
@@ -967,7 +967,7 @@ namespace centurion {
 			Identifier* item = visitResult;
 			parts.emplace_back(item->getValue());
 		}
-		return QualifiedName(parts);
+		return new QualifiedName(parts);
 	}
 
 	std::optional<std::string> AstBuilder::getTextIfPresent(antlr4::ParserRuleContext* ctx)

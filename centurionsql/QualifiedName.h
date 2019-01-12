@@ -7,21 +7,23 @@ namespace centurion {
 
 	class QualifiedName {
 	public:
+		QualifiedName() { }
+
 		QualifiedName(const std::vector<std::string>& parts, const std::vector<std::string>& originalParts) {
 			for (const auto& s : parts) parts_.push_back(s);
 			for (const auto& s : originalParts) originalParts_.push_back(s);
 		}
 
 		QualifiedName(const std::vector<std::string>& originalParts) {
-			for (const auto& s : originalParts) {
-				parts_.push_back(toLowerCopy(s));
-				originalParts_.push_back(s);
+			for (auto& s : originalParts) {
+				parts_.emplace_back(toLowerCopy(s));
+				originalParts_.emplace_back(s);
 			}
 		}
 
-		QualifiedName(const std::string originalPart) {
-			parts_.push_back(toLowerCopy(originalPart));
-			originalParts_.push_back(originalPart);
+		QualifiedName(std::string originalPart) {
+			parts_.emplace_back(toLowerCopy(originalPart));
+			originalParts_.emplace_back(originalPart);
 		}
 
 		QualifiedName(const QualifiedName& other) {

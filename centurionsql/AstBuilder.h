@@ -73,7 +73,7 @@ namespace centurion {
 			return result;
 		}
 
-		QualifiedName getQualifiedName(CentSqlParser::QualifiedNameContext* ctx);
+		QualifiedName* getQualifiedName(CentSqlParser::QualifiedNameContext* ctx);
 
 
     public:

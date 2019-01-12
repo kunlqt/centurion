@@ -17,7 +17,7 @@ public:
 		virtual std::optional<NodeLocation> getLocation() const { return location_; }
 		virtual std::vector<Node*> getChildren()  const = 0;
 		virtual size_t hashCode() const = 0;
-		virtual bool equals(const Node& node) const = 0;
+		virtual bool equals(const Node* node) const = 0;
 		virtual std::string toString() const = 0;
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context);
@@ -81,12 +81,14 @@ public:
 		}
 
 		virtual size_t hashCode() const override {
-			return (int)std::hash_value(value_);
+			return std::hash_value(value_);
 		}
 
-		virtual bool equals(const Node& node) const override {
-			//return getValue() == node.getValue();
-			return true;
+		virtual bool equals(const Node* node) const override {
+			if (node == nullptr) return false;
+			const auto identifier = dynamic_cast<const Identifier*>(node);
+			if (identifier == nullptr) return false;
+			return getValue() == identifier->getValue();
 		}
 
 		virtual std::string toString() const override {
@@ -138,11 +140,15 @@ public:
 		}
 
 		virtual size_t hashCode() const override {
-			return 0;
+			return hashCombine(base_->hashCode(), field_->hashCode());
 		}
 
-		virtual bool equals(const Node& node) const override {
-			return false;
+		virtual bool equals(const Node* node) const override {
+			if (node == nullptr) return false;
+			const auto expr  = dynamic_cast<const DereferenceExpression*>(node);
+			if (expr == nullptr) return false;
+			if (!expr->getField()->equals(getField())) return false;
+			return expr->getBase()->equals(getBase());
 		}
 
 		virtual std::string toString() const override {
@@ -159,25 +165,25 @@ public:
 
 		static std::vector<std::string> tryParseParts(Expression* base, std::string fieldName)
 		{
-			Identifier* identifier = dynamic_cast<Identifier*>(base);
+			const auto identifier = dynamic_cast<Identifier*>(base);
 			if (identifier) {
-				return std::vector<std::string> { identifier->getValue() };
+				return std::vector<std::string> { identifier->getValue(), fieldName };
 			} 
-			DereferenceExpression* dereferenceExpression = dynamic_cast<DereferenceExpression*>(base);
+			const auto dereferenceExpression = dynamic_cast<DereferenceExpression*>(base);
 			if (dereferenceExpression) {
 				QualifiedName* baseQualifiedName = getQualifiedName(dereferenceExpression);
 				if (baseQualifiedName != nullptr) {
 					auto newList = baseQualifiedName->getParts();
-					newList.push_back(fieldName);
+					newList.emplace_back(fieldName);
 					return newList;
 				}
 			}
 			return std::vector<std::string>();
 		}
 
-		static Expression* from(const QualifiedName& name) {
+		static Expression* from(const QualifiedName* name) {
 			Expression* result = nullptr;
-			for (const auto& part : name.getParts()) {
+			for (const auto& part : name->getParts()) {
 				if (result == nullptr) {
 					result = new Identifier(part);
 				} else {
@@ -232,12 +238,14 @@ public:
 		}
 
 		virtual size_t hashCode() const override {
-			std::hash<std::string> h;
-			return (int)h(value_);
+			return std::hash_value(value_);
 		}
 
-		virtual bool equals(const Node& node) const override {
-			return false;
+		virtual bool equals(const Node* node) const override {
+			if (node == nullptr) return false;
+			const auto identifier = dynamic_cast<const StringLiteral*>(node);
+			if (identifier == nullptr) return false;
+			return getValue() == identifier->getValue();
 		}
 
 		std::string getValue() const {
@@ -266,12 +274,14 @@ public:
 		}
 
 		virtual size_t hashCode() const override {
-			std::hash<std::string> h;
-			return (int)h(value_);
+			return std::hash_value(value_);
 		}
 
-		virtual bool equals(const Node& node) const override {
-			return false;
+		virtual bool equals(const Node* node) const override {
+			if (node == nullptr) return false;
+			const auto identifier = dynamic_cast<const DecimalLiteral*>(node);
+			if (identifier == nullptr) return false;
+			return getValue() == identifier->getValue();
 		}
 
 		std::string getValue() const {
@@ -309,11 +319,14 @@ public:
 		}
 
 		virtual size_t hashCode() const override {
-			return ((int)value_);
+			return ((size_t)value_);
 		}
 
-		virtual bool equals(const Node& node) const override {
-			return false;
+		virtual bool equals(const Node* node) const override {
+			if (node == nullptr) return false;
+			const auto identifier = dynamic_cast<const DoubleLiteral*>(node);
+			if (identifier == nullptr) return false;
+			return getValue() == identifier->getValue();
 		}
 
 	private:
@@ -343,15 +356,17 @@ public:
 		long getValue() const {
 			return value_;
 		}
-
+		
 		virtual size_t hashCode() const override {
-			return (value_);
+			return ((size_t)value_);
 		}
 
-		virtual bool equals(const Node& node) const override {
-			return false;
+		virtual bool equals(const Node* node) const override {
+			if (node == nullptr) return false;
+			const auto identifier = dynamic_cast<const LongLiteral*>(node);
+			if (identifier == nullptr) return false;
+			return getValue() == identifier->getValue();
 		}
-
 
 	private:
 		long value_;
@@ -383,11 +398,14 @@ public:
 		}
 
 		virtual size_t hashCode() const override {
-			return (value_);
+			return value_ ? 1 : 0;
 		}
 
-		virtual bool equals(const Node& node) const override {
-			return false;
+		virtual bool equals(const Node* node) const override {
+			if (node == nullptr) return false;
+			const auto identifier = dynamic_cast<const BooleanLiteral*>(node);
+			if (identifier == nullptr) return false;
+			return getValue() == identifier->getValue();
 		}
 
 
@@ -449,7 +467,7 @@ public:
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) const override {
+		virtual bool equals(const Node* node) const override {
 			return false;
 		}
 
@@ -498,7 +516,7 @@ public:
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) const override {
+		virtual bool equals(const Node* node) const override {
 			return false;
 		}
 
@@ -577,7 +595,7 @@ public:
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) const override {
+		virtual bool equals(const Node* node) const override {
 			return false;
 		}
 
@@ -620,7 +638,7 @@ public:
 		{
 			return 0;
 		}
-		virtual bool equals(const Node& node) const override
+		virtual bool equals(const Node* node) const override
 		{
 			return false;
 		}
@@ -689,7 +707,7 @@ public:
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) const override {
+		virtual bool equals(const Node* node) const override {
 			return false;
 		}
 
@@ -736,7 +754,7 @@ public:
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) const override {
+		virtual bool equals(const Node* node) const override {
 			return false;
 		}
 
@@ -795,7 +813,7 @@ public:
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) const override {
+		virtual bool equals(const Node* node) const override {
 			return false;
 		}
 
@@ -857,7 +875,7 @@ public:
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) const override {
+		virtual bool equals(const Node* node) const override {
 			return false;
 		}
 
@@ -920,7 +938,7 @@ public:
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) const override {
+		virtual bool equals(const Node* node) const override {
 			return false;
 		}
 
@@ -986,7 +1004,7 @@ public:
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) const override {
+		virtual bool equals(const Node* node) const override {
 			return false;
 		}
 
@@ -1045,7 +1063,7 @@ public:
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) const override {
+		virtual bool equals(const Node* node) const override {
 			return false;
 		}
 
@@ -1089,7 +1107,7 @@ public:
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) const override {
+		virtual bool equals(const Node* node) const override {
 			return false;
 		}
 
@@ -1150,7 +1168,7 @@ public:
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) const override {
+		virtual bool equals(const Node* node) const override {
 			return false;
 		}
 
@@ -1188,7 +1206,7 @@ public:
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) const override {
+		virtual bool equals(const Node* node) const override {
 			return false;
 		}
 
@@ -1211,27 +1229,27 @@ public:
 	public:
 		AllColumns()
 			: SelectItem(std::optional<NodeLocation>())
-			, prefix_(std::optional<QualifiedName>())
+			, prefix_(std::optional<QualifiedName*>())
 		{
 		}
 
 		AllColumns(const NodeLocation& location)
 			: SelectItem(std::optional<NodeLocation>(location))
-			, prefix_(std::optional<QualifiedName>())
+			, prefix_(std::optional<QualifiedName*>())
 		{
 		}
 
-		AllColumns(const QualifiedName& prefix)
-			: AllColumns(std::optional<NodeLocation>() , prefix) 
+		AllColumns(QualifiedName* prefix)
+			: AllColumns(std::optional<NodeLocation>(), prefix) 
 		{
 		}
 
-		AllColumns(const NodeLocation& location, const QualifiedName& prefix)
+		AllColumns(const NodeLocation& location, QualifiedName* prefix)
 			: AllColumns(std::optional<NodeLocation>(location), prefix) 
 		{
 		}
 
-		AllColumns(std::optional<NodeLocation> location, const QualifiedName& prefix)
+		AllColumns(std::optional<NodeLocation> location, QualifiedName* prefix)
 			: SelectItem(location), prefix_(prefix) {
 		}
 
@@ -1245,7 +1263,7 @@ public:
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) const override {
+		virtual bool equals(const Node* node) const override {
 			return false;
 		}
 
@@ -1253,12 +1271,12 @@ public:
 			return "AllColumns";
 		}
 
-		std::optional<QualifiedName> getPrefix() const {
+		std::optional<std::shared_ptr<QualifiedName>> getPrefix() const {
 			return prefix_;
 		}
 
 	private:
-		std::optional<QualifiedName> prefix_;
+		std::optional<std::shared_ptr<QualifiedName>> prefix_;
 	};
 
 	class GroupingElement : public Node {
@@ -1299,7 +1317,7 @@ public:
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) const override {
+		virtual bool equals(const Node* node) const override {
 			return false;
 		}
 
@@ -1319,7 +1337,7 @@ public:
 
 	class GroupingOperation : public Expression {
 	public:
-		GroupingOperation(const std::optional<NodeLocation>& location, const std::vector<QualifiedName>& groupingColumns) : Expression(location) {
+		GroupingOperation(const std::optional<NodeLocation>& location, const std::vector<QualifiedName*>& groupingColumns) : Expression(location) {
 			for (const auto& groupingColumn : groupingColumns) {
 				groupingColumns_.push_back(DereferenceExpression::from(groupingColumn));
 			}
@@ -1335,7 +1353,7 @@ public:
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) const override {
+		virtual bool equals(const Node* node) const override {
 			return false;
 		}
 
@@ -1375,7 +1393,7 @@ public:
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) const override
+		virtual bool equals(const Node* node) const override
 		{
 			return false;
 		}
@@ -1424,7 +1442,7 @@ public:
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) const override {
+		virtual bool equals(const Node* node) const override {
 			return false;
 		}
 
@@ -1467,7 +1485,7 @@ public:
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) const override {
+		virtual bool equals(const Node* node) const override {
 			return false;
 		}
 
@@ -1511,7 +1529,7 @@ public:
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) const override {
+		virtual bool equals(const Node* node) const override {
 			return false;
 		}
 
@@ -1554,7 +1572,7 @@ public:
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) const override {
+		virtual bool equals(const Node* node) const override {
 			return false;
 		}
 
@@ -1607,7 +1625,7 @@ public:
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) const override {
+		virtual bool equals(const Node* node) const override {
 			return false;
 		}
 
@@ -1636,9 +1654,9 @@ public:
 	class Table : public QueryBody {
 
 	public:
-		Table(std::optional<NodeLocation> location, const QualifiedName& name) : QueryBody(location), name_(name) { }
-		Table(const QualifiedName& name) : QueryBody(std::nullopt), name_(name) { }
-		Table(NodeLocation location, const QualifiedName& name) : QueryBody(location), name_(name) { }
+		Table(std::optional<NodeLocation> location, QualifiedName* name) : QueryBody(location), name_(name) { }
+		Table(QualifiedName* name) : QueryBody(std::nullopt), name_(name) { }
+		Table(NodeLocation location, QualifiedName* name) : QueryBody(location), name_(name) { }
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
@@ -1650,7 +1668,7 @@ public:
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) const override {
+		virtual bool equals(const Node* node) const override {
 			return false;
 		}
 
@@ -1658,10 +1676,10 @@ public:
 			return "Table";
 		}
 
-		const QualifiedName& getName() const { return name_; }
+		const QualifiedName* getName() const { return name_; }
 
 	private:
-		QualifiedName name_;
+		QualifiedName* name_;
 
 	};
 
@@ -1716,7 +1734,7 @@ public:
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) const override {
+		virtual bool equals(const Node* node) const override {
 			return false;
 		}
 
@@ -1903,7 +1921,7 @@ public:
 			return 0;
 		}
 
-		virtual bool equals(const Node& node) const override {
+		virtual bool equals(const Node* node) const override {
 			return false;
 		}
 
@@ -1938,7 +1956,7 @@ public:
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual bool equals(const Node& obj) const override
+		virtual bool equals(const Node* node) const override
 		{
 			return false;
 		}
@@ -1997,7 +2015,7 @@ public:
 			return result;
 		}
 
-		virtual bool equals(const Node& node) const override {
+		virtual bool equals(const Node* node) const override {
 			return false;
 		}
 
@@ -2061,7 +2079,7 @@ public:
 			return result;
 		}
 
-		virtual bool equals(const Node& node) const override {
+		virtual bool equals(const Node* node) const override {
 			return false;
 		}
 
