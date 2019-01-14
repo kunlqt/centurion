@@ -16,11 +16,10 @@ using namespace std;
 
 int main(int argc, const char * argv[]) {
 	auto rootLogger = spdlog::stdout_color_mt("root");
-	rootLogger->set_level(spdlog::level::err);
+	rootLogger->set_level(spdlog::level::trace);
 	using namespace centurion;
 	std::stringstream stream;
-	stream << "SELeCT field1.subfield2.*, field3.subfield4, * FROM supercategory WHERE term1.subterm2='vasko' and term3.sub4.sub5.sub6=39 and field>34 or fieldx<50";
-	//stream << "SELeCT field1.subfield2.subfield3";
+	stream << "SELeCT field1.subfield2.*, field3.subfield4, * FROM supercategory WHERE term1.subterm2='vas'+'ko' and term3.sub4.sub5.sub6=(((3+9)/2)*7)-4 and field>3.1-4 or fieldx<50 and z>1.34";
 	antlr4::CaseInsensitiveStream input(stream);
 	CentSqlLexer lexer(&input);
 	antlr4::CommonTokenStream tokens(&lexer);
@@ -32,13 +31,13 @@ int main(int argc, const char * argv[]) {
 		parser.getInterpreter<antlr4::atn::ParserATNSimulator>()->setPredictionMode(antlr4::atn::PredictionMode::SLL);
 		AstBuilder astBuilder(options);
 		tree = parser.singleStatement();
-		// std::wstring s = antlrcpp::s2ws(tree->toStringTree(&parser));
-		//std::wcout << s << std::endl;
+		std::wstring s = antlrcpp::s2ws(tree->toStringTree(&parser));
+		std::wcout << s << std::endl;
 		auto statement = astBuilder.visitSingleStatement(dynamic_cast<CentSqlParser::SingleStatementContext*>(tree));
 		QualifiedNameBuilderVisitor visitor;
 		QualifiedNameBuilder builder;
-		antlrcpp::Any result = visitor.process(statement, &builder);
-		std::cout << result.isNull();
+		visitor.process(statement, &builder);
+		std::cout << builder.toString() << std::endl;
 	} catch (const antlr4::ParseCancellationException& exc) {
 		std::cout << exc.what() << std::endl;
 		tokens.reset();

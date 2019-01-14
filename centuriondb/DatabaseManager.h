@@ -1,13 +1,12 @@
 #pragma once
 
-#include "TraversalVisitorResult.h"
-#include "DocumentIndexer.h"
 #include "SearchIterator.h"
-#include "IndexNameStore.h"
 #include "DocumentStore.h"
+#include "IndexNameStore.h"
 #include "StringValueIndexStore.h"
 #include "DoubleValueIndexStore.h"
 #include "BooleanValueIndexStore.h"
+#include "StringArrayValueIndexStore.h"
 #include <rapidjson/document.h>
 #include <boost/filesystem/path.hpp>
 #include <string>
@@ -27,11 +26,14 @@ namespace centurion
 
 	public:
 		DatabaseManager(boost::filesystem::path databaseRootDir);
-		size_t searchDocuments(TraversalVisitorResult* visitorResult, rapidjson::Document& results, DocumentId startFrom, size_t limit);
+		size_t searchDocuments(
+			std::vector<std::string> qualifiedNames,
+			std::shared_ptr<SearchIterator> rootSearchIterator,
+			rapidjson::Document& results,
+			DocumentId startFrom,
+			size_t limit);
 		std::vector<DocumentId> insertDocuments(rapidjson::StringStream& is);
-		std::vector<centurion::SearchIterator*> buildSearchIterators(rapidjson::StringStream& query) const;
-		centurion::SearchIterator* buildSearchIterator(const rapidjson::Value& searchTerm) const;
-
+	
 		const DocumentStore& documentStore() const { return documentStore_; };
 		const IndexNameStore& indexNameStore() const { return indexNameStore_; };
 		const StringValueIndexStore& isvs() const { return isvs_; };
@@ -40,8 +42,7 @@ namespace centurion
 		const StringArrayValueIndexStore& savs() const { return savs_; };
 
 	private:
-		inline std::vector<std::string> createSelectedFields(SelectedFields* selectFields) const;
-
+	
 		boost::filesystem::path databaseRootDir_;
 		centurion::DocumentStore documentStore_;
 		centurion::IndexNameStore indexNameStore_;

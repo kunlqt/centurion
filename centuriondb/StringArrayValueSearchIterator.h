@@ -4,9 +4,7 @@
 #include "IndexId.h"
 #include "DocumentId.h"
 #include "SearchIterator.h"
-#include "StringArrayValueIndexStore.h"
 #include "Dumper.h"
-#include <rocksdb/db.h>
 #include <spdlog/spdlog.h>
 #include <string>
 
@@ -17,14 +15,14 @@ namespace centurion
 		StringArrayValueSearchIterator(const StringArrayValueSearchIterator&) = delete;
 		StringArrayValueSearchIterator(StringArrayValueSearchIterator&& other) = delete;
 
-		static StringArrayValueSearchIterator* eq(const StringArrayValueIndexStore& store, std::string fieldName, const std::string& str)
+		static StringArrayValueSearchIterator* eq(std::string fieldName, const std::string& str)
 		{
-			return new StringArrayValueSearchIterator(store, fieldName, str);
+			return new StringArrayValueSearchIterator(fieldName, str);
 		}
 
-		static StringArrayValueSearchIterator* eq(const StringArrayValueIndexStore& store, std::string fieldName, const char* str, std::uint32_t strSize)
+		static StringArrayValueSearchIterator* eq(std::string fieldName, const char* str, std::uint32_t strSize)
 		{
-			return new StringArrayValueSearchIterator(store, fieldName, str);
+			return new StringArrayValueSearchIterator(fieldName, str);
 		}
 
 		virtual ~StringArrayValueSearchIterator() override
@@ -34,7 +32,10 @@ namespace centurion
 			delete iterator_;
 		}
 
-		void seek(std::function<IndexId(const std::string&)> fieldNameResolver, DocumentId documentId) override
+		void seek(
+			std::function<IndexId(FieldType, const std::string&)> fieldNameResolver,
+			std::function<rocksdb::Iterator*(FieldType, rocksdb::ReadOptions& opts)> iteratorBuilder,
+			DocumentId documentId) override
 		{
 			auto console = spdlog::get("root");
 			delete[] lowerSliceBuf_;
@@ -43,7 +44,7 @@ namespace centurion
 			upperSliceBuf_ = nullptr;
 			delete iterator_;
 			iterator_ = nullptr;
-			indexId_ = fieldNameResolver(fieldName_);
+			indexId_ = fieldNameResolver(kStringArray, fieldName_);
 			if (indexId_ == InvalidIndexId)
 			{
 				console->error("Field name: {0} not found", fieldName_);
@@ -61,7 +62,7 @@ namespace centurion
 			upperBoundSlice_ = rocksdb::Slice(upperSliceBuf_, upperSliceBufSize);
 			opts_.iterate_lower_bound = &lowerBoundSlice_;
 			opts_.iterate_upper_bound = &upperBoundSlice_;
-			iterator_ = store_.newIterator(opts_);
+			iterator_ = iteratorBuilder(kStringArray, opts_);
 			iterator_->Seek(lowerBoundSlice_);
 			if (iterator_->Valid()) {
 				if (checkUpperBound()) {
@@ -115,9 +116,8 @@ namespace centurion
 		IndexId indexId() const { return indexId_; }
 
 	private:
-		StringArrayValueSearchIterator(const IndexedValuesStore& store, std::string fieldName, std::string value)
+		StringArrayValueSearchIterator(std::string fieldName, std::string value)
 			:
-			store_(store),
 			fieldName_(fieldName),
 			value_(std::move(value)),
 			indexId_(InvalidIndexId),
@@ -144,7 +144,6 @@ namespace centurion
 			}
 			return false;
 		}
-		const IndexedValuesStore& store_;
 		std::string fieldName_;
 		IndexId indexId_;
 		std::string value_;

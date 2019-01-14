@@ -2,6 +2,7 @@
 #include "Utils.h"
 #include <vector>
 #include <string>
+#include <sstream>
 
 namespace centurion {
 
@@ -37,6 +38,21 @@ namespace centurion {
 
 		std::vector<std::string> getOriginalParts() const {
 			return originalParts_;
+		}
+
+		std::string toString() const
+		{
+			std::stringstream ss;
+			if (parts_.empty())
+			{
+				ss << "/";
+			} else {
+				for (const auto& part : parts_)
+				{
+					ss << "/" << part;
+				}
+			}
+			return ss.str();
 		}
 
 	private:

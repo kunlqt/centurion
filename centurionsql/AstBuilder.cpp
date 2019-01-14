@@ -18,6 +18,15 @@ namespace centurion {
 	static SortItem::Ordering getOrderingType(antlr4::Token* token);
 	static SortItem::NullOrdering getNullOrderingType(antlr4::Token* token);
 
+	template <typename To>
+	std::vector<To> castAnyVector(std::vector<antlrcpp::Any>& from) {
+		std::vector<To> to;
+		for (auto& f : from) {
+			to.push_back(f.as<To>());
+		}
+		return to;
+	}
+
 	AstBuilder::AstBuilder(ParsingOptions parsingOptions) 
 		: 
 		parameterPosition_(0),

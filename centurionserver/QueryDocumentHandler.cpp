@@ -12,9 +12,9 @@ namespace  centurion {
 		centurion::SearchIteratorBuilder builder;
 		log->trace("creating build query...");
 		std::stringstream ss(query);
-		const auto traversalVisitorResult = builder.buildQuery(dbm, ss);
+		const auto res = builder.buildQuery(ss);
 		log->trace("creating search documents...");		
-		size_t totalDocumentsFound = dbm.searchDocuments(traversalVisitorResult.get(), results, 0, 100);
+		size_t totalDocumentsFound = dbm.searchDocuments(res.qualifiedNames(), res.rootSearchIterator(), results, 0, 100);
 		log->trace("Search documents finished, found {}", totalDocumentsFound);
 
 	}

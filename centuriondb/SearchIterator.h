@@ -2,7 +2,8 @@
 
 #include "DocumentId.h"
 #include "IndexId.h"
-#include <iterator>
+#include <rocksdb/iterator.h>
+#include <rocksdb/options.h>
 #include <functional>
 
 namespace centurion
@@ -27,13 +28,17 @@ namespace centurion
 		lhs = lhs | rhs;
 		return lhs;
 	}
-	   
+	enum FieldType { kDouble, kBoolean, kString, kStringArray };
+	
 	struct SearchIterator
 	{		
 		SearchIterator() : stateFlags_(BeforeFirst) {}
 		virtual ~SearchIterator() {};
 		virtual DocumentId current() const = 0;
-		virtual void seek(std::function<IndexId(const std::string&)> fieldNameResolver, DocumentId documentId) = 0;
+		virtual void seek(
+			std::function<IndexId(FieldType, const std::string&)> fieldNameResolver,
+			std::function<rocksdb::Iterator*(FieldType, rocksdb::ReadOptions& opts)> iteratorBuilder,
+			DocumentId documentId) = 0;
 		virtual void next() = 0;
 
 		virtual bool valid() const 

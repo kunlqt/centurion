@@ -5,7 +5,6 @@
 #include <cwctype>
 #include <locale>
 #include <vector>
-#include <antlr4-runtime.h>
 
 namespace centurion {
 	static inline std::string& replace(std::string& s, const std::string& from, const std::string& to)
@@ -37,14 +36,7 @@ namespace centurion {
 		return to;
 	}
 
-	template <typename To>
-	std::vector<To> castAnyVector(std::vector<antlrcpp::Any>& from) {
-		std::vector<To> to;
-		for (auto& f : from) {
-			to.push_back(f.as<To>());
-		}
-		return to;
-	}
+
 
 	inline void removeQuotes(std::string& value)
 	{

@@ -3,10 +3,7 @@
 #include "IndexId.h"
 #include "DocumentId.h"
 #include "SearchIterator.h"
-#include "BooleanValueIndexStore.h"
-#include <rocksdb/db.h>
 #include <spdlog/spdlog.h>
-#include <spdlog/sinks/stdout_color_sinks.h>
 
 namespace centurion
 {
@@ -21,9 +18,9 @@ namespace centurion
 		BooleanValueSearchIterator(const BooleanValueSearchIterator&) = delete;
 		BooleanValueSearchIterator(BooleanValueSearchIterator&& other) = delete;
 
-		static BooleanValueSearchIterator* eq(const BooleanValueIndexStore& store, std::string fieldName, bool value)
+		static BooleanValueSearchIterator* eq(std::string fieldName, bool value)
 		{
-			return new BooleanValueSearchIterator(store, fieldName, value);
+			return new BooleanValueSearchIterator(fieldName, value);
 		}
 
 		virtual ~BooleanValueSearchIterator() override
@@ -33,7 +30,10 @@ namespace centurion
 			delete iterator_;
 		}
 
-		void seek(std::function<IndexId(const std::string&)> fieldNameResolver, DocumentId documentId) override
+		void seek(
+			std::function<IndexId(FieldType, const std::string&)> fieldNameResolver,
+			std::function<rocksdb::Iterator*(FieldType, rocksdb::ReadOptions& opts)> iteratorBuilder,
+			DocumentId documentId) override
 		{	
 			auto console = spdlog::get("root");
 			delete[] lowerSliceBuf_;
@@ -42,7 +42,7 @@ namespace centurion
 			upperSliceBuf_ = nullptr;
 			delete iterator_;
 			iterator_ = nullptr;
-			indexId_ = fieldNameResolver(fieldName_);
+			indexId_ = fieldNameResolver(kBoolean, fieldName_);
 			if (indexId_ == InvalidIndexId)
 			{
 				console->error("Field name: {0} not found", fieldName_);
@@ -59,7 +59,7 @@ namespace centurion
 			upperBoundSlice_ = (buildBooleanSlice(value_ ? indexId_ + 1 : indexId_, !value_, upperSliceBuf_, upperSliceBufSize_));
 			opts_.iterate_lower_bound = &lowerBoundSlice_;
 			opts_.iterate_upper_bound = &upperBoundSlice_;			
-			iterator_ = store_.newIterator(opts_);
+			iterator_ = iteratorBuilder(kBoolean, opts_);
 			iterator_->Seek(lowerBoundSlice_);
 			if (iterator_->Valid()) {
 				if (checkUpperBound()) {
@@ -112,10 +112,9 @@ namespace centurion
 		IndexId indexId() const { return indexId_; }
 
 	private:
-		BooleanValueSearchIterator(const IndexedValuesStore& store, std::string fieldName, bool value)
+		BooleanValueSearchIterator(std::string fieldName, bool value)
 			:
-			store_(store),
-			fieldName_(fieldName),			
+			fieldName_(std::move(fieldName)),			
 			indexId_(InvalidIndexId),
 			value_(value),
 			lowerSliceBuf_(nullptr),
@@ -136,7 +135,6 @@ namespace centurion
 			return false;
 		}
 
-		const IndexedValuesStore& store_;
 		std::string fieldName_;
 		IndexId indexId_;
 		bool value_;

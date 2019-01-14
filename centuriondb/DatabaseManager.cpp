@@ -1,8 +1,6 @@
 #include "DatabaseManager.h"
-#include "StringValueSearchIterator.h"
-#include "DoubleValueSearchIterator.h"
-#include "BooleanValueSearchIterator.h"
-
+#include "DocumentIndexer.h"
+#include <rapidjson/pointer.h>
 
 namespace centurion {
 
@@ -17,41 +15,40 @@ namespace centurion {
 		savs_(databaseRootDir_ / iasDirName)
 	{}
 
-	inline std::vector<std::string> DatabaseManager::createSelectedFields(SelectedFields* selectFields) const
-	{
-		std::vector<std::string> result;
-		auto fields = selectFields;
-		bool selectAllFields = true;
-		if (!fields->empty()) {
-			for (auto fieldIter = fields->begin();
-				fieldIter != fields->end();
-				++fieldIter)
-			{
-				if (*fieldIter == "/")
-				{
-					return std::vector<std::string>();
-				}
-				result.push_back(fieldIter->c_str());
-			}
-			mergeOverlappingFields(result);
-		}
-		return result;
-	}
-
-	size_t DatabaseManager::searchDocuments(TraversalVisitorResult* visitorResult, rapidjson::Document& results, DocumentId startFrom, size_t limit)
+	size_t DatabaseManager::searchDocuments(
+		std::vector<std::string> qualifiedNames,
+		std::shared_ptr<SearchIterator> rootSearchIterator,
+		rapidjson::Document& results, 
+		DocumentId startFrom, 
+		size_t limit)
 	{
 		auto console = spdlog::get("root");
-		auto selectFields = createSelectedFields(visitorResult->selectFields);
-		visitorResult->searchRootIterator->seek([this](const std::string& fieldName) { return indexNameStore_.findIndexId(fieldName); },  MinDocumentId);
+		auto selectFields = std::move(qualifiedNames);
+		mergeOverlappingFields(selectFields);
+		rootSearchIterator->seek(
+			[this](FieldType fieldType, const std::string& fieldName) { return indexNameStore_.findIndexId(fieldName); },
+			[this](FieldType fieldType, rocksdb::ReadOptions& opts)
+			{
+				switch (fieldType)
+				{
+					case kDouble: return idvs_.newIterator(opts);
+					case kBoolean: return ibvs_.newIterator(opts);
+					case kString: return isvs_.newIterator(opts);
+					case kStringArray: return savs_.newIterator(opts);
+					default:
+						throw std::runtime_error("Unsupported field type");
+				}
+			},
+			MinDocumentId);
 		results.SetArray();
 		rapidjson::Value::AllocatorType& allocator = results.GetAllocator();
 		results.Reserve(limit, allocator);
 		size_t totalDocumentsFound = 0;
 		for (size_t cnt = 0; cnt < limit; cnt++) {
-			if (!visitorResult->searchRootIterator->valid()) {
+			if (!rootSearchIterator->valid()) {
 				break;
 			}
-			const auto documentId = visitorResult->searchRootIterator->current();
+			const auto documentId = rootSearchIterator->current();
 			console->trace("Found document id: {}", documentId);
 			totalDocumentsFound++;
 			auto result = documentStore_.findDocument(documentId, allocator);
@@ -72,7 +69,7 @@ namespace centurion {
 					results.PushBack(resultFitered, allocator);
 				}
 			}
-			visitorResult->searchRootIterator->next();
+			rootSearchIterator->next();
 		}
 		console->trace("Total: {} documents found", totalDocumentsFound);
 		return totalDocumentsFound;
@@ -129,68 +126,5 @@ namespace centurion {
 		return result;
 	}
 
-	std::vector<centurion::SearchIterator*> DatabaseManager::buildSearchIterators(rapidjson::StringStream& query) const
-	{
-		std::vector<centurion::SearchIterator*> searchIterators;
-		auto console = spdlog::get("root");
-		rapidjson::Document doc;
-		doc.ParseStream(query);
-		if (doc.HasParseError())
-		{
-			throw std::runtime_error("json query parse error");
-		}
-		if (doc.IsArray())
-		{
-			for (const auto& searchTerm : doc.GetArray())
-			{
-				searchIterators.push_back(buildSearchIterator(searchTerm));
-			}
-		} else if (doc.IsObject())
-		{
-			searchIterators.push_back(buildSearchIterator(doc));
-		} else {
-			throw std::runtime_error("json query is not and object or array of search terms");
-		}
-
-		return searchIterators;
-	}
-	
-	centurion::SearchIterator* DatabaseManager::buildSearchIterator(const rapidjson::Value& searchTerm) const
-	{
-		if (!searchTerm.IsObject())
-		{
-			throw std::runtime_error("json query array of search terms element is not an object");
-		}
-		if (!searchTerm.HasMember("path"))
-		{
-			throw std::runtime_error("missing query field: 'path'");
-		}
-		if (!searchTerm.HasMember("op"))
-		{
-			throw std::runtime_error("missing query field: 'op'");
-		}
-		if (!searchTerm.HasMember("value"))
-		{
-			throw std::runtime_error("missing query field: 'value'");
-		}
-
-		std::string field = searchTerm["path"].GetString();
-		std::string op = searchTerm["op"].GetString();
-		const auto& val = searchTerm["value"];
-		if (val.IsString())
-		{
-			return(StringValueSearchIterator::eq(isvs_, field, val.GetString()));
-		} else if (val.IsNumber())
-		{
-			if (op == "eq") {
-				return(DoubleValueSearchIterator::eq(idvs_, field, val.GetDouble()));
-			}
-		} else if (val.IsBool()) {
-			if (op == "eq") {
-				return(BooleanValueSearchIterator::eq(ibvs_, field, val.GetBool()));
-			}
-		}
-		throw std::runtime_error("error");
-	}
 
 }

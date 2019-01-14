@@ -8,13 +8,11 @@
 #include <atn/ParserATNSimulator.h>
 
 #include "SearchIteratorBuilder.h"
-#include "SearchIterator.h"
-#include "DefaultTraversalVisitor.h"
-
+#include "QualifiedNameBuilderVisitor.h"
 
 namespace centurion {
 	
-	std::shared_ptr<TraversalVisitorResult> SearchIteratorBuilder::buildQuery(DatabaseManager& dbm, std::istream& query)
+	QualifiedNameBuilder SearchIteratorBuilder::buildQuery(std::istream& query)
 	{
 		auto console = spdlog::get("root");
 		console->trace("Starting SQL parser...");
@@ -31,11 +29,11 @@ namespace centurion {
 			console->trace("Visiting single sql statement");
 			antlr4::ParserRuleContext* tree = parser.singleStatement();
 			auto statement = astBuilder.visitSingleStatement(dynamic_cast<CentSqlParser::SingleStatementContext*>(tree));
-			DefaultTraversalVisitor visitor(dbm);
-			StackableAstVisitor::StackableAstVisitorContext parserContext;
-			std::shared_ptr<TraversalVisitorResult> res = visitor.process(statement, &parserContext);
+			QualifiedNameBuilderVisitor visitor;
+			QualifiedNameBuilder parserContext;
+			visitor.process(statement, &parserContext);
 			console->trace("Parsing done, returning results");
-			return res;
+			return parserContext;
 		} catch (const antlr4::ParseCancellationException& exc) {
 			console->error("SQL parse error: {}", exc.what());
 			throw;

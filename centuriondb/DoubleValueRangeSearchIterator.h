@@ -4,9 +4,6 @@
 #include "DocumentId.h"
 #include "SearchIterator.h"
 #include "Utils.h"
-#include "IndexedValuesStore.h"
-#include "DoubleValueIndexStore.h"
-#include <rocksdb/db.h>
 #include <spdlog/spdlog.h>
 
 namespace centurion
@@ -21,35 +18,38 @@ namespace centurion
 			
 		}
 
-		static DoubleValueRangeSearchIterator* lt(const DoubleValueIndexStore& store, std::string fieldName, double val, double eps = DefaultComparisionPrecision)
+		static DoubleValueRangeSearchIterator* lt(std::string fieldName, double val, double eps = DefaultComparisionPrecision)
 		{
-			return new DoubleValueRangeSearchIterator(store, fieldName, std::numeric_limits<double>::min(), val - eps);
+			return new DoubleValueRangeSearchIterator(fieldName, std::numeric_limits<double>::min(), val - eps);
 		}
 
-		static DoubleValueRangeSearchIterator* gt(const DoubleValueIndexStore& store, std::string fieldName, double val, double eps = DefaultComparisionPrecision)
+		static DoubleValueRangeSearchIterator* gt(std::string fieldName, double val, double eps = DefaultComparisionPrecision)
 		{
-			return new DoubleValueRangeSearchIterator(store, fieldName, val + eps, std::numeric_limits<double>::max());
+			return new DoubleValueRangeSearchIterator(fieldName, val + eps, std::numeric_limits<double>::max());
 		}
 
-		static DoubleValueRangeSearchIterator* lte(const DoubleValueIndexStore& store, std::string fieldName, double val, double eps = DefaultComparisionPrecision)
+		static DoubleValueRangeSearchIterator* lte(std::string fieldName, double val, double eps = DefaultComparisionPrecision)
 		{
-			return new DoubleValueRangeSearchIterator(store, fieldName, std::numeric_limits<double>::min(), val + (eps / 2));
+			return new DoubleValueRangeSearchIterator(fieldName, std::numeric_limits<double>::min(), val + (eps / 2));
 		}
 
-		static DoubleValueRangeSearchIterator* gte(const DoubleValueIndexStore& store, std::string fieldName, double val, double eps = DefaultComparisionPrecision)
+		static DoubleValueRangeSearchIterator* gte(std::string fieldName, double val, double eps = DefaultComparisionPrecision)
 		{
-			return new DoubleValueRangeSearchIterator(store, fieldName, val - (eps / 2), std::numeric_limits<double>::max());
+			return new DoubleValueRangeSearchIterator(fieldName, val - (eps / 2), std::numeric_limits<double>::max());
 		}
 
-		static DoubleValueRangeSearchIterator* between(const DoubleValueIndexStore& store, std::string fieldName, double lower, double upper, double eps = DefaultComparisionPrecision)
+		static DoubleValueRangeSearchIterator* between(std::string fieldName, double lower, double upper, double eps = DefaultComparisionPrecision)
 		{
-			return new DoubleValueRangeSearchIterator(store, fieldName, lower + eps, upper - eps);
+			return new DoubleValueRangeSearchIterator(fieldName, lower + eps, upper - eps);
 		}
 
-		void seek(std::function<IndexId(const std::string&)> fieldNameResolver, DocumentId documentId) override
+		void seek(
+			std::function<IndexId(FieldType, const std::string&)> fieldNameResolver,
+			std::function<rocksdb::Iterator*(FieldType, rocksdb::ReadOptions& opts)> iteratorBuilder,
+			DocumentId documentId) override
 		{
 			auto console = spdlog::get("root");
-			indexId_ = fieldNameResolver(fieldName_);
+			indexId_ = fieldNameResolver(kDouble, fieldName_);
 			if (indexId_ == InvalidIndexId)
 			{
 				console->error("Field name: {0} not found", fieldName_);
@@ -69,7 +69,7 @@ namespace centurion
 			opts_.iterate_lower_bound = &lowerBoundSlice_;
 			opts_.iterate_upper_bound = &upperBoundSlice_;
 
-			rocksdb::Iterator* iterator = store_.newIterator(opts_);
+			rocksdb::Iterator* iterator = iteratorBuilder(kDouble, opts_);
 			iterator->Seek(lowerBoundSlice_);
 			while (iterator->Valid()) {
 				if (checkUpperBound(iterator->key().data()))
@@ -120,9 +120,8 @@ namespace centurion
 		IndexId indexId() const { return indexId_; }
 
 	private:
-		DoubleValueRangeSearchIterator(const IndexedValuesStore& store, std::string fieldName, double lowerBound, double upperBound)
+		DoubleValueRangeSearchIterator(std::string fieldName, double lowerBound, double upperBound)
 			:
-			store_(store),
 			fieldName_(fieldName),			
 			indexId_(InvalidIndexId),
 			lowerBound_(lowerBound),
@@ -148,7 +147,6 @@ namespace centurion
 			return false;
 		}
 		std::string fieldName_;
-		const IndexedValuesStore& store_;
 		IndexId indexId_;
 		double lowerBound_;
 		double upperBound_;

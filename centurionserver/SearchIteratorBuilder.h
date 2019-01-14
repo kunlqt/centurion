@@ -1,13 +1,11 @@
 #pragma once
-
-#include "DatabaseManager.h"
-#include "TraversalVisitorResult.h"
+#include "QualifiedNameBuilder.h"
 
 namespace centurion {
 	class SearchIteratorBuilder
 	{
 	public:
-		std::shared_ptr<TraversalVisitorResult> buildQuery(DatabaseManager& dbm, std::istream& query);
+		QualifiedNameBuilder buildQuery(std::istream& query);
 
 	};
 }
