@@ -326,7 +326,7 @@ namespace centurion {
 		std::vector<SelectItem*> selectItems;
 		for (auto& visitSelectItemResultItem : visitSelectItemResult) {
 			selectItems.push_back(visitSelectItemResultItem);
-		}
+		}		
 		std::vector<antlrcpp::Any> visitRelationResult = visit(castVector<CentSqlParser::RelationContext*, antlr4::ParserRuleContext*>(ctx->relation()));
 		std::vector<Relation*> relations;
 		for (auto& item : visitRelationResult) {

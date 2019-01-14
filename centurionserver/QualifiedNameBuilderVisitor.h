@@ -233,6 +233,16 @@ namespace centurion {
 			}
 			return new SearchIteratorIn(iterators);
 		}
+
+		virtual antlrcpp::Any visitInListExpression(InListExpression* node, antlr4::ParserRuleContext* context) override
+		{
+			log_->trace("visitInListExpression");
+			std::vector<antlrcpp::Any> result;
+			for (Expression* value : node->getValues()) {				
+				result.emplace_back(std::move(process(value, context)));
+			}
+			return result;
+		}
 		
 		antlrcpp::Any visitLogicalBinaryExpression(LogicalBinaryExpression* logicalExpr, antlr4::ParserRuleContext* context) override
 		{

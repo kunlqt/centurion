@@ -49,6 +49,7 @@ namespace centurion
 			DocumentId documentId) override
 		{
 			auto console = spdlog::get("root");
+			documentBufferPos_ = 0;
 			indexId_ = fieldNameResolver(kDouble, fieldName_);
 			if (indexId_ == InvalidIndexId)
 			{
@@ -56,7 +57,7 @@ namespace centurion
 				setState(AfterLast);
 				currentDocumentId_ = InvalidDocumentId;
 				return;
-			}
+			}			
 			size_t lowerSliceBufSize_ = (sizeof(IndexId) + sizeof(double) + sizeof(DocumentId));
 			char* lowerSliceBuf_ = (new char[lowerSliceBufSize_]);
 			size_t upperSliceBufSize_ = (sizeof(IndexId) + sizeof(double) + sizeof(DocumentId));

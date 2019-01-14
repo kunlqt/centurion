@@ -124,7 +124,9 @@ namespace centurion
 			lowerSliceBuf_(nullptr),
 			upperBound_(upperBound),
 			upperSliceBuf_(nullptr),
-			iterator_(nullptr) {
+			iterator_(nullptr),
+			currentDocumentId_(InvalidDocumentId)
+		{
 		}
 
 		bool checkUpperBound() const {
