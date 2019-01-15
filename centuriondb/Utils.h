@@ -60,20 +60,26 @@ using StringSizeType = std::uint32_t;
 	slice = Slice(slice##buffer, sizeof(slice##buffer))
 
 
-static void mergeOverlappingFields(std::vector<std::string>& result) {
-	if (result.size() <= 1) return;
-	std::sort(result.begin(), result.end());
-	for (auto it = result.begin(); it != result.end(); it++)
-	{
-		const auto a = *it;
-		auto it2 = it + 1;
-		while (it2 != result.end()) {			
-			const auto b = *it2;
-			if (boost::istarts_with(b, a)) {
-				it2 = result.erase(it2);
-			} else {
-				break;
+static void MergeOverlappingFields(std::vector<std::string>& result) {
+	if (result.size() > 1) {
+		std::sort(result.begin(), result.end());
+		for (auto it = result.begin(); it != result.end(); it++)
+		{
+			const auto a = *it;
+			auto it2 = it + 1;
+			while (it2 != result.end()) {
+				const auto b = *it2;
+				if (boost::istarts_with(b, a)) {
+					it2 = result.erase(it2);
+				} else {
+					break;
+				}
 			}
-		}		
+		}
+	}
+	if (result.size() == 1) {
+		if (result.front() == "/") {
+			result.erase(result.begin());
+		}
 	}
 }

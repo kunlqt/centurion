@@ -24,7 +24,7 @@ namespace centurion {
 	{
 		auto console = spdlog::get("root");
 		auto selectFields = std::move(qualifiedNames);
-		mergeOverlappingFields(selectFields);
+		MergeOverlappingFields(selectFields);
 		rootSearchIterator->seek(
 			[this](FieldType fieldType, const std::string& fieldName) { return indexNameStore_.findIndexId(fieldName); },
 			[this](FieldType fieldType, rocksdb::ReadOptions& opts)

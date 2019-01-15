@@ -223,7 +223,6 @@ namespace centurion {
 				{
 					throw std::runtime_error("Unsupported literal for IN operation");
 				}
-				iterators.push_back(searchIterator);
 			}
 			if (iterators.size() == 1)
 			{
