@@ -279,12 +279,12 @@ namespace centurion {
 			: DoubleLiteral(std::make_optional(location), value) { }
 
 		DoubleLiteral(std::optional<NodeLocation> location, const std::string& value) 
-		: Literal(location)
-		, value_(std::stod(value)) { }
+			: Literal(location)
+			, value_(std::stod(value)) { }
 
 		DoubleLiteral(std::optional<NodeLocation> location, double value) 
-		: Literal(location)
-		, value_(value) { }
+			: Literal(location)
+			, value_(value) { }
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
@@ -529,14 +529,8 @@ namespace centurion {
 			}
 
 		private:
-			enum openum { Equal , NotEqual
-			, LessThan
-			, LessThanOrEqual
-			, GreaterThan
-			, GreaterThanOrEqual
-			, IsDistinctFrom
-			};
-			Operator(openum op, const std::string& name) : name_(name), op_(op) { }
+			enum openum {Equal, NotEqual, LessThan, LessThanOrEqual, GreaterThan, GreaterThanOrEqual, IsDistinctFrom};
+			Operator(openum op, const std::string& name) : name_(std::move(name)), op_(op) { }
 			std::string name_;
 			openum op_;
 		};
@@ -654,19 +648,13 @@ namespace centurion {
 		};
 
 		LogicalBinaryExpression(Operator oper, Expression* left, Expression* right)
-			:
-			LogicalBinaryExpression(std::optional<NodeLocation>(), oper, left, right) {
-		}
+			: LogicalBinaryExpression(std::optional<NodeLocation>(), oper, left, right) { }
 
 		LogicalBinaryExpression(NodeLocation location, Operator oper, Expression* left, Expression* right)
-			:
-			LogicalBinaryExpression(std::make_optional(location), oper, left, right) {
-		}
+			: LogicalBinaryExpression(std::make_optional(location), oper, left, right) { }
 
 		LogicalBinaryExpression(std::optional<NodeLocation> location, Operator oper, Expression* left, Expression* right)
-			:
-			Expression(location), operator_(oper), left_(left), right_(right) {
-		}
+			: Expression(location), operator_(oper), left_(left), right_(right) { }
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
@@ -744,29 +732,20 @@ namespace centurion {
 
 	class Statement : public Node {
 	public:
-		Statement(std::optional<NodeLocation> location) : Node(location) {
-		}
-
+		Statement(std::optional<NodeLocation> location) : Node(location) { }
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
-
 	};
 
 	class Relation : public Node {
 	public:
-		Relation(std::optional<NodeLocation> location) : Node(location) {
-		}
-
+		Relation(std::optional<NodeLocation> location) : Node(location) { }
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
-
 	};
 
 	class QueryBody : public Relation {
 	public:
-		QueryBody(std::optional<NodeLocation> location) : Relation(location) {
-		}
-
+		QueryBody(std::optional<NodeLocation> location) : Relation(location) { }
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
-
 	};
 
 	class SortItem : public Node {
@@ -775,10 +754,7 @@ namespace centurion {
 		enum NullOrdering { First, Last, Undefined };
 
 		SortItem(std::optional<NodeLocation> location, Expression* sortKey, Ordering ordering, NullOrdering nullOrdering)
-			:
-			Node(location), sortKey_(sortKey), ordering_(ordering), nullOrdering_(nullOrdering)
-		{
-		}
+			: Node(location), sortKey_(sortKey), ordering_(ordering), nullOrdering_(nullOrdering) { }
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
@@ -822,22 +798,13 @@ namespace centurion {
 	class OrderBy : public Node {
 	public:
 		OrderBy(const std::vector<SortItem*>& sortItems)
-			: OrderBy(std::optional<NodeLocation>(), sortItems)
-		{
-
-		}
+			: OrderBy(std::optional<NodeLocation>(), sortItems) { }
 
 		OrderBy(const NodeLocation& location, const std::vector<SortItem*>& sortItems)
-			: OrderBy(std::make_optional(location), sortItems)
-		{
-
-		}
+			: OrderBy(std::make_optional(location), sortItems) { }
 
 		OrderBy(std::optional<NodeLocation> location, const std::vector<SortItem*>& sortItems)
-			:
-			Node(location), sortItems_(sortItems)
-		{
-		}
+			: Node(location), sortItems_(sortItems) { }
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
@@ -877,37 +844,31 @@ namespace centurion {
 			QueryBody* queryBody,
 			std::optional<OrderBy*> orderBy,
 			const std::optional<std::string>& limit)
-			:
-			Query(std::optional<NodeLocation>(), with, queryBody, orderBy, limit) {
-		}
+			: Query(std::optional<NodeLocation>(), with, queryBody, orderBy, limit) { }
 
 		Query(const NodeLocation& location,
 			std::optional<With*> with,
 			QueryBody* queryBody,
 			std::optional<OrderBy*> orderBy,
 			const std::optional<std::string>& limit)
-			:
-			Query(std::optional<NodeLocation>(location), with, queryBody, orderBy, limit) {
-		}
+			: Query(std::optional<NodeLocation>(location), with, queryBody, orderBy, limit) { }
 
 		Query(std::optional<NodeLocation> location,
 			std::optional<With*> with,
 			QueryBody* queryBody,
 			std::optional<OrderBy*> orderBy,
 			const std::optional<std::string>& limit)
-			:
-			Statement(location), with_(with), queryBody_(queryBody), orderBy_(orderBy), limit_(limit) {
-		}
+			: Statement(location), with_(with), queryBody_(queryBody), orderBy_(orderBy), limit_(limit) { }
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
 		virtual std::vector<Node*> getChildren() const override {
 			std::vector<Node*> result;
 			if (with_.has_value()) {
-				result.push_back((Node*)with_.value());
+				result.push_back((Node*)(with_.value()));
 			}
 			if (orderBy_.has_value()) {
-				result.push_back((Node*)orderBy_.value());
+				result.push_back((Node*)(orderBy_.value()));
 			}
 			return result;
 		}
@@ -955,22 +916,16 @@ namespace centurion {
 	class WithQuery : public Node {
 	public:
 		WithQuery(Identifier* name, Query* query, const std::optional<std::vector<Identifier*>>& columnNames)
-			:
-			WithQuery(std::optional<NodeLocation>(), name, query, columnNames)
-		{ }
+			: WithQuery(std::optional<NodeLocation>(), name, query, columnNames) { }
 
 		WithQuery(const NodeLocation& location, Identifier* name, Query* query, const std::optional<std::vector<Identifier*>>& columnNames)
-			:
-			WithQuery(std::optional<NodeLocation>(location), name, query, columnNames)
-		{ }
+			: WithQuery(std::optional<NodeLocation>(location), name, query, columnNames) { }
 
 		WithQuery(std::optional<NodeLocation> location, Identifier* name, Query* query, const std::optional<std::vector<Identifier*>>& columnNames)
-			:
-			Node(location),
-			name_(name),
-			query_(query),
-			columnNames_(columnNames)
-		{ }
+			: Node(location)
+			, name_(name)
+			, query_(query)
+			, columnNames_(columnNames) { }
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
@@ -1011,19 +966,13 @@ namespace centurion {
 	class With : public Node {
 	public:
 		With(bool recursive, std::vector<WithQuery*> queries)
-			: With(std::optional<NodeLocation>(), recursive, std::move(queries)) {
-
-		}
+			: With(std::optional<NodeLocation>(), recursive, std::move(queries)) { }
 
 		With(const NodeLocation& location, bool recursive, std::vector<WithQuery*> queries)
-			: With(std::optional<NodeLocation>(location), recursive, std::move(queries)) {
-
-		}
+			: With(std::optional<NodeLocation>(location), recursive, std::move(queries)) { }
 
 		With(std::optional<NodeLocation> location, bool recursive, std::vector<WithQuery*> queries)
-			: Node(location), recursive_(recursive), queries_(std::move(queries)) {
-			
-		}
+			: Node(location), recursive_(recursive), queries_(std::move(queries)) { }
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
@@ -1096,43 +1045,31 @@ namespace centurion {
 	class SelectItem : public Node {
 	public:
 		SelectItem(std::optional<NodeLocation> location) : Node(location) { }
-
 	};
 
 	class SingleColumn : public SelectItem {
 	public:
 		SingleColumn(Expression* expression)
-			: SingleColumn(std::optional<NodeLocation>(), expression, std::optional<Identifier*>())
-		{
-		}
+			: SingleColumn(std::optional<NodeLocation>(), expression, std::optional<Identifier*>()) { }
 
 		SingleColumn(
 			Expression* expression,
 			std::optional<Identifier*> alias)
-			:
-			SingleColumn(std::optional<NodeLocation>(), expression, std::optional<Identifier*>(alias))
-		{
-		}
+			: SingleColumn(std::optional<NodeLocation>(), expression, std::optional<Identifier*>(alias)) { }
 
 		SingleColumn(
 			const NodeLocation& location,
 			Expression* expression,
 			std::optional<Identifier*> alias)
-			:
-			SingleColumn(std::optional<NodeLocation>(location), expression, std::optional<Identifier*>(alias))
-		{
-		}
+			: SingleColumn(std::optional<NodeLocation>(location), expression, std::optional<Identifier*>(alias)) { }
 
 		SingleColumn(
 			std::optional<NodeLocation> location,
 			Expression* expression,
 			std::optional<Identifier*> alias)
-			:
-			SelectItem(location),
-			expression_(expression),
-			alias_(alias)
-		{
-		}
+			: SelectItem(location)
+			, expression_(expression)
+			, alias_(alias) { }
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
@@ -1198,29 +1135,20 @@ namespace centurion {
 	public:
 		AllColumns()
 			: SelectItem(std::optional<NodeLocation>())
-			, prefix_(std::optional<QualifiedName*>())
-		{
-		}
+			, prefix_(std::optional<QualifiedName*>()) { }
 
 		AllColumns(const NodeLocation& location)
 			: SelectItem(std::optional<NodeLocation>(location))
-			, prefix_(std::optional<QualifiedName*>())
-		{
-		}
+			, prefix_(std::optional<QualifiedName*>()) { }
 
 		AllColumns(QualifiedName* prefix)
-			: AllColumns(std::optional<NodeLocation>(), prefix) 
-		{
-		}
+			: AllColumns(std::optional<NodeLocation>(), prefix)  { }
 
 		AllColumns(const NodeLocation& location, QualifiedName* prefix)
-			: AllColumns(std::optional<NodeLocation>(location), prefix) 
-		{
-		}
+			: AllColumns(std::optional<NodeLocation>(location), prefix)  { }
 
 		AllColumns(std::optional<NodeLocation> location, QualifiedName* prefix)
-			: SelectItem(location), prefix_(prefix) {
-		}
+			: SelectItem(location), prefix_(prefix) { }
 
 		antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
@@ -1258,19 +1186,13 @@ namespace centurion {
 	class GroupBy : public Node {
 	public:
 		GroupBy(bool distinct, const std::vector<GroupingElement*> groupingElements)
-			: GroupBy(std::nullopt, distinct, groupingElements) {
-
-		}
+			: GroupBy(std::nullopt, distinct, groupingElements) { }
 
 		GroupBy(const NodeLocation& location, bool distinct, const std::vector<GroupingElement*> groupingElements)
-			: GroupBy(std::optional<NodeLocation>(location), distinct, groupingElements) {
-
-		}
+			: GroupBy(std::optional<NodeLocation>(location), distinct, groupingElements) { }
 
 		GroupBy(const std::optional<NodeLocation>& location, bool distinct, const std::vector<GroupingElement*> groupingElements)
-			: Node(location), distinct_(distinct), groupingElements_(groupingElements) {
-
-		}
+			: Node(location), distinct_(distinct), groupingElements_(groupingElements) { }
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
@@ -1383,19 +1305,13 @@ namespace centurion {
 	class Select : public Node {
 	public:
 		Select(bool distinct, const std::vector<SelectItem*> selectItems)
-			: Select(std::nullopt, distinct, selectItems) {
-
-		}
+			: Select(std::nullopt, distinct, selectItems) { }
 
 		Select(const NodeLocation& location, bool distinct, const std::vector<SelectItem*> selectItems)
-			: Select(std::optional<NodeLocation>(location), distinct, selectItems) {
-
-		}
+			: Select(std::optional<NodeLocation>(location), distinct, selectItems) { }
 
 		Select(const std::optional<NodeLocation>& location, bool distinct, const std::vector<SelectItem*> selectItems)
-			: Node(location), distinct_(distinct), selectItems_(selectItems) {
-
-		}
+			: Node(location), distinct_(distinct), selectItems_(selectItems) { }
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
@@ -1430,19 +1346,13 @@ namespace centurion {
 	class IsNotNullPredicate : public Expression {
 	public:
 		IsNotNullPredicate(Expression* value)
-			:
-			IsNotNullPredicate(std::optional<NodeLocation>(), value) {
-		}
+			: IsNotNullPredicate(std::optional<NodeLocation>(), value) { }
 
 		IsNotNullPredicate(NodeLocation location, Expression* value)
-			:
-			IsNotNullPredicate(std::make_optional(location), value) {
-		}
+			: IsNotNullPredicate(std::make_optional(location), value) { }
 
 		IsNotNullPredicate(std::optional<NodeLocation> location, Expression* value)
-			:
-			Expression(location), value_(value) {
-		}
+			: Expression(location), value_(value) { }
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
@@ -1661,23 +1571,13 @@ namespace centurion {
 		};
 
 		Join(JoinType type, Relation* left, Relation* right, std::optional<JoinCriteria*> criteria)
-			: Join(std::nullopt, type, left, right, criteria)
-		{
-
-		}
+			: Join(std::nullopt, type, left, right, criteria) { }
 
 		Join(NodeLocation location, JoinType type, Relation* left, Relation* right, std::optional<JoinCriteria*> criteria)
-			: Join(std::make_optional(location), type, left, right, criteria)
-		{
-
-		}
+			: Join(std::make_optional(location), type, left, right, criteria) { }
 
 		Join(std::optional<NodeLocation> location, JoinType type, Relation* left, Relation* right, std::optional<JoinCriteria*> criteria)
-			: Relation(location), type_(type), left_(left), right_(right), criteria_(criteria)
-		{
-
-		}
-
+			: Relation(location), type_(type), left_(left), right_(right), criteria_(criteria) { }
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
@@ -1945,30 +1845,19 @@ namespace centurion {
 
 	class SimpleGroupBy : public GroupingElement {
 	public:
-		SimpleGroupBy(const std::vector<Expression*>& columns)
-			:
-			SimpleGroupBy(std::optional<NodeLocation>(), columns)
-		{
-		}
+		SimpleGroupBy(std::vector<Expression*> columns)
+			: SimpleGroupBy(std::optional<NodeLocation>(), std::move(columns)) { }
 
-		SimpleGroupBy(NodeLocation location, const std::vector<Expression*>& columns)
-			:
-			SimpleGroupBy(std::make_optional(location), columns)
-		{
-		}
+		SimpleGroupBy(NodeLocation location, std::vector<Expression*> columns)
+			: SimpleGroupBy(std::make_optional(location), std::move(columns)) { }
 
-		SimpleGroupBy(std::optional<NodeLocation> location, const std::vector<Expression*>& columns)
-			:
-			GroupingElement(location), columns_(columns)
-		{
-		}
+		SimpleGroupBy(std::optional<NodeLocation> location, std::vector<Expression*> columns)
+			: GroupingElement(location), columns_(std::move(columns)) { }
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
 		virtual std::vector<Node*> getChildren() const override {
-			std::vector<Node*> result;
-			for (const auto& column : columns_) result.push_back(column);
-			return result;
+			return castVector<Node*>(columns_);
 		};
 
 		virtual size_t hashCode() const override {
@@ -1992,61 +1881,6 @@ namespace centurion {
 	private:
 		std::vector<Expression*> columns_;
 	};
-
-	struct FieldIdentifier : public Identifier
-	{
-		FieldIdentifier(std::optional<NodeLocation> location, Identifier* base, Identifier* comp) : FieldIdentifier(location, base)
-		{			
-			components_.push_back(comp);
-		}
-
-		FieldIdentifier(std::optional<NodeLocation> location, Identifier* comp) : Identifier(location, "", true)
-		{			
-			components_.push_back(comp);
-		}
-
-		FieldIdentifier* AddComponent(Identifier* comp)
-		{
-			components_.push_back(comp);
-			return this;
-		}
-
-		virtual std::string getValue() const override {
-			std::stringstream result;			
-			for (const auto& comp : components_)
-			{
-				if (components_.size() > 1 && comp->getValue() == "*") {
-					// ignore field.* components
-				} else {
-					result << "/" << comp->getValue();
-				}
-			}
-			return result.str();
-		}
-
-		std::string toString() const override
-		{
-			return "FieldIdentifier";
-		}
-
-		virtual std::vector<Node*> getChildren() const override {
-			std::vector<Node*> result;
-			for (const auto& column : components_) result.push_back(column);
-			return result;
-		};
-
-		virtual size_t hashCode() const override {
-			int result = 0;
-			//for (const auto& column : columns_) (column-> result.push_back(column);
-			return result;
-		}
-
-		virtual bool equals(const Node* node) const override {
-			return false;
-		}
-
-	private:
-		std::vector<Identifier*> components_;
-	};
+	
 
 }
