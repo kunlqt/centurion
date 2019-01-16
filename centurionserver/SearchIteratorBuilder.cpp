@@ -28,7 +28,7 @@ namespace centurion {
 			AstBuilder astBuilder(options);
 			console->trace("Visiting single sql statement");
 			antlr4::ParserRuleContext* tree = parser.singleStatement();
-			auto statement = astBuilder.visitSingleStatement(dynamic_cast<CentSqlParser::SingleStatementContext*>(tree));
+			Statement* statement = astBuilder.visitSingleStatement(dynamic_cast<CentSqlParser::SingleStatementContext*>(tree));
 			QualifiedNameBuilderVisitor visitor;
 			QualifiedNameBuilder parserContext;
 			visitor.process(statement, &parserContext);
@@ -36,7 +36,7 @@ namespace centurion {
 			return parserContext;
 		} catch (const antlr4::ParseCancellationException& exc) {
 			console->error("SQL parse error: {}", exc.what());
-			throw;
+			throw std::runtime_error(exc.what());
 			/*
 			tokens.reset();
 			parser.reset();

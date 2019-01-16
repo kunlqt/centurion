@@ -126,7 +126,8 @@ template<class Body, class Allocator, class Send>
 					}
 					res.keep_alive(req.keep_alive());
 					return send(std::move(res));
-				} catch (std::runtime_error& err)
+				} 
+				catch (std::runtime_error& err)
 				{
 					log->error("An error while query db: {0}", err.what());
 					http::response<http::string_body> res{ http::status::bad_request, req.version() };
