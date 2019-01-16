@@ -74,6 +74,10 @@ public:
 			delimited_ = std::regex_match(value, namePattern_);
 		}
 
+		operator Expression*() const { 
+			return nullptr;
+		}
+
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
 		virtual std::vector<Node*> getChildren() const override {
@@ -132,6 +136,7 @@ public:
 			: Expression(location), base_(base), field_(field)
 		{
 		}
+
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 

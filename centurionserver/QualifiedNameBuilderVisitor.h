@@ -204,21 +204,20 @@ namespace centurion {
 			} else {
 				throw std::runtime_error("Unsupported identifier for IN predicate");
 			}
-			antlrcpp::Any values = process(node->getValueList(), context);
+			std::vector<std::shared_ptr<antlrcpp::Any>> literals = process(node->getValueList(), context);
 			std::vector<SearchIterator*> iterators;
-			std::vector<antlrcpp::Any> literals = values.as<std::vector<antlrcpp::Any>>();
 			for (auto literal : literals)
 			{
 				SearchIterator* searchIterator = nullptr;
-				if (literal.is<std::string>())
+				if (literal->is<std::string>())
 				{
-					iterators.emplace_back(StringValueSearchIterator::eq(fieldName, literal.as<std::string>()));
-				} else if (literal.is<double>())
+					iterators.emplace_back(StringValueSearchIterator::eq(fieldName, literal->as<std::string>()));
+				} else if (literal->is<double>())
 				{
-					iterators.emplace_back(DoubleValueSearchIterator::eq(fieldName, literal.as<double>()));
-				} else if (literal.is<bool>())
+					iterators.emplace_back(DoubleValueSearchIterator::eq(fieldName, literal->as<double>()));
+				} else if (literal->is<bool>())
 				{
-					iterators.emplace_back(BooleanValueSearchIterator::eq(fieldName, literal.as<bool>()));
+					iterators.emplace_back(BooleanValueSearchIterator::eq(fieldName, literal->as<bool>()));
 				} else
 				{
 					throw std::runtime_error("Unsupported literal for IN operation");
@@ -228,17 +227,17 @@ namespace centurion {
 			{
 				return iterators.front();
 			} else if (iterators.size() == 2) {
-				return new SearchIteratorOr(iterators.front(), iterators.back());
+				return ImplicitCast<SearchIterator*>(new SearchIteratorOr(iterators.front(), iterators.back()));
 			}
-			return new SearchIteratorIn(iterators);
+			return ImplicitCast<SearchIterator*>(new SearchIteratorIn(iterators));
 		}
 
 		virtual antlrcpp::Any visitInListExpression(InListExpression* node, antlr4::ParserRuleContext* context) override
 		{
 			log_->trace("visitInListExpression");
-			std::vector<antlrcpp::Any> result;
+			std::vector<std::shared_ptr<antlrcpp::Any>> result;
 			for (Expression* value : node->getValues()) {				
-				result.emplace_back(std::move(process(value, context)));
+				result.emplace_back(std::make_shared<antlrcpp::Any>(process(value, context)));
 			}
 			return result;
 		}
@@ -251,11 +250,11 @@ namespace centurion {
 			if (logicalExpr->getOperator() == LogicalBinaryExpression::Operator::AND)
 			{
 				log_->trace("visitLogicalBinaryExpression operator AND");
-				return new SearchIteratorAnd(left, right);
+				return ImplicitCast<SearchIterator*>(new SearchIteratorAnd(left, right));
 			} else if (logicalExpr->getOperator() == LogicalBinaryExpression::Operator::OR)
 			{
 				log_->trace("visitLogicalBinaryExpression operator OR");
-				return new SearchIteratorOr(left, right);
+				return ImplicitCast<SearchIterator*>(new SearchIteratorOr(left, right));
 			}
 			throw std::runtime_error("Unsupported logical binary operator");
 		}

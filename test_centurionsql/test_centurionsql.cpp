@@ -8,7 +8,9 @@
 #include "CaseInsensitiveStream.h"
 #include "AstBuilder.h"
 #include "ParsingOptions.h"
-#include "QualifiedNameBuilderVisitor.h"
+#include <QualifiedNameBuilderVisitor.h>
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
 
 using namespace std;
 
@@ -19,7 +21,14 @@ int main(int argc, const char * argv[]) {
 	rootLogger->set_level(spdlog::level::trace);
 	using namespace centurion;
 	std::stringstream stream;
-	stream << "SELeCT field1.subfield2.*, field3.subfield4, * FROM supercategory WHERE term1.subterm2='vas'+'ko' and term3.sub4.sub5.sub6=(((3+9)/2)*7)-4 and field>3.1-4 or fieldx<50 and z>1.34";
+	stream << "SELeCT field1.subfield2.*, field3.subfield4 as xxx, *";
+	stream << " FROM supercategory as fld LEFT JOIN blabla as t ON (fld.x=5) ";
+	stream << "WHERE ";
+	stream << "term1.subterm2='vas'+'ko' and term3.sub4.sub5.sub6=(((3+9)/2)*7)-4 and ";
+	stream << "field>3.1-4 or fieldx<50 and z>1.34 and field in ('a','b') ";
+	stream << " group by x, y ";
+	stream << " order by a asc, b desc ";
+
 	antlr4::CaseInsensitiveStream input(stream);
 	CentSqlLexer lexer(&input);
 	antlr4::CommonTokenStream tokens(&lexer);
@@ -33,7 +42,7 @@ int main(int argc, const char * argv[]) {
 		tree = parser.singleStatement();
 		std::wstring s = antlrcpp::s2ws(tree->toStringTree(&parser));
 		std::wcout << s << std::endl;
-		auto statement = astBuilder.visitSingleStatement(dynamic_cast<CentSqlParser::SingleStatementContext*>(tree));
+		Statement* statement = astBuilder.visitSingleStatement(dynamic_cast<CentSqlParser::SingleStatementContext*>(tree));
 		QualifiedNameBuilderVisitor visitor;
 		QualifiedNameBuilder builder;
 		visitor.process(statement, &builder);

@@ -45,8 +45,8 @@ struct ANTLR4CPP_PUBLIC Any
   }
 
   template<class U>
-  bool is(bool checkCast = false) const {
-    auto derived = getDerived<U>(checkCast);
+  bool is() const {
+    auto derived = getDerived<U>(false);
 
     return derived != nullptr;
   }
@@ -122,12 +122,12 @@ private:
     }
 
   private:
-    template<int N = 0, typename std::enable_if<N == N && std::is_copy_constructible<T>::value, int>::type = 0>
+    template<int N = 0, typename std::enable_if<N == N && std::is_nothrow_copy_constructible<T>::value, int>::type = 0>
     Base* clone() const {
       return new Derived<T>(value);
     }
 
-    template<int N = 0, typename std::enable_if<N == N && !std::is_copy_constructible<T>::value, int>::type = 0>
+    template<int N = 0, typename std::enable_if<N == N && !std::is_nothrow_copy_constructible<T>::value, int>::type = 0>
     Base* clone() const {
       return nullptr;
     }
@@ -148,9 +148,9 @@ private:
 
     auto derived = dynamic_cast<Derived<T>*>(_ptr);
 
-    if (derived == nullptr && checkCast)
-		derived = static_cast<Derived<T>*>(_ptr);
-   
+    if (checkCast && !derived)
+      throw std::bad_cast();
+
     return derived;
   }
 

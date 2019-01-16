@@ -22,7 +22,7 @@ namespace centurion {
 			rootSearchIterator_.reset(rootSearchIterator);
 		}
 
-		std::string toString() const
+		std::string toString() const 
 		{
 			std::stringstream ss;
 			for (const auto& qualifiedName : qualifiedNames_)

@@ -40,7 +40,7 @@ namespace centurion {
 			return setQuantifier->DISTINCT() != nullptr;
 		}
 				
-		template<typename F, typename T>
+		template<typename T, typename F>
 		static std::vector<T> castVector(const std::vector<F>& from)
 		{
 			std::vector<T> to(from.size());
@@ -50,18 +50,18 @@ namespace centurion {
 			}
 			return to;
 		}
-			   
-		template<class T>
-		std::optional<T*> visitIfPresent(antlr4::ParserRuleContext* context)
+
+		template<typename T>
+		std::optional<T> visitIfPresent(antlr4::ParserRuleContext* context)
 		{
 			if (context != nullptr) {
 				auto visitResult = CentSqlBaseVisitor::visit(context);
 				if (visitResult.isNotNull()) {
-					T* tmp = visitResult;
+					T tmp = visitResult;
 					return std::make_optional(tmp);
 				}
 			}
-			return std::optional<T*>();
+			return std::optional<T>();
 		}
 
 		std::vector<antlrcpp::Any> visit(std::vector<antlr4::ParserRuleContext*> contexts)

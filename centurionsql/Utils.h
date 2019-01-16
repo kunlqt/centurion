@@ -22,20 +22,12 @@ namespace centurion {
 		return result;
 	}
 
-	template <typename A>
-	A implicit_cast(A x) {
-		return x;
-	}
 
-	template <typename To, typename From>
-	std::vector<To> castVector(std::vector<From>& from) {
-		std::vector<To> to;
-		for (auto& f : from) {
-			to.push_back(f);
-		}
-		return to;
+	template<typename T, typename P>
+	T ImplicitCast(P v)
+	{
+		return v;
 	}
-
 
 
 	inline void removeQuotes(std::string& value)

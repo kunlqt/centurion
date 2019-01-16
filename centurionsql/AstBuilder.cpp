@@ -153,7 +153,7 @@ namespace centurion {
 	}
 
 	antlrcpp::Any AstBuilder::visitShowStats(CentSqlParser::ShowStatsContext *ctx) {
-		return new ShowStats(std::make_optional(getLocation(ctx)), new Table(getQualifiedName(ctx->qualifiedName())));
+		return ImplicitCast<Statement*>(new ShowStats(std::make_optional(getLocation(ctx)), new Table(getQualifiedName(ctx->qualifiedName()))));
 	}
 
 	antlrcpp::Any AstBuilder::visitShowStatsForQuery(CentSqlParser::ShowStatsForQueryContext *ctx) {
@@ -213,17 +213,19 @@ namespace centurion {
 	}
 
 	antlrcpp::Any AstBuilder::visitQuery(CentSqlParser::QueryContext *ctx) {
-		Query* body = CentSqlBaseVisitor::visit(ctx->queryNoWith());
-		return new Query(
+		Statement* queryStatement = CentSqlBaseVisitor::visit(ctx->queryNoWith());
+		const auto body = dynamic_cast<Query*>(queryStatement);
+		return ImplicitCast<Statement*>(new Query(
 			getLocation(ctx),
-			visitIfPresent<With>(ctx->with()),
+			visitIfPresent<With*>(ctx->with()),
 			body->getQueryBody(),
 			body->getOrderBy(),
-			body->getLimit());
+			body->getLimit())
+		);
 	}
 
 	antlrcpp::Any AstBuilder::visitWith(CentSqlParser::WithContext *ctx) {
-		auto visitResult = visit(castVector<CentSqlParser::NamedQueryContext*, antlr4::ParserRuleContext*>(ctx->namedQuery()));
+		auto visitResult = visit(castVector<antlr4::ParserRuleContext*>(ctx->namedQuery()));
 		std::vector<WithQuery*> queries;
 		for (auto queryItem : visitResult)
 		{
@@ -253,17 +255,17 @@ namespace centurion {
 	}
 
 	antlrcpp::Any AstBuilder::visitQueryNoWith(CentSqlParser::QueryNoWithContext *ctx) {
-		auto term = CentSqlBaseVisitor::visit(ctx->queryTerm());
+		Relation* queryTerm = CentSqlBaseVisitor::visit(ctx->queryTerm());
 		std::optional<OrderBy*> orderBy;
 		if (ctx->ORDER() != nullptr) {
-			auto sortItemResult = visit(castVector<CentSqlParser::SortItemContext*, antlr4::ParserRuleContext*>(ctx->sortItem()));
+			auto sortItemResult = visit(castVector<antlr4::ParserRuleContext*>(ctx->sortItem()));
 			std::vector<SortItem*> sortItems;
 			for (auto item : sortItemResult) sortItems.push_back(item);
 			orderBy.emplace(new OrderBy(getLocation(ctx->ORDER()), sortItems));
 		}
-		if (term.is<QuerySpecification*>()) {
-			QuerySpecification* query = term;
-			return new Query(
+		const auto query = dynamic_cast<QuerySpecification*>(queryTerm);
+		if (query != nullptr) {
+			return ImplicitCast<Statement*>(new Query(
 				getLocation(ctx),
 				std::optional<With*>(),
 				new QuerySpecification(
@@ -277,15 +279,20 @@ namespace centurion {
 					getTextIfPresent(ctx->limit)),
 				std::optional<OrderBy*>(),
 				std::optional<std::string>()
-			);
+			));
 		}
-		
-		return new Query(
-			getLocation(ctx),
-			std::optional<With*>(),
-			term,
-			orderBy,
-			getTextIfPresent(ctx->limit));
+		const auto queryBody = dynamic_cast<QueryBody*>(queryTerm);
+		if (queryBody != nullptr) {
+			return ImplicitCast<Statement*>(
+				new Query(
+					getLocation(ctx),
+					std::optional<With*>(),
+					queryBody,
+					orderBy,
+					getTextIfPresent(ctx->limit))
+				);
+		}
+		throw std::runtime_error("Missing query body");
 	}
 
 	antlrcpp::Any AstBuilder::visitQueryTermDefault(CentSqlParser::QueryTermDefaultContext *ctx) {
@@ -301,7 +308,7 @@ namespace centurion {
 	}
 
 	antlrcpp::Any AstBuilder::visitTable(CentSqlParser::TableContext *ctx) {
-		return new Table(getLocation(ctx), getQualifiedName(ctx->qualifiedName()));
+		return ImplicitCast<Relation*>(new Table(getLocation(ctx), getQualifiedName(ctx->qualifiedName())));
 	}
 
 	antlrcpp::Any AstBuilder::visitInlineTable(CentSqlParser::InlineTableContext *ctx) {
@@ -322,12 +329,12 @@ namespace centurion {
 	}
 
 	antlrcpp::Any AstBuilder::visitQuerySpecification(CentSqlParser::QuerySpecificationContext *ctx) {
-		auto visitSelectItemResult = visit(castVector<CentSqlParser::SelectItemContext*, antlr4::ParserRuleContext*>(ctx->selectItem()));
+		auto visitSelectItemResult = visit(castVector<antlr4::ParserRuleContext*>(ctx->selectItem()));
 		std::vector<SelectItem*> selectItems;
 		for (auto& visitSelectItemResultItem : visitSelectItemResult) {
 			selectItems.push_back(visitSelectItemResultItem);
 		}		
-		std::vector<antlrcpp::Any> visitRelationResult = visit(castVector<CentSqlParser::RelationContext*, antlr4::ParserRuleContext*>(ctx->relation()));
+		std::vector<antlrcpp::Any> visitRelationResult = visit(castVector<antlr4::ParserRuleContext*>(ctx->relation()));
 		std::vector<Relation*> relations;
 		for (auto& item : visitRelationResult) {
 			relations.push_back(item);
@@ -339,36 +346,39 @@ namespace centurion {
 			auto relation = *iterator;
 			++iterator;
 			while (iterator != relations.cend()) {
-				relation = new Join(getLocation(ctx), Join::JoinType::IMPLICIT, relation, *iterator, std::nullopt);
+				relation = ImplicitCast<Relation*>(
+					new Join(
+						getLocation(ctx), Join::JoinType::IMPLICIT, relation, *iterator, std::optional<JoinCriteria*>()
+					)
+				);
 				++iterator;
 			}
 			from = std::make_optional(relation);
 		}
-		return new QuerySpecification(
+		return ImplicitCast<Relation*>(new QuerySpecification(
 			getLocation(ctx),
 			new Select(getLocation(ctx->SELECT()), isDistinct(ctx->setQuantifier()), selectItems),
 			from,
-			visitIfPresent<Expression>(ctx->where),
-			visitIfPresent<GroupBy>(ctx->groupBy()),
-			visitIfPresent<Expression>(ctx->having),
+			visitIfPresent<Expression*>(ctx->where),
+			visitIfPresent<GroupBy*>(ctx->groupBy()),
+			visitIfPresent<Expression*>(ctx->having),
 			std::optional<OrderBy*>(),
 			std::optional<std::string>()
-		);		
+		));		
 	}
 
 	antlrcpp::Any AstBuilder::visitGroupBy(CentSqlParser::GroupByContext *ctx) {
-		auto visitResult = visit(castVector<CentSqlParser::GroupingElementContext*, antlr4::ParserRuleContext*>(ctx->groupingElement()));
+		auto visitResult = visit(castVector<antlr4::ParserRuleContext*>(ctx->groupingElement()));
 		return new GroupBy(getLocation(ctx), isDistinct(ctx->setQuantifier()), castAnyVector<GroupingElement*>(visitResult));
 	}
 
 	antlrcpp::Any AstBuilder::visitSingleGroupingSet(CentSqlParser::SingleGroupingSetContext *ctx) {
-		auto visitResult = visit(
-			castVector<CentSqlParser::ExpressionContext*, antlr4::ParserRuleContext*>(ctx->groupingSet()->expression()));
+		auto visitResult = visit(castVector<antlr4::ParserRuleContext*>(ctx->groupingSet()->expression()));
 		std::vector<Expression*> expr;
 		for (auto item : visitResult) {
 			expr.push_back(item);
 		}
-		return new SimpleGroupBy(getLocation(ctx), expr);
+		return ImplicitCast<GroupingElement*>(new SimpleGroupBy(getLocation(ctx), expr));
 	}
 
 	antlrcpp::Any AstBuilder::visitRollup(CentSqlParser::RollupContext *ctx) {
@@ -390,8 +400,7 @@ namespace centurion {
 	antlrcpp::Any AstBuilder::visitNamedQuery(CentSqlParser::NamedQueryContext *ctx) {
 		std::vector<Identifier*> aliases;
 		if (ctx->columnAliases() != nullptr) {
-			auto visitResult = visit(
-				castVector<CentSqlParser::IdentifierContext*, antlr4::ParserRuleContext*>(ctx->columnAliases()->identifier()));
+			auto visitResult = visit(castVector<antlr4::ParserRuleContext*>(ctx->columnAliases()->identifier()));
 			for (auto visitResultItem : visitResult) {
 				aliases.push_back(visitResultItem);
 			}
@@ -409,18 +418,26 @@ namespace centurion {
 	}
 
 	antlrcpp::Any AstBuilder::visitSelectSingle(CentSqlParser::SelectSingleContext *ctx) {
-		return new SingleColumn(
-			getLocation(ctx), 
-			CentSqlBaseVisitor::visit(ctx->expression()),
-			visitIfPresent<Identifier>(ctx->identifier())
+		Expression* expr = CentSqlBaseVisitor::visit(ctx->expression());
+		auto identifier = visitIfPresent<Expression*>(ctx->identifier());
+		const auto alias =
+			identifier.has_value()
+			? std::make_optional<Identifier*>(dynamic_cast<Identifier*>(identifier.value()))
+			: std::optional<Identifier*>();
+		return ImplicitCast<SelectItem*>(
+			new SingleColumn(
+				getLocation(ctx), 
+				expr,
+				alias
+			)
 		);
 	}
 
 	antlrcpp::Any AstBuilder::visitSelectAll(CentSqlParser::SelectAllContext *ctx) {
 		if (ctx->qualifiedName() != nullptr) {
-			return new AllColumns(getLocation(ctx), getQualifiedName(ctx->qualifiedName()));
+			return ImplicitCast<SelectItem*>(new AllColumns(getLocation(ctx), getQualifiedName(ctx->qualifiedName())));
 		}
-		return new AllColumns(getLocation(ctx));
+		return ImplicitCast<SelectItem*>(new AllColumns(getLocation(ctx)));
 	}
 	
 	antlrcpp::Any AstBuilder::visitRelationDefault(CentSqlParser::RelationDefaultContext *ctx) {
@@ -432,7 +449,7 @@ namespace centurion {
 		
 		if (ctx->CROSS() != nullptr) {
 			Relation* right = CentSqlBaseVisitor::visit(ctx->right);
-			return new Join(getLocation(ctx), Join::CROSS, left, right, std::optional<JoinCriteria*>());
+			return ImplicitCast<Relation*>(new Join(getLocation(ctx), Join::CROSS, left, right, std::optional<JoinCriteria*>()));
 		}
 		Relation* right;
 		JoinCriteria* criteria;
@@ -442,12 +459,12 @@ namespace centurion {
 		} else {
 			right = CentSqlBaseVisitor::visit(ctx->rightRelation);
 			if (ctx->joinCriteria()->ON() != nullptr) {
-				criteria = new JoinOn((Expression*)CentSqlBaseVisitor::visit(ctx->joinCriteria()->booleanExpression()));
+				Expression* joinOnExpr = CentSqlBaseVisitor::visit(ctx->joinCriteria()->booleanExpression());
+				criteria = new JoinOn(joinOnExpr);
 			} else if (ctx->joinCriteria()->USING() != nullptr) {
-				auto visitResult = visit(castVector<CentSqlParser::IdentifierContext*, antlr4::ParserRuleContext*>(ctx->joinCriteria()->identifier()));
+				auto visitResult = visit(castVector<antlr4::ParserRuleContext*>(ctx->joinCriteria()->identifier()));
 				std::vector<Identifier*> columns;
-				for (auto& visitResultItem : visitResult)
-				{
+				for (auto& visitResultItem : visitResult) {
 					columns.emplace_back(visitResultItem);
 				}
 				criteria = new JoinUsing(columns);
@@ -456,22 +473,16 @@ namespace centurion {
 			}
 		}
 		Join::JoinType joinType;
-		if (ctx->joinType()->LEFT() != nullptr)
-		{
+		if (ctx->joinType()->LEFT() != nullptr) {
 			joinType = Join::LEFT;
-		} else if (ctx->joinType()->RIGHT() != nullptr)
-		{
+		} else if (ctx->joinType()->RIGHT() != nullptr) {
 			joinType = Join::RIGHT;
-		}
-		else if (ctx->joinType()->FULL() != nullptr)
-		{
+		} else if (ctx->joinType()->FULL() != nullptr) {
 			joinType = Join::FULL;
-		}
-		else
-		{
+		} else {
 			joinType = Join::INNER;
 		}
-		return new Join(getLocation(ctx), joinType, left, right, std::make_optional(criteria));
+		return ImplicitCast<Relation*>(new Join(getLocation(ctx), joinType, left, right, std::make_optional(criteria)));
 	}
 
 	antlrcpp::Any AstBuilder::visitJoinType(CentSqlParser::JoinTypeContext *ctx) {
@@ -504,13 +515,17 @@ namespace centurion {
 		std::vector<Identifier*> aliases;
 		if (ctx->columnAliases() != nullptr) {
 			auto visitResult = visit(
-				castVector<CentSqlParser::IdentifierContext*, antlr4::ParserRuleContext*>(ctx->columnAliases()->identifier()));
+				castVector<antlr4::ParserRuleContext*>(ctx->columnAliases()->identifier()));
 			for (auto visitResultItem : visitResult) {
 				aliases.push_back(visitResultItem);
 			}
 		}
-		return new AliasedRelation(getLocation(ctx), child, (Identifier*)CentSqlBaseVisitor::visit(ctx->identifier()), aliases);
-
+		Expression* expr = CentSqlBaseVisitor::visit(ctx->identifier());
+		return ImplicitCast<Relation*>(
+			new AliasedRelation(
+				getLocation(ctx), child, dynamic_cast<Identifier*>(expr), aliases
+			)
+		);
 	}
 
 	antlrcpp::Any AstBuilder::visitColumnAliases(CentSqlParser::ColumnAliasesContext *ctx) {
@@ -518,7 +533,7 @@ namespace centurion {
 	}
 
 	antlrcpp::Any AstBuilder::visitTableName(CentSqlParser::TableNameContext *ctx) {
-		return new Table(getLocation(ctx), getQualifiedName(ctx->qualifiedName()));
+		return ImplicitCast<Relation*>(new Table(getLocation(ctx), getQualifiedName(ctx->qualifiedName())));
 	}
 
 	antlrcpp::Any AstBuilder::visitSubqueryRelation(CentSqlParser::SubqueryRelationContext *ctx) {
@@ -542,7 +557,9 @@ namespace centurion {
 	}
 
 	antlrcpp::Any AstBuilder::visitLogicalNot(CentSqlParser::LogicalNotContext *ctx) {
-		return new NotExpression(getLocation(ctx), (Expression*)CentSqlBaseVisitor::visit(ctx->booleanExpression()));
+		return ImplicitCast<Expression*>(
+			new NotExpression(getLocation(ctx), (Expression*)CentSqlBaseVisitor::visit(ctx->booleanExpression()))
+			);
 	}
 
 	antlrcpp::Any AstBuilder::visitPredicated(CentSqlParser::PredicatedContext *ctx) {
@@ -553,12 +570,12 @@ namespace centurion {
 	}
 
 	antlrcpp::Any AstBuilder::visitLogicalBinary(CentSqlParser::LogicalBinaryContext *ctx) {
-		return new LogicalBinaryExpression(
+		return ImplicitCast<Expression*>(new LogicalBinaryExpression(
 			getLocation(ctx->oper),
 			getLogicalBinaryOperator(ctx->oper),
-			(Expression*)CentSqlBaseVisitor::visit(ctx->left),
-			(Expression*)CentSqlBaseVisitor::visit(ctx->right)
-		);
+			CentSqlBaseVisitor::visit(ctx->left),
+			CentSqlBaseVisitor::visit(ctx->right)
+		));
 	}
 
 	antlrcpp::Any AstBuilder::visitComparison(CentSqlParser::ComparisonContext *ctx) {
@@ -568,11 +585,14 @@ namespace centurion {
 		}
 		auto comparisonOp = (antlr4::tree::TerminalNode*)children.at(0);
 		auto token = comparisonOp->getSymbol();
-		return new ComparisonExpression(
-			getLocation(ctx->comparisonOperator()),
-			getComparisonOperator(token),
-			(Expression*)CentSqlBaseVisitor::visit(ctx->value),
-			(Expression*)CentSqlBaseVisitor::visit(ctx->right)
+		antlrcpp::Any left = CentSqlBaseVisitor::visit(ctx->value);
+		antlrcpp::Any right = CentSqlBaseVisitor::visit(ctx->right);
+		return ImplicitCast<Expression*>(
+			new ComparisonExpression(getLocation(ctx->comparisonOperator()),
+				getComparisonOperator(token),
+				left,
+				right
+			)
 		);
 	}
 
@@ -585,12 +605,12 @@ namespace centurion {
 	}
 
 	antlrcpp::Any AstBuilder::visitInList(CentSqlParser::InListContext *ctx) {
-		Expression* v1 = CentSqlBaseVisitor::visit(ctx->value);
-		auto v2 = visit(castVector<CentSqlParser::ExpressionContext*, antlr4::ParserRuleContext*>(ctx->expression()));
+		Expression* fieldName = CentSqlBaseVisitor::visit(ctx->value);
+		auto fieldValues = visit(castVector<antlr4::ParserRuleContext*>(ctx->expression()));
 		Expression* result = new InPredicate(
 			getLocation(ctx),
-			v1,
-			new InListExpression(getLocation(ctx), castAnyVector<Expression*>(v2)));
+			fieldName,
+			new InListExpression(getLocation(ctx), castAnyVector<Expression*>(fieldValues)));
 
 		if (ctx->NOT() != nullptr) {
 			result = new NotExpression(getLocation(ctx), result);
@@ -627,11 +647,12 @@ namespace centurion {
 	}
 
 	antlrcpp::Any AstBuilder::visitArithmeticBinary(CentSqlParser::ArithmeticBinaryContext *ctx) {
-		return new ArithmeticBinaryExpression(
+		return ImplicitCast<Expression*>(new ArithmeticBinaryExpression(
 			getLocation(ctx->oper),
 			getArithmeticBinaryOperator(ctx->oper),
 			(Expression*)CentSqlBaseVisitor::visit(ctx->left),
-			(Expression*)CentSqlBaseVisitor::visit(ctx->right));
+			(Expression*)CentSqlBaseVisitor::visit(ctx->right))
+		);
 	}
 
 	antlrcpp::Any AstBuilder::visitArithmeticUnary(CentSqlParser::ArithmeticUnaryContext *ctx) {
@@ -652,10 +673,9 @@ namespace centurion {
 	}
 
 	antlrcpp::Any AstBuilder::visitDereference(CentSqlParser::DereferenceContext *ctx) {
-		return new DereferenceExpression(
-			getLocation(ctx), 
-			CentSqlBaseVisitor::visit(ctx->base), 
-			CentSqlBaseVisitor::visit(ctx->fieldName));
+		Expression* expr = CentSqlBaseVisitor::visit(ctx->base);
+		Expression* ident = CentSqlBaseVisitor::visit(ctx->fieldName);
+		return ImplicitCast<Expression*>(new DereferenceExpression(getLocation(ctx), expr, dynamic_cast<Identifier*>(ident)));
 	}
 
 	antlrcpp::Any AstBuilder::visitTypeConstructor(CentSqlParser::TypeConstructorContext *ctx) {
@@ -779,13 +799,13 @@ namespace centurion {
 	antlrcpp::Any AstBuilder::visitBasicStringLiteral(CentSqlParser::BasicStringLiteralContext *ctx) {
 		std::string value = ctx->getText();
 		removeQuotes(value);
-		return new StringLiteral(getLocation(ctx), value);
+		return ImplicitCast<Expression*>(new StringLiteral(getLocation(ctx), value));
 	}
 
 	antlrcpp::Any AstBuilder::visitUnicodeStringLiteral(CentSqlParser::UnicodeStringLiteralContext *ctx) {
 		std::string value = ctx->getText();
 		removeQuotes(value);
-		return new StringLiteral(getLocation(ctx), value);  // todo: convert to unicode
+		return ImplicitCast<Expression*>(new StringLiteral(getLocation(ctx), value));  // todo: convert to unicode
 	}
 
 	antlrcpp::Any AstBuilder::visitTimeZoneInterval(CentSqlParser::TimeZoneIntervalContext *ctx) {
@@ -805,7 +825,7 @@ namespace centurion {
 	}
 
 	antlrcpp::Any AstBuilder::visitBooleanValue(CentSqlParser::BooleanValueContext *ctx) {
-		return new BooleanLiteral(getLocation(ctx), ctx->getText());
+		return ImplicitCast<Expression*>(new BooleanLiteral(getLocation(ctx), ctx->getText()));
 	}
 
 	antlrcpp::Any AstBuilder::visitInterval(CentSqlParser::IntervalContext *ctx) {
@@ -921,14 +941,14 @@ namespace centurion {
 	}
 
 	antlrcpp::Any AstBuilder::visitUnquotedIdentifier(CentSqlParser::UnquotedIdentifierContext *ctx) {
-		return new Identifier(getLocation(ctx), ctx->getText(), false);
+		return ImplicitCast<Expression*>(new Identifier(getLocation(ctx), ctx->getText(), false));
 	}
 
 	antlrcpp::Any AstBuilder::visitQuotedIdentifier(CentSqlParser::QuotedIdentifierContext *ctx) {
 		const auto& token = ctx->getText();
 		auto identifier = token.substr(1, token.length() - 1); 
 		replace(identifier, "\"\"", "\"");
-		return new Identifier(getLocation(ctx), identifier, true);
+		return ImplicitCast<Expression*>(new Identifier(getLocation(ctx), identifier, true));
 	}
 
 	antlrcpp::Any AstBuilder::visitBackQuotedIdentifier(CentSqlParser::BackQuotedIdentifierContext *ctx) {
@@ -942,9 +962,9 @@ namespace centurion {
 	antlrcpp::Any AstBuilder::visitDecimalLiteral(CentSqlParser::DecimalLiteralContext *ctx) {
 		switch (parsingOptions_.getDecimalLiteralTreatment()) {
 			case ParsingOptions::AS_DOUBLE:
-				return new DoubleLiteral(getLocation(ctx), ctx->getText());
+				return ImplicitCast<Expression*>(new DoubleLiteral(getLocation(ctx), ctx->getText()));
 			case ParsingOptions::AS_DECIMAL:
-				return new DecimalLiteral(getLocation(ctx), ctx->getText());
+				return ImplicitCast<Expression*>(new DecimalLiteral(getLocation(ctx), ctx->getText()));
 			case ParsingOptions::REJECT:
 				throw ParsingException("Unexpected decimal literal");
 			default:
@@ -953,11 +973,11 @@ namespace centurion {
 	}
 
 	antlrcpp::Any AstBuilder::visitDoubleLiteral(CentSqlParser::DoubleLiteralContext *ctx) {
-		return new DoubleLiteral(getLocation(ctx), ctx->getText());
+		return ImplicitCast<Expression*>(new DoubleLiteral(getLocation(ctx), ctx->getText()));
 	}
 
 	antlrcpp::Any AstBuilder::visitIntegerLiteral(CentSqlParser::IntegerLiteralContext *ctx) {
-		return new LongLiteral(getLocation(ctx), ctx->getText());
+		return ImplicitCast<Expression*>(new LongLiteral(getLocation(ctx), ctx->getText()));
 	}
 
 	antlrcpp::Any AstBuilder::visitNonReserved(CentSqlParser::NonReservedContext *ctx) {
@@ -973,8 +993,8 @@ namespace centurion {
 		auto visitResults = visit(contexts);
 		std::vector<std::string> parts;
 		for (auto& visitResult : visitResults) {
-			Identifier* item = visitResult;
-			parts.emplace_back(item->getValue());
+			Expression* item = visitResult;
+			parts.emplace_back(dynamic_cast<Identifier*>(item)->getValue());
 		}
 		return new QualifiedName(parts);
 	}
