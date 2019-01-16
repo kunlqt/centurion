@@ -5,6 +5,7 @@
 #include <cwctype>
 #include <locale>
 #include <vector>
+#include <optional>
 
 namespace centurion {
 	static inline std::string& replace(std::string& s, const std::string& from, const std::string& to)
@@ -24,11 +25,21 @@ namespace centurion {
 
 
 	template<typename T, typename P>
-	T ImplicitCast(P v)
+	inline T implicitCast(P v)
 	{
 		return v;
 	}
-
+	
+	template<typename T, typename F>
+	inline std::vector<T> castVector(const std::vector<F>& from)
+	{
+		std::vector<T> to(from.size());
+		for (size_t idx = 0; idx < from.size(); idx++) {
+			F a = from[idx];
+			to[idx] = (T)a;
+		}
+		return to;
+	}
 
 	inline void removeQuotes(std::string& value)
 	{

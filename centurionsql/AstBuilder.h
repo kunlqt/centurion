@@ -18,7 +18,7 @@
 #include <optional>
 
 namespace centurion {
-    class AstBuilder : public CentSqlBaseVisitor  {
+	class AstBuilder : public CentSqlBaseVisitor  {
         int parameterPosition_;
         ParsingOptions parsingOptions_;
 
@@ -39,31 +39,7 @@ namespace centurion {
 			if (setQuantifier == nullptr) return false;
 			return setQuantifier->DISTINCT() != nullptr;
 		}
-				
-		template<typename T, typename F>
-		static std::vector<T> castVector(const std::vector<F>& from)
-		{
-			std::vector<T> to(from.size());
-			for (size_t idx = 0; idx < from.size(); idx++) {
-				F a = from[idx];
-				to[idx] = (T)a;
-			}
-			return to;
-		}
-
-		template<typename T>
-		std::optional<T> visitIfPresent(antlr4::ParserRuleContext* context)
-		{
-			if (context != nullptr) {
-				auto visitResult = CentSqlBaseVisitor::visit(context);
-				if (visitResult.isNotNull()) {
-					T tmp = visitResult;
-					return std::make_optional(tmp);
-				}
-			}
-			return std::optional<T>();
-		}
-
+		
 		std::vector<antlrcpp::Any> visit(std::vector<antlr4::ParserRuleContext*> contexts)
 		{
 			std::vector<antlrcpp::Any> result;
@@ -74,7 +50,7 @@ namespace centurion {
 		}
 
 		QualifiedName* getQualifiedName(CentSqlParser::QualifiedNameContext* ctx);
-
+		template<typename T> inline std::optional<T> visitIfPresent(antlr4::ParserRuleContext* context);
 
     public:
         AstBuilder(ParsingOptions parsingOptions);

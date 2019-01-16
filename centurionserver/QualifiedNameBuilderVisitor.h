@@ -227,9 +227,9 @@ namespace centurion {
 			{
 				return iterators.front();
 			} else if (iterators.size() == 2) {
-				return ImplicitCast<SearchIterator*>(new SearchIteratorOr(iterators.front(), iterators.back()));
+				return implicitCast<SearchIterator*>(new SearchIteratorOr(iterators.front(), iterators.back()));
 			}
-			return ImplicitCast<SearchIterator*>(new SearchIteratorIn(iterators));
+			return implicitCast<SearchIterator*>(new SearchIteratorIn(iterators));
 		}
 
 		virtual antlrcpp::Any visitInListExpression(InListExpression* node, antlr4::ParserRuleContext* context) override
@@ -250,11 +250,11 @@ namespace centurion {
 			if (logicalExpr->getOperator() == LogicalBinaryExpression::Operator::AND)
 			{
 				log_->trace("visitLogicalBinaryExpression operator AND");
-				return ImplicitCast<SearchIterator*>(new SearchIteratorAnd(left, right));
+				return implicitCast<SearchIterator*>(new SearchIteratorAnd(left, right));
 			} else if (logicalExpr->getOperator() == LogicalBinaryExpression::Operator::OR)
 			{
 				log_->trace("visitLogicalBinaryExpression operator OR");
-				return ImplicitCast<SearchIterator*>(new SearchIteratorOr(left, right));
+				return implicitCast<SearchIterator*>(new SearchIteratorOr(left, right));
 			}
 			throw std::runtime_error("Unsupported logical binary operator");
 		}
