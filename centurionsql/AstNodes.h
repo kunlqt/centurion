@@ -12,18 +12,15 @@ namespace centurion {
 	class AstVisitor;
 
 	class Node {
-
-public:
+	public:
 		virtual std::optional<NodeLocation> getLocation() const { return location_; }
 		virtual std::vector<Node*> getChildren()  const = 0;
 		virtual size_t hashCode() const = 0;
 		virtual bool equals(const Node* node) const = 0;
 		virtual std::string toString() const = 0;
-
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context);
 
-	protected:
-		// protected:
+	protected:		
 		Node(std::optional<NodeLocation> location) : location_(location) { }
 		virtual ~Node() {};
 	private:
@@ -33,9 +30,7 @@ public:
 	class Expression : public Node {
 	public:
 		Expression(std::optional<NodeLocation> location) : Node(location) { }
-
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
-
 		virtual std::string toString() const override {
 			return "Expression";
 		}
@@ -49,33 +44,18 @@ public:
 			namePattern_("[a-zA-Z_]([a-zA-Z0-9_:@])*"),
 			location_(location),
 			value_(std::move(value)),
-			delimited_(delimited)
-		{
-
-		}
+			delimited_(delimited) { }
 
 		Identifier(NodeLocation location, std::string value, bool delimited)
-			: Identifier(std::optional<NodeLocation>(location), value, delimited)
-		{
-
-		}
+			: Identifier(std::optional<NodeLocation>(location), value, delimited) { }
 
 		Identifier(std::string value, bool delimited)
-			:
-			Identifier(std::optional<NodeLocation>(), value, delimited)
-		{
-
-		}
+			: Identifier(std::optional<NodeLocation>(), value, delimited) { }
 
 		Identifier(std::string value)
-			:
-			Identifier(std::optional<NodeLocation>(), value, false)
+			: Identifier(std::optional<NodeLocation>(), value, false) 
 		{
 			delimited_ = std::regex_match(value, namePattern_);
-		}
-
-		operator Expression*() const { 
-			return nullptr;
 		}
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
@@ -121,21 +101,13 @@ public:
 
 	public:
 		DereferenceExpression(Expression* base, Identifier* field)
-			: DereferenceExpression(std::optional<NodeLocation>(), base, field)
-		{
-
-		}
+			: DereferenceExpression(std::optional<NodeLocation>(), base, field) { }
 
 		DereferenceExpression(NodeLocation location, Expression* base, Identifier* field)
-			: DereferenceExpression(std::make_optional(location), base, field)
-		{
-
-		}
+			: DereferenceExpression(std::make_optional(location), base, field) { }
 
 		DereferenceExpression(std::optional<NodeLocation> location, Expression* base, Identifier* field)
-			: Expression(location), base_(base), field_(field)
-		{
-		}
+			: Expression(location), base_(base), field_(field) { }
 
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
@@ -162,7 +134,8 @@ public:
 
 		static QualifiedName* getQualifiedName(DereferenceExpression* expression)
 		{
-			std::vector<std::string> parts = tryParseParts(expression->getBase(), toLowerCopy(expression->getField()->getValue()));
+			std::vector<std::string> parts = 
+				tryParseParts(expression->getBase(), toLowerCopy(expression->getField()->getValue()));
 			if (parts.empty())
 				return nullptr;
 			return new QualifiedName(parts);
@@ -210,8 +183,8 @@ public:
 
 	class Literal : public Expression {
 	public:
-		Literal(std::optional<NodeLocation> location) : Expression(location) {
-		}
+		Literal(std::optional<NodeLocation> location) 
+			: Expression(location) { }
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
@@ -1037,21 +1010,19 @@ public:
 
 	class With : public Node {
 	public:
-		With(bool recursive, std::vector<WithQuery*>& queries)
-			: With(std::optional<NodeLocation>(), recursive, queries) {
+		With(bool recursive, std::vector<WithQuery*> queries)
+			: With(std::optional<NodeLocation>(), recursive, std::move(queries)) {
 
 		}
 
-		With(const NodeLocation& location, bool recursive, std::vector<WithQuery*>& queries)
-			: With(std::optional<NodeLocation>(location), recursive, queries) {
+		With(const NodeLocation& location, bool recursive, std::vector<WithQuery*> queries)
+			: With(std::optional<NodeLocation>(location), recursive, std::move(queries)) {
 
 		}
 
-		With(std::optional<NodeLocation> location, bool recursive, std::vector<WithQuery*>& queries)
-			: Node(location), recursive_(recursive) {
-			for (auto item : queries) {
-				queries_.push_back(item);
-			}
+		With(std::optional<NodeLocation> location, bool recursive, std::vector<WithQuery*> queries)
+			: Node(location), recursive_(recursive), queries_(std::move(queries)) {
+			
 		}
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
@@ -1191,20 +1162,13 @@ public:
 
 	class AliasedRelation : public Relation {
 	public:
-		AliasedRelation(std::optional<NodeLocation> location, Relation* relation, Identifier* alias, const std::vector<Identifier*>& columnNames)
-			: Relation(location), relation_(relation), alias_(alias)
-		{
-			for (const auto& col : columnNames_) {
-				columnNames_.push_back(col);
-			}
-		}
+		AliasedRelation(std::optional<NodeLocation> location, Relation* relation, Identifier* alias, std::vector<Identifier*> columnNames)
+			: Relation(location), relation_(relation), alias_(alias), columnNames_(std::move(columnNames)) { }
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
 		virtual std::vector<Node*> getChildren() const override {
-			std::vector<Node*> result;
-			result.push_back(relation_);
-			return result;
+			return std::vector<Node*> { relation_ };
 		}
 
 		virtual size_t hashCode() const override {
@@ -1510,19 +1474,13 @@ public:
 	class IsNullPredicate : public Expression {
 	public:
 		IsNullPredicate(Expression* value)
-			:
-			IsNullPredicate(std::optional<NodeLocation>(), value) {
-		}
+			: IsNullPredicate(std::optional<NodeLocation>(), value) { }
 
 		IsNullPredicate(NodeLocation location, Expression* value)
-			:
-			IsNullPredicate(std::make_optional(location), value) {
-		}
+			: IsNullPredicate(std::make_optional(location), value) { }
 
 		IsNullPredicate(std::optional<NodeLocation> location, Expression* value)
-			:
-			Expression(location), value_(value) {
-		}
+			: Expression(location), value_(value) { }
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
@@ -1657,7 +1615,6 @@ public:
 	};
 
 	class Table : public QueryBody {
-
 	public:
 		Table(std::optional<NodeLocation> location, QualifiedName* name) : QueryBody(location), name_(name) { }
 		Table(QualifiedName* name) : QueryBody(std::nullopt), name_(name) { }
@@ -2087,7 +2044,6 @@ public:
 		virtual bool equals(const Node* node) const override {
 			return false;
 		}
-
 
 	private:
 		std::vector<Identifier*> components_;
