@@ -70,30 +70,47 @@ template<class Body, class Allocator, class Send>
 		return res;
 	};
 
+	auto const buildStatusProgress = [](size_t progress) {
+		rapidjson::Document doc(rapidjson::kObjectType);
+		doc.AddMember(rapidjson::StringRef("status"), rapidjson::StringRef("insert_in_progress"), doc.GetAllocator());
+		doc.AddMember(rapidjson::StringRef("progress"), rapidjson::Value().SetInt64(progress), doc.GetAllocator());
+		rapidjson::StringBuffer result;
+		rapidjson::Writer<rapidjson::StringBuffer> writer(result);
+		doc.Accept(writer);
+		std::string str(result.GetString(), result.GetSize());
+		return str;
+	};
+		
+	auto const buildInsertResult = [](centurion::DocumentIds& docsInserted) {
+		rapidjson::Document doc(rapidjson::kObjectType);
+		doc.AddMember(rapidjson::StringRef("status"), rapidjson::StringRef("insert_done"), doc.GetAllocator());
+		rapidjson::Value documentIds(rapidjson::kArrayType);
+		rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
+		documentIds.Reserve(docsInserted.size(), allocator);
+		for (auto docInserted : docsInserted) {
+			documentIds.PushBack(docInserted, allocator);
+		}
+		doc.AddMember(rapidjson::StringRef("documents"), documentIds, doc.GetAllocator());
+		rapidjson::StringBuffer result;
+		rapidjson::Writer<rapidjson::StringBuffer> writer(result);
+		doc.Accept(writer);
+		std::string str(result.GetString(), result.GetSize());
+		return str;
+	};
+
 	if (req.method() == http::verb::post)
 	{
 		if (boost::iends_with(req.target(), "/insert")) {
 			if (req[http::field::content_type] == "application/json") {
 				try {
 					rapidjson::StringStream ss(req.body().data());
-					auto docsInserted = dbm->insertDocuments(ss);
+					auto docsInserted = dbm->insertDocuments(ss, [&buildStatusProgress, &state](size_t progress) { state->send(buildStatusProgress(progress)); });
 					http::response<http::string_body> res{ http::status::ok, req.version() };
 					res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
 					res.set(http::field::content_type, "application/json");
-					rapidjson::Document doc(rapidjson::kObjectType);
-					doc.AddMember(rapidjson::StringRef("operation"), rapidjson::StringRef("insert"), doc.GetAllocator());
-					rapidjson::Value documentIds(rapidjson::kArrayType);
-					rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
-					documentIds.Reserve(docsInserted.size(), allocator);					
-					for (auto documentId : docsInserted) {
-						documentIds.PushBack(documentId, allocator);
-					}
-					doc.AddMember(rapidjson::StringRef("documents"), documentIds, doc.GetAllocator());
-					rapidjson::StringBuffer result;
-					rapidjson::Writer<rapidjson::StringBuffer> writer(result);
-					doc.Accept(writer);
-					state->send(result.GetString());
-					res.body() = result.GetString();
+					const auto insertResult = buildInsertResult(docsInserted);
+					state->send(insertResult);
+					res.body() = insertResult;
 					res.keep_alive(req.keep_alive());
 					return send(std::move(res));
 				} catch (std::runtime_error& err)

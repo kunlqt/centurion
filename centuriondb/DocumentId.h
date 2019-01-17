@@ -5,9 +5,12 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
+#include <vector>
+#include <cstdint>
 
 namespace centurion {
 	using DocumentId = std::uint64_t;
+	using DocumentIds = std::vector<DocumentId>;
 	static const DocumentId InvalidDocumentId = 0;
 	static const DocumentId MinDocumentId = 0;
 	static const DocumentId MaxDocumentId = std::numeric_limits<std::uint64_t>::max();

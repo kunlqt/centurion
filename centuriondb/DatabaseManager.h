@@ -1,5 +1,5 @@
 #pragma once
-
+#include "DocumentId.h"
 #include "SearchIterator.h"
 #include "DocumentStore.h"
 #include "IndexNameStore.h"
@@ -32,7 +32,7 @@ namespace centurion
 			rapidjson::Document& results,
 			DocumentId startFrom,
 			size_t limit);
-		std::vector<DocumentId> insertDocuments(rapidjson::StringStream& is);
+		DocumentIds insertDocuments(rapidjson::StringStream& is, std::function<void(size_t)> onProgress);
 	
 		const DocumentStore& documentStore() const { return documentStore_; };
 		const IndexNameStore& indexNameStore() const { return indexNameStore_; };

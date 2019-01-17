@@ -8,8 +8,8 @@ namespace centurion {
 
 	public:
 		virtual int Compare(const rocksdb::Slice& a, const rocksdb::Slice& b) const override {
-			IndexId idxA = *(IndexId*)(a.data());
-			IndexId idxB = *(IndexId*)(b.data());
+			IndexId idxA = GetIndexId(a.data());
+			IndexId idxB = GetIndexId(b.data());
 			if (idxA < idxB) return -1;
 			if (idxA > idxB) return +1;
 			std::uint8_t valueA = *(std::uint8_t*)(a.data() + sizeof idxA);

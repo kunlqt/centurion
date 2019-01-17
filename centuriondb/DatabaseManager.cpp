@@ -16,14 +16,14 @@ namespace centurion {
 	{}
 
 	size_t DatabaseManager::searchDocuments(
-		std::vector<std::string> qualifiedNames,
+		std::vector<std::string> selectedFields,
 		std::shared_ptr<SearchIterator> rootSearchIterator,
 		rapidjson::Document& results, 
 		DocumentId startFrom, 
 		size_t limit)
 	{
 		auto console = spdlog::get("root");
-		auto selectFields = std::move(qualifiedNames);
+		auto selectFields = std::move(selectedFields);
 		MergeOverlappingFields(selectFields);
 		rootSearchIterator->seek(
 			[this](FieldType fieldType, const std::string& fieldName) { return indexNameStore_.findIndexId(fieldName); },
@@ -54,7 +54,7 @@ namespace centurion {
 			const auto documentId = rootSearchIterator->current();
 			console->trace("Found document id: {}", documentId);
 			totalDocumentsFound++;
-			auto result = documentStore_.findDocument(documentId, allocator);
+			auto result = documentStore_.loadDocument(documentId, allocator);
 			if (result.IsNull()) {
 				console->error("Document with id: {} not found in database", documentId);
 			} else {
@@ -78,9 +78,9 @@ namespace centurion {
 		return totalDocumentsFound;
 	}
 
-	std::vector<DocumentId> DatabaseManager::insertDocuments(rapidjson::StringStream& is)
+	DocumentIds DatabaseManager::insertDocuments(rapidjson::StringStream& is, std::function<void(size_t)> onProgress)
 	{
-		std::vector<DocumentId> result;
+		DocumentIds result;
 		centurion::DocumentIndexer documentIndexer(documentStore_, indexNameStore_, isvs_, idvs_, ibvs_, savs_);
 
 		bool dropDatabase = false;
@@ -105,21 +105,27 @@ namespace centurion {
 		{
 			throw std::runtime_error("Only json object or json array are supported as root object");
 		}
-		//auto docs = rootDoc["rows"].GetArray();
 		auto docs = rootDoc.GetArray();
+		size_t total = docs.Size();
 		console->trace("Parsing done!");
-		console->trace("Inserting {} documents...", docs.Size());
+		if (total == 0) {
+			throw std::runtime_error("Empty array of objects");
+		}
+		console->trace("Inserting {} documents...", total);
 		const auto start = std::chrono::system_clock::now();
-		size_t cnt = 0;
+		size_t cnt = 0;		
+		// report progress on each 10% but not more than 1k and not less than 1
+		size_t div = std::min(1ull, std::max(total / 10, 1000ull));
 		for (const auto& doc : docs)
 		{
 			result.push_back(documentIndexer.indexDocument(doc));
 			cnt++;
-			if ((cnt % 1000) == 0)
+			if ((cnt % div) == 0)
 			{
-				std::cout << ".";
+				onProgress(((double)cnt/(double)total)*100.0f);
 			}
 		}
+		onProgress(100.0f);
 		std::cout << std::endl;
 		const auto end = std::chrono::system_clock::now();
 		std::chrono::duration<double> elapsed_seconds = end - start;

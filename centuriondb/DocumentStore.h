@@ -75,12 +75,12 @@ namespace centurion {
 			throw std::runtime_error("Empty document");			
 		}
 
-		rapidjson::Value findDocument(DocumentId documentId, rapidjson::Document::AllocatorType& allocator) const
+		rapidjson::Value loadDocument(DocumentId documentId, rapidjson::Document::AllocatorType& allocator) const
 		{
 			std::string documentPayload;
 			auto getResult = db_->Get(
 				rocksdb::ReadOptions(),
-				rocksdb::Slice(reinterpret_cast<char*>(documentId), sizeof(documentId)),
+				rocksdb::Slice(reinterpret_cast<char*>(&documentId), sizeof(documentId)),
 				&documentPayload);
 			if (getResult.ok()) {
 				rapidjson::Document doc;
@@ -172,18 +172,22 @@ namespace centurion {
 
 		void makeDirty() const
 		{
+			logger_->trace("Marking DB as not clean...");
 			if (!db_->Put(rocksdb::WriteOptions(), isDirtyKey, "Y").ok())
-			{
+			{				
 				throw std::runtime_error("put __is_dirty__ error");
 			}
+			logger_->trace("Done marking DB as not clean!");
 		}
 
 		void cleanDirty() const
 		{
+			logger_->trace("Resetting DB clean flag...");
 			if (!db_->Put(rocksdb::WriteOptions(), isDirtyKey, "N").ok())
-			{
+			{				
 				throw std::runtime_error("put __is_dirty__ error");
 			}
+			logger_->trace("Done resetting DB clean flag...");
 		}
 
 		rocksdb::DB* db_;
