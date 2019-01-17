@@ -26,11 +26,9 @@ namespace centurion
 			delete right_;
 		}
 		
-		void seek(
-			std::function<IndexId(FieldType, const std::string&)> fieldNameResolver,
-			std::function<rocksdb::Iterator*(FieldType, rocksdb::ReadOptions& opts)> iteratorBuilder,
-			DocumentId documentId
-		) override
+		void seek(std::function<IndexId(FieldType, const std::string&)> fieldNameResolver,
+			std::function<rocksdb::Iterator*(FieldType, const rocksdb::Slice*, const rocksdb::Slice*)> iteratorBuilder,
+			DocumentId documentId) override
 		{
 			left_->seek(fieldNameResolver, iteratorBuilder, documentId);
 			if (!left_->valid())

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Utils.h"
 #include "IndexId.h"
 #include "DocumentId.h"
 #include "SearchIterator.h"
@@ -7,12 +8,6 @@
 
 namespace centurion
 {
-	inline rocksdb::Slice buildBooleanSlice(IndexId indexId, bool value, char* dst, size_t dstSize)
-	{
-		CreateBooleanIndex(dst, indexId, value);
-		return { dst, dstSize };
-	}
-
 	struct BooleanValueSearchIterator : SearchIterator
 	{
 		BooleanValueSearchIterator(const BooleanValueSearchIterator&) = delete;
@@ -32,7 +27,7 @@ namespace centurion
 
 		void seek(
 			std::function<IndexId(FieldType, const std::string&)> fieldNameResolver,
-			std::function<rocksdb::Iterator*(FieldType, rocksdb::ReadOptions& opts)> iteratorBuilder,
+			std::function<rocksdb::Iterator*(FieldType, const rocksdb::Slice*, const rocksdb::Slice*)> iteratorBuilder,
 			DocumentId documentId) override
 		{	
 			auto console = spdlog::get("root");
@@ -53,13 +48,13 @@ namespace centurion
 			lowerBoundVal_ = (value_ ? 1 : 0);
 			size_t lowerSliceBufSize_ = (sizeof(indexId_) + sizeof(std::uint8_t) + sizeof(DocumentId));			
 			lowerSliceBuf_ = (new char[lowerSliceBufSize_]);
-			lowerBoundSlice_ = (buildBooleanSlice(indexId_, value_, lowerSliceBuf_, lowerSliceBufSize_));
+			CreateBooleanIndex(lowerSliceBuf_, indexId_, value_);
+			lowerBoundSlice_ = rocksdb::Slice(lowerSliceBuf_, lowerSliceBufSize_);
 			size_t upperSliceBufSize_ = (sizeof(indexId_) + sizeof(std::uint8_t) + sizeof(DocumentId));			
 			upperSliceBuf_ = (new char[upperSliceBufSize_]);
-			upperBoundSlice_ = (buildBooleanSlice(value_ ? indexId_ + 1 : indexId_, !value_, upperSliceBuf_, upperSliceBufSize_));
-			opts_.iterate_lower_bound = &lowerBoundSlice_;
-			opts_.iterate_upper_bound = &upperBoundSlice_;			
-			iterator_ = iteratorBuilder(kBoolean, opts_);
+			CreateBooleanIndex(upperSliceBuf_, value_ ? indexId_ + 1 : indexId_, !value_);
+			upperBoundSlice_ = rocksdb::Slice(upperSliceBuf_, upperSliceBufSize_);
+			iterator_ = iteratorBuilder(kBoolean, &lowerBoundSlice_, &upperBoundSlice_);
 			iterator_->Seek(lowerBoundSlice_);
 			if (iterator_->Valid()) {
 				if (checkUpperBound()) {
@@ -142,8 +137,7 @@ namespace centurion
 		char* lowerSliceBuf_;
 		rocksdb::Slice lowerBoundSlice_;		
 		char* upperSliceBuf_;
-		rocksdb::Slice upperBoundSlice_;
-		rocksdb::ReadOptions opts_;
+		rocksdb::Slice upperBoundSlice_;		
 		rocksdb::Iterator* iterator_;
 		DocumentId currentDocumentId_;
 	};

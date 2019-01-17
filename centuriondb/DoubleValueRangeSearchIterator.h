@@ -43,9 +43,8 @@ namespace centurion
 			return new DoubleValueRangeSearchIterator(fieldName, lower + eps, upper - eps);
 		}
 
-		void seek(
-			std::function<IndexId(FieldType, const std::string&)> fieldNameResolver,
-			std::function<rocksdb::Iterator*(FieldType, rocksdb::ReadOptions& opts)> iteratorBuilder,
+		void seek(std::function<IndexId(FieldType, const std::string&)> fieldNameResolver,
+			std::function<rocksdb::Iterator*(FieldType, const rocksdb::Slice*, const rocksdb::Slice*)> iteratorBuilder,
 			DocumentId documentId) override
 		{
 			auto console = spdlog::get("root");
@@ -66,11 +65,7 @@ namespace centurion
 			rocksdb::Slice lowerBoundSlice_ = (buildDoubleSlice(indexId_, lowerBound_, lowerSliceBuf_, lowerSliceBufSize_));
 			rocksdb::Slice upperBoundSlice_ = (buildDoubleSlice(indexId_, upperBound_, upperSliceBuf_, upperSliceBufSize_));
 
-			rocksdb::ReadOptions opts_;
-			opts_.iterate_lower_bound = &lowerBoundSlice_;
-			opts_.iterate_upper_bound = &upperBoundSlice_;
-
-			rocksdb::Iterator* iterator = iteratorBuilder(kDouble, opts_);
+			rocksdb::Iterator* iterator = iteratorBuilder(kDouble, &lowerBoundSlice_, &upperBoundSlice_);
 			iterator->Seek(lowerBoundSlice_);
 			while (iterator->Valid()) {
 				if (checkUpperBound(iterator->key().data()))

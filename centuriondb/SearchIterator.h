@@ -37,7 +37,7 @@ namespace centurion
 		virtual DocumentId current() const = 0;
 		virtual void seek(
 			std::function<IndexId(FieldType, const std::string&)> fieldNameResolver,
-			std::function<rocksdb::Iterator*(FieldType, rocksdb::ReadOptions& opts)> iteratorBuilder,
+			std::function<rocksdb::Iterator*(FieldType, const rocksdb::Slice*, const rocksdb::Slice*)> iteratorBuilder,
 			DocumentId documentId) = 0;
 		virtual void next() = 0;
 

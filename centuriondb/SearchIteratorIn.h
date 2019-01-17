@@ -28,9 +28,8 @@ namespace centurion
 			}
 		}
 
-		void seek(
-			std::function<IndexId(FieldType, const std::string&)> fieldNameResolver,
-			std::function<rocksdb::Iterator*(FieldType, rocksdb::ReadOptions& opts)> iteratorBuilder,
+		void seek(std::function<IndexId(FieldType, const std::string&)> fieldNameResolver,
+			std::function<rocksdb::Iterator*(FieldType, const rocksdb::Slice*, const rocksdb::Slice*)> iteratorBuilder,
 			DocumentId documentId) override
 		{			
 			if (!iterators_.empty()) {

@@ -27,8 +27,11 @@ namespace centurion {
 		MergeOverlappingFields(selectFields);
 		rootSearchIterator->seek(
 			[this](FieldType fieldType, const std::string& fieldName) { return indexNameStore_.findIndexId(fieldName); },
-			[this](FieldType fieldType, rocksdb::ReadOptions& opts)
+			[this](FieldType fieldType, const rocksdb::Slice* lowerBound, const rocksdb::Slice* upperBound)
 			{
+				rocksdb::ReadOptions opts;
+				opts.iterate_lower_bound = lowerBound;
+				opts.iterate_upper_bound = upperBound;
 				switch (fieldType)
 				{
 					case kDouble: return idvs_.newIterator(opts);

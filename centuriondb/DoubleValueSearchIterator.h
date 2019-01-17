@@ -7,12 +7,6 @@
 
 namespace centurion
 {
-	inline rocksdb::Slice buildDoubleSlice(IndexId indexId, double value, char* dst, size_t dstSize)
-	{
-		CreateDoubleIndex(dst, indexId, value);
-		return { dst, dstSize };
-	}
-
 	struct DoubleValueSearchIterator : SearchIterator
 	{
 		DoubleValueSearchIterator(const DoubleValueSearchIterator&) = delete;
@@ -30,9 +24,8 @@ namespace centurion
 			delete iterator_;
 		}
 
-		void seek(
-			std::function<IndexId(FieldType, const std::string&)> fieldNameResolver,
-			std::function<rocksdb::Iterator*(FieldType, rocksdb::ReadOptions& opts)> iteratorBuilder,
+		void seek(std::function<IndexId(FieldType, const std::string&)> fieldNameResolver,
+			std::function<rocksdb::Iterator*(FieldType, const rocksdb::Slice*, const rocksdb::Slice*)> iteratorBuilder,
 			DocumentId documentId) override
 		{	
 			auto console = spdlog::get("root");
@@ -43,8 +36,7 @@ namespace centurion
 			delete iterator_;
 			iterator_ = nullptr;
 			indexId_ = fieldNameResolver(kDouble, fieldName_);
-			if (indexId_ == InvalidIndexId)
-			{
+			if (indexId_ == InvalidIndexId) {
 				console->error("Field name: {0} not found", fieldName_);
 				setState(AfterLast);
 				currentDocumentId_ = InvalidDocumentId;
@@ -52,18 +44,16 @@ namespace centurion
 			}
 			const size_t lowerSliceBufSize = (sizeof(indexId_) + sizeof(double) + sizeof(DocumentId));			
 			lowerSliceBuf_ = (new char[lowerSliceBufSize]);
-			lowerBoundSlice_ = (buildDoubleSlice(indexId_, lowerBound_, lowerSliceBuf_, lowerSliceBufSize));
-			const size_t upperSliceBufSize = (sizeof(indexId_) + sizeof(double) + sizeof(DocumentId));			
+			CreateDoubleIndex(lowerSliceBuf_, indexId_, lowerBound_);
+			lowerBoundSlice_ = rocksdb::Slice(lowerSliceBuf_, lowerSliceBufSize);
+			const size_t upperSliceBufSize = (sizeof(indexId_) + sizeof(double) + sizeof(DocumentId));
 			upperSliceBuf_ = (new char[upperSliceBufSize]);
-			upperBoundSlice_ = (buildDoubleSlice(indexId_, upperBound_, upperSliceBuf_, upperSliceBufSize));
-			opts_.iterate_lower_bound = &lowerBoundSlice_;
-			opts_.iterate_upper_bound = &upperBoundSlice_;			
-			iterator_ = iteratorBuilder(kDouble, opts_);
+			CreateDoubleIndex(upperSliceBuf_, indexId_, upperBound_);
+			upperBoundSlice_ = rocksdb::Slice(upperSliceBuf_, upperSliceBufSize);
+			iterator_ = iteratorBuilder(kDouble, &lowerBoundSlice_, &upperBoundSlice_);
 			iterator_->Seek(lowerBoundSlice_);
-			if (iterator_->Valid())
-			{
-				if (checkUpperBound())
-				{
+			if (iterator_->Valid()) {
+				if (checkUpperBound()) {
 					setState(First);
 					currentDocumentId_ = ExtractDocumentIdFromDouble(iterator_->key().data());
 				} else {
@@ -78,16 +68,12 @@ namespace centurion
 			}
 		}
 
-		void next() override
-		{
+		void next() override {
 			if (valid() && iterator_->Valid()) {
 				iterator_->Next();
-				if (iterator_->Valid())
-				{
-					if (checkUpperBound())
-					{
-						if (getState() == First)
-						{
+				if (iterator_->Valid()) {
+					if (checkUpperBound()) {
+						if (getState() == First) {
 							setState(None);
 						}
 						currentDocumentId_ = ExtractDocumentIdFromDouble(iterator_->key().data());
@@ -145,8 +131,7 @@ namespace centurion
 		rocksdb::Slice lowerBoundSlice_;
 		double upperBound_;		
 		char* upperSliceBuf_;
-		rocksdb::Slice upperBoundSlice_;
-		rocksdb::ReadOptions opts_;
+		rocksdb::Slice upperBoundSlice_;		
 		rocksdb::Iterator* iterator_;
 		DocumentId currentDocumentId_;
 	};
