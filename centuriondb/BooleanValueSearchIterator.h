@@ -114,10 +114,7 @@ namespace centurion
 			value_(value),
 			lowerSliceBuf_(nullptr),
 			upperSliceBuf_(nullptr),
-			iterator_(nullptr)
-		{
-		
-		}
+			iterator_(nullptr) { }
 
 		bool checkUpperBound() const
 		{

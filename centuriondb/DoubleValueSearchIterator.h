@@ -104,16 +104,14 @@ namespace centurion
 	private:
 		DoubleValueSearchIterator(std::string fieldName, double lowerBound, double upperBound)
 			:
-			fieldName_(fieldName),			
+			fieldName_(std::move(fieldName)),
 			indexId_(InvalidIndexId),
 			lowerBound_(lowerBound),
 			lowerSliceBuf_(nullptr),
 			upperBound_(upperBound),
 			upperSliceBuf_(nullptr),
 			iterator_(nullptr),
-			currentDocumentId_(InvalidDocumentId)
-		{
-		}
+			currentDocumentId_(InvalidDocumentId) { }
 
 		bool checkUpperBound() const {
 			const char* kd = iterator_->key().data();

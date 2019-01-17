@@ -118,14 +118,11 @@ namespace centurion
 	private:
 		DoubleValueRangeSearchIterator(std::string fieldName, double lowerBound, double upperBound)
 			:
-			fieldName_(fieldName),			
+			fieldName_(std::move(fieldName)),
 			indexId_(InvalidIndexId),
 			lowerBound_(lowerBound),
 			upperBound_(upperBound),
-			currentDocumentId_(InvalidDocumentId)
-		{
-
-		}
+			currentDocumentId_(InvalidDocumentId) { }
 		
 		inline rocksdb::Slice buildDoubleSlice(IndexId indexId, double value, char* dst, size_t dstSize)
 		{
