@@ -2,7 +2,7 @@
 #include "IndexId.h"
 #include "DocumentId.h"
 #include "Utils.h"
-#include <rocksdb/db.h>
+#include <rocksdb/comparator.h>
 
 namespace centurion {
 	class StringArrayValueIndexComparator : public rocksdb::Comparator {

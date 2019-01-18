@@ -3,9 +3,8 @@
 #include "DocumentId.h"
 #include "StringValueIndexComparator.h"
 #include "IndexedValuesStore.h"
-#include "Dumper.h"
-#include <rocksdb/db.h>
-#include <spdlog/spdlog.h>
+#include <rocksdb/write_batch.h>
+#include <rocksdb/slice.h>
 #include <string>
 
 namespace centurion {
@@ -40,9 +39,6 @@ namespace centurion {
 				rocksdb::Slice((const char*)&documentId, sizeof documentId) };
 			w.Put(rocksdb::SliceParts(slices, 4), rocksdb::SliceParts());
 			return writeSlice(&w);
-		}
-		/*
-		
-		*/
+		}		
 	};
 }

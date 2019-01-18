@@ -918,7 +918,7 @@ namespace centurion {
 	}
 
 	antlrcpp::Any AstBuilder::visitQuotedIdentifier(CentSqlParser::QuotedIdentifierContext *ctx) {
-		const auto& token = ctx->getText();
+		const auto& token = ctx->getText(); 
 		auto identifier = token.substr(1, token.length() - 1); 
 		replace(identifier, "\"\"", "\"");
 		return implicitCast<Expression*>(new Identifier(getLocation(ctx), identifier, true));

@@ -3,8 +3,8 @@
 #include "DocumentId.h"
 #include "StringArrayValueIndexComparator.h"
 #include "IndexedValuesStore.h"
-#include <rocksdb/db.h>
-#include <spdlog/spdlog.h>
+#include <rocksdb/write_batch.h>
+#include <rocksdb/slice.h>
 #include <string>
 
 namespace centurion {

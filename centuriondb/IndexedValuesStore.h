@@ -23,10 +23,10 @@ namespace centurion {
 			opts_.enable_pipelined_write = true;
 			opts_.max_background_jobs = 8;
 			opts_.IncreaseParallelism();
+			opts_.comparator = new Comp();
 			if (dropIfExist) {
 				rocksdb::DestroyDB(filename_.string(), opts_);
-			}
-			opts_.comparator = new Comp();
+			}			
 			log_->trace("Opening db index value store: {}...", filename_.string());
 			rocksdb::Status s1 = rocksdb::DB::Open(opts_, filename_.string(), &db_);
 			if (s1.ok()) {
@@ -37,12 +37,12 @@ namespace centurion {
 		}
 
 		virtual ~IndexedValuesStore() {
-			log_->trace("Releasing index value store!");
-			delete opts_.comparator;
+			log_->trace("Releasing index value store!");			
 			db_->FlushWAL(true);
 			db_->SyncWAL();
 			db_->Close();
 			delete db_;
+			delete opts_.comparator;
 			if (dropIfExist_) {
 				rocksdb::DestroyDB(filename_.string(), rocksdb::Options());
 			}

@@ -1,10 +1,10 @@
 #include "HttpSession.hpp"
 #include "WebsocketSession.hpp"
 #include "QueryDocumentHandler.h"
+#include "HttpRequestHandler.h"
 #include <boost/config.hpp>
 #include <boost/algorithm/string.hpp>
 #include <iostream>
-#include "HttpRequestHandler.h"
 
 #define BOOST_NO_CXX14_GENERIC_LAMBDAS
 
@@ -102,16 +102,6 @@ void http_session::on_read(beast::error_code ec, std::size_t)
             using response_type = typename std::decay<decltype(response)>::type;
             auto sp = std::make_shared<response_type>(std::forward<decltype(response)>(response));
 
-#if 0
-            // NOTE This causes an ICE in gcc 7.3
-            // Write the response
-            http::async_write(this->socket_, *sp,
-				[self = shared_from_this(), sp](
-					beast::error_code ec, std::size_t bytes)
-				{
-					self->on_write(ec, bytes, sp->need_eof()); 
-				});
-#else
             // Write the response
             auto self = shared_from_this();
             http::async_write(this->socket_, *sp,
@@ -120,7 +110,6 @@ void http_session::on_read(beast::error_code ec, std::size_t)
 				{
 					self->on_write(ec, bytes, sp->need_eof()); 
 				});
-#endif
         });
 #else
     //

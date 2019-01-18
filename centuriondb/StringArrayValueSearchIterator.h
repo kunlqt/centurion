@@ -4,7 +4,6 @@
 #include "IndexId.h"
 #include "DocumentId.h"
 #include "SearchIterator.h"
-#include "Dumper.h"
 #include <spdlog/spdlog.h>
 #include <string>
 

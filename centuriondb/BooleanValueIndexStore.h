@@ -2,9 +2,10 @@
 #include "IndexId.h"
 #include "DocumentId.h"
 #include "BooleanIndexComparator.h"
-#include <rocksdb/db.h>
-#include <string>
 #include "IndexedValuesStore.h"
+#include <rocksdb/write_batch.h>
+#include <rocksdb/slice.h>
+#include <string>
 
 namespace centurion {
 	class BooleanValueIndexStore : public IndexedValuesStore<BooleanIndexComparator>

@@ -1,7 +1,7 @@
 #pragma once
 #include "IndexId.h"
 #include "DocumentId.h"
-#include <rocksdb/db.h>
+#include <rocksdb/comparator.h>
 
 namespace centurion {
 	class BooleanIndexComparator : public rocksdb::Comparator {

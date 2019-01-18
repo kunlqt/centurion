@@ -1,10 +1,10 @@
 #pragma once
 #include "IndexId.h"
 #include <rocksdb/db.h>
+#include <spdlog/spdlog.h>
 #include <boost/filesystem/path.hpp>
 #include <string>
 #include <mutex>
-#include <spdlog/spdlog.h>
 
 namespace centurion {
 	inline const char* lastIndexIdKey = "__last_index_id__";

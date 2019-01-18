@@ -2,7 +2,7 @@
 #include "Utils.h"
 #include "IndexId.h"
 #include "DocumentId.h"
-#include <rocksdb/db.h>
+#include <rocksdb/comparator.h>
 
 namespace centurion {
 	class DoubleIndexComparator : public rocksdb::Comparator {

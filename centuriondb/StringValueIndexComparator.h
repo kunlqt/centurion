@@ -2,7 +2,7 @@
 #include "IndexId.h"
 #include "DocumentId.h"
 #include "Utils.h"
-#include <rocksdb/db.h>
+#include <rocksdb/comparator.h>
 
 namespace centurion {
 	class StringValueIndexComparator : public rocksdb::Comparator {
@@ -34,7 +34,6 @@ namespace centurion {
 			if (docA < docB) return -1;
 			if (docA > docB) return +1;
 			return 0;
-
 		}
 
 		virtual const char* Name() const override { return "StringValueIndexComparator"; }

@@ -8,7 +8,7 @@
 namespace  centurion {
 	void QueryDocumentHandler::handle(DatabaseManager& dbm, const std::string& query, rapidjson::Document& results)
 	{
-		auto log = spdlog::get("root");
+		auto log = spdlog::get("root")->clone("QueryDocumentHandler");
 		centurion::SearchIteratorBuilder builder;
 		log->trace("creating build query...");
 		std::stringstream ss(query);
@@ -19,6 +19,5 @@ namespace  centurion {
 			totalDocumentsFound = dbm.searchDocuments(res.qualifiedNames(), res.rootSearchIterator(), results, 0, 100);
 		}
 		log->trace("Search documents finished, found {}", totalDocumentsFound);
-
 	}
 }

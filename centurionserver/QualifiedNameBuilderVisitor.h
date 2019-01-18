@@ -152,7 +152,7 @@ namespace centurion {
 
 		}
 
-		SearchIterator* visitFieldComparisonExpression(const ComparisonExpression::Operator& oper, const std::string& fieldName, const antlrcpp::Any& value) const
+		SearchIterator* visitFieldComparisonExpression(const ComparisonExpression::Operator& oper, const std::string& fieldName, antlrcpp::Any value) const
 		{
 			if (oper == ComparisonExpression::Operator::EQUAL)
 			{
