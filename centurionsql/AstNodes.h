@@ -19,10 +19,10 @@ namespace centurion {
 		virtual bool equals(const Node* node) const = 0;
 		virtual std::string toString() const = 0;
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context);
-
+		std::optional<NodeLocation> location() const { return location_; }
 	protected:		
-		Node(std::optional<NodeLocation> location) : location_(location) { }
-		virtual ~Node() {};
+		Node(std::optional<NodeLocation> location) : location_(std::move(location)) { }
+		virtual ~Node() = default;
 	private:
 		std::optional<NodeLocation> location_;
 	};
@@ -149,7 +149,7 @@ namespace centurion {
 			} 
 			const auto dereferenceExpression = dynamic_cast<DereferenceExpression*>(base);
 			if (dereferenceExpression) {
-				QualifiedName* baseQualifiedName = getQualifiedName(dereferenceExpression);
+				const auto baseQualifiedName = getQualifiedName(dereferenceExpression);
 				if (baseQualifiedName != nullptr) {
 					auto newList = baseQualifiedName->getParts();
 					newList.emplace_back(fieldName);
@@ -1561,6 +1561,7 @@ namespace centurion {
 		virtual size_t hashCode() = 0;
 		virtual std::string toString() = 0;
 		virtual std::vector<Node*> getNodes() const = 0;
+		virtual ~JoinCriteria() {};
 	};
 
 	class Join : public Relation {
@@ -1620,6 +1621,7 @@ namespace centurion {
 	{
 	public:
 		JoinOn(Expression* expression) : expression_(expression) { }
+		virtual ~JoinOn() {}
 
 		virtual bool equals(const JoinCriteria& obj) override
 		{
@@ -1652,6 +1654,7 @@ namespace centurion {
 	{
 	public:
 		JoinUsing(std::vector<Identifier*> columns) : columns_(std::move(columns)) { }
+		virtual ~JoinUsing() {}
 
 		virtual bool equals(const JoinCriteria& obj) override
 		{
@@ -1683,6 +1686,8 @@ namespace centurion {
 	class NaturalJoin : public JoinCriteria
 	{
 	public:
+		virtual ~NaturalJoin() {}
+
 		virtual bool equals(const JoinCriteria& obj) override
 		{
 			return false;

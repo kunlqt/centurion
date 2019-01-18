@@ -9,21 +9,20 @@
 #include <string>
 
 namespace centurion {
-	class StringValueIndexStore : public IndexedValuesStore
+	class StringValueIndexStore : public IndexedValuesStore<StringValueIndexComparator>
 	{
 	public:
 		StringValueIndexStore(boost::filesystem::path filename, bool dropIfExist = false)
 			:
 			IndexedValuesStore(
 				filename, 
-				new centurion::StringValueIndexComparator(), 
 				dropIfExist)
 		{
 		}
 
 		virtual ~StringValueIndexStore()
 		{
-			delete comparator_;
+			
 		}
 
 		bool add(IndexId indexId, const std::string& str, DocumentId documentId) const
@@ -39,15 +38,8 @@ namespace centurion {
 				rocksdb::Slice((const char*)&strSize, sizeof strSize),
 				rocksdb::Slice(str, strSize),
 				rocksdb::Slice((const char*)&documentId, sizeof documentId) };
-			w.Put(rocksdb::SliceParts(slices, 4), emptySliceParts_);
-			auto status = db_->Write(writeOptions_, &w);
-			if (!status.ok())
-			{
-				auto console = spdlog::get("root");
-				console->error("Error indexing string value. Error: {}", status.ToString());
-				return false;
-			}
-			return true;
+			w.Put(rocksdb::SliceParts(slices, 4), rocksdb::SliceParts());
+			return writeSlice(&w);
 		}
 		/*
 		

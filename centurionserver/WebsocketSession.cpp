@@ -20,8 +20,8 @@ void websocket_session::fail(beast::error_code ec, char const* what)
     if( ec == net::error::operation_aborted ||
         ec == websocket::error::closed)
         return;
-
-    std::cerr << what << ": " << ec.message() << "\n";
+	log_->error(what);
+	log_->error(ec.message());
 }
 
 void websocket_session::on_accept(beast::error_code ec)

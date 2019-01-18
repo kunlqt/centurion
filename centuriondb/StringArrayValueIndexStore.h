@@ -8,18 +8,17 @@
 #include <string>
 
 namespace centurion {
-	class StringArrayValueIndexStore : public IndexedValuesStore
+	class StringArrayValueIndexStore : public IndexedValuesStore<StringArrayValueIndexComparator>
 	{
 	public:
 		StringArrayValueIndexStore(boost::filesystem::path filename, bool dropIfExist = false)
 			:
-			IndexedValuesStore(filename, new StringArrayValueIndexComparator(), dropIfExist)
+			IndexedValuesStore(filename, dropIfExist)
 		{
 		}
 
 		virtual ~StringArrayValueIndexStore()
 		{
-			delete comparator_;
 		}
 
 		bool add(IndexId indexId, std::uint32_t arrayElementIndex, const std::string& str, DocumentId documentId) const
@@ -36,15 +35,8 @@ namespace centurion {
 				rocksdb::Slice(str, strSize),
 				rocksdb::Slice((const char*)&arrayElementIndex, sizeof arrayElementIndex),
 				rocksdb::Slice((const char*)&documentId, sizeof documentId) };
-			w.Put(rocksdb::SliceParts(slices, 5), emptySliceParts_);
-			auto status = db_->Write(writeOptions_, &w);
-			if (!status.ok())
-			{
-				auto console = spdlog::get("root");
-				console->error("Error indexing array string element value. Error: {}", status.ToString());
-				return false;
-			}
-			return true;
+			w.Put(rocksdb::SliceParts(slices, 5), rocksdb::SliceParts());
+			return writeSlice(&w);
 		}
 		
 	};

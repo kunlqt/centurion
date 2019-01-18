@@ -35,13 +35,13 @@ void http_session::run()
 }
 
 // Report a failure
-void http_session::fail(beast::error_code ec, char const* what)
+void http_session::fail(beast::error_code ec, char const* what) const
 {
     // Don't report on canceled operations
     if(ec == net::error::operation_aborted)
         return;
-
-    std::cerr << what << ": " << ec.message() << "\n";
+	log_->error(what);
+	log_->error(ec.message());
 }
 
 template<bool isRequest, class Body, class Fields>
@@ -102,7 +102,7 @@ void http_session::on_read(beast::error_code ec, std::size_t)
             using response_type = typename std::decay<decltype(response)>::type;
             auto sp = std::make_shared<response_type>(std::forward<decltype(response)>(response));
 
-        #if 0
+#if 0
             // NOTE This causes an ICE in gcc 7.3
             // Write the response
             http::async_write(this->socket_, *sp,
@@ -111,7 +111,7 @@ void http_session::on_read(beast::error_code ec, std::size_t)
 				{
 					self->on_write(ec, bytes, sp->need_eof()); 
 				});
-        #else
+#else
             // Write the response
             auto self = shared_from_this();
             http::async_write(this->socket_, *sp,
@@ -120,7 +120,7 @@ void http_session::on_read(beast::error_code ec, std::size_t)
 				{
 					self->on_write(ec, bytes, sp->need_eof()); 
 				});
-        #endif
+#endif
         });
 #else
     //

@@ -4,17 +4,17 @@
 #include <boost/filesystem/path.hpp>
 
 namespace centurion {
+	template<typename Comp>
 	class IndexedValuesStore
 	{
 	public:
 		IndexedValuesStore(const IndexedValuesStore&) = delete;
 		IndexedValuesStore(IndexedValuesStore&&) = delete;
 
-		IndexedValuesStore(boost::filesystem::path filename, const rocksdb::Comparator* cmp, bool dropIfExist = false)
+		IndexedValuesStore(boost::filesystem::path filename, bool dropIfExist = false)
 			:
 			db_(nullptr),
 			filename_(std::move(filename)),
-			comparator_(cmp),
 			dropIfExist_(dropIfExist)
 		{
 			log_ = spdlog::get("root")->clone("IndexedValuesStore");			
@@ -26,7 +26,7 @@ namespace centurion {
 			if (dropIfExist) {
 				rocksdb::DestroyDB(filename_.string(), opts_);
 			}
-			opts_.comparator = cmp;			
+			opts_.comparator = new Comp();
 			log_->trace("Opening db index value store: {}...", filename_.string());
 			rocksdb::Status s1 = rocksdb::DB::Open(opts_, filename_.string(), &db_);
 			if (s1.ok()) {
@@ -38,6 +38,7 @@ namespace centurion {
 
 		virtual ~IndexedValuesStore() {
 			log_->trace("Releasing index value store!");
+			delete opts_.comparator;
 			db_->FlushWAL(true);
 			db_->SyncWAL();
 			db_->Close();
@@ -51,17 +52,24 @@ namespace centurion {
 		{
 			return db_->NewIterator(opts);
 		}
-		
-	protected:			
-		rocksdb::Options opts_;
-		rocksdb::WriteOptions writeOptions_;
-		rocksdb::SliceParts emptySliceParts_;
-		rocksdb::DB* db_;
-		boost::filesystem::path filename_;
-		const rocksdb::Comparator* comparator_;
-		bool dropIfExist_;
+
+	protected:
+		bool writeSlice(rocksdb::WriteBatch* w) const
+		{
+			auto status = db_->Write(rocksdb::WriteOptions(), w);
+			if (!status.ok()) {
+				auto console = spdlog::get("root");
+				console->error("Error indexing value. Error: {}", status.ToString());
+				return false;
+			}
+			return true;
+		}
 
 	private:
+		rocksdb::DB* db_;
+		rocksdb::Options opts_;
+		boost::filesystem::path filename_;
+		bool dropIfExist_;
 		std::shared_ptr<spdlog::logger> log_;
 	};
 }

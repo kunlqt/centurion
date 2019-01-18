@@ -2,6 +2,7 @@
 #include "DatabaseManager.h"
 #include <boost/beast.hpp>
 #include <boost/asio.hpp>
+#include <spdlog/logger.h>
 #include <memory>
 #include <string>
 
@@ -17,6 +18,7 @@ class shared_state;
 // Accepts incoming connections and launches the sessions
 class listener : public std::enable_shared_from_this<listener>
 {
+	std::shared_ptr<spdlog::logger> log_;
     tcp::acceptor acceptor_;
     tcp::socket socket_;
     std::shared_ptr<shared_state> state_;

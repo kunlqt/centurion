@@ -7,7 +7,7 @@ namespace centurion {
 	class QualifiedNameBuilder : public antlr4::ParserRuleContext {
 	public:
 		QualifiedNameBuilder() { }
-		QualifiedNameBuilder(QualifiedNameBuilder&& other)
+		QualifiedNameBuilder(QualifiedNameBuilder&& other) noexcept
 			: qualifiedNames_(std::move(other.qualifiedNames_))
 			, rootSearchIterator_(other.rootSearchIterator_)
 		{

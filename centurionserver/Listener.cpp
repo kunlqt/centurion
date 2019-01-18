@@ -12,6 +12,8 @@ listener::listener(
     , state_(state)
 	, dbm_(dbm)
 {
+	log_ = spdlog::get("root")->clone("http_listener");
+
     beast::error_code ec;
 
     // Open the acceptor
@@ -64,7 +66,8 @@ void listener::fail(beast::error_code ec, char const* what)
     // Don't report on canceled operations
     if(ec == net::error::operation_aborted)
         return;
-    std::cerr << what << ": " << ec.message() << "\n";
+	log_->error(what);
+	log_->error(ec.message());
 }
 
 // Handle a connection

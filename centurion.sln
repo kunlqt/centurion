@@ -6,25 +6,10 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "centuriondb", "centuriondb\centuriondb.vcxproj", "{380BB632-0AC3-424A-814A-2BB8CE4373FA}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "centurionsql", "centurionsql\centurionsql.vcxproj", "{25378B0C-DBDC-478C-B0D2-4126A148250C}"
-	ProjectSection(ProjectDependencies) = postProject
-		{83BE66CD-9C4F-4F84-B72A-DD1855C8FC8A} = {83BE66CD-9C4F-4F84-B72A-DD1855C8FC8A}
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "centurionserver", "centurionserver\centurionserver.vcxproj", "{718BFA6E-15D6-49A1-8736-7C73F5D87A67}"
 	ProjectSection(ProjectDependencies) = postProject
 		{25378B0C-DBDC-478C-B0D2-4126A148250C} = {25378B0C-DBDC-478C-B0D2-4126A148250C}
-		{380BB632-0AC3-424A-814A-2BB8CE4373FA} = {380BB632-0AC3-424A-814A-2BB8CE4373FA}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test_centurionsql", "test_centurionsql\test_centurionsql.vcxproj", "{F7797D96-154A-4F2B-96D6-5D5B7F258432}"
-	ProjectSection(ProjectDependencies) = postProject
-		{25378B0C-DBDC-478C-B0D2-4126A148250C} = {25378B0C-DBDC-478C-B0D2-4126A148250C}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "antlr4cpp-vs2017", "antlr4cpp-runtime\antlr4cpp-vs2017.vcxproj", "{83BE66CD-9C4F-4F84-B72A-DD1855C8FC8A}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test_centuriondb", "test_centuriondb\test_centuriondb.vcxproj", "{40D417D4-F056-43AE-8178-CC378D720792}"
-	ProjectSection(ProjectDependencies) = postProject
 		{380BB632-0AC3-424A-814A-2BB8CE4373FA} = {380BB632-0AC3-424A-814A-2BB8CE4373FA}
 	EndProjectSection
 EndProject
@@ -46,18 +31,6 @@ Global
 		{718BFA6E-15D6-49A1-8736-7C73F5D87A67}.Debug|x64.Build.0 = Debug|x64
 		{718BFA6E-15D6-49A1-8736-7C73F5D87A67}.Release|x64.ActiveCfg = Release|x64
 		{718BFA6E-15D6-49A1-8736-7C73F5D87A67}.Release|x64.Build.0 = Release|x64
-		{F7797D96-154A-4F2B-96D6-5D5B7F258432}.Debug|x64.ActiveCfg = Debug|x64
-		{F7797D96-154A-4F2B-96D6-5D5B7F258432}.Debug|x64.Build.0 = Debug|x64
-		{F7797D96-154A-4F2B-96D6-5D5B7F258432}.Release|x64.ActiveCfg = Release|x64
-		{F7797D96-154A-4F2B-96D6-5D5B7F258432}.Release|x64.Build.0 = Release|x64
-		{83BE66CD-9C4F-4F84-B72A-DD1855C8FC8A}.Debug|x64.ActiveCfg = Debug|x64
-		{83BE66CD-9C4F-4F84-B72A-DD1855C8FC8A}.Debug|x64.Build.0 = Debug|x64
-		{83BE66CD-9C4F-4F84-B72A-DD1855C8FC8A}.Release|x64.ActiveCfg = Release|x64
-		{83BE66CD-9C4F-4F84-B72A-DD1855C8FC8A}.Release|x64.Build.0 = Release|x64
-		{40D417D4-F056-43AE-8178-CC378D720792}.Debug|x64.ActiveCfg = Debug|x64
-		{40D417D4-F056-43AE-8178-CC378D720792}.Debug|x64.Build.0 = Debug|x64
-		{40D417D4-F056-43AE-8178-CC378D720792}.Release|x64.ActiveCfg = Release|x64
-		{40D417D4-F056-43AE-8178-CC378D720792}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

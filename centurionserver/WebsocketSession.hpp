@@ -3,7 +3,7 @@
 #include "SharedState.hpp"
 #include <boost/beast.hpp>
 #include <boost/asio.hpp>
-#include <cstdlib>
+#include <spdlog/logger.h>
 #include <memory>
 #include <string>
 #include <vector>
@@ -21,7 +21,8 @@ class shared_state;
 */
 class websocket_session : public std::enable_shared_from_this<websocket_session>
 {
-    beast::flat_buffer buffer_;
+	std::shared_ptr<spdlog::logger> log_;
+	beast::flat_buffer buffer_;
     websocket::stream<tcp::socket> ws_;
     std::shared_ptr<shared_state> state_;
     std::vector<std::shared_ptr<std::string const>> queue_;

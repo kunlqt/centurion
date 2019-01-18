@@ -8,20 +8,18 @@
 #include <string>
 
 namespace centurion {
-	class DoubleValueIndexStore : public IndexedValuesStore
+	class DoubleValueIndexStore : public IndexedValuesStore<DoubleIndexComparator>
 	{
 	public:
 		DoubleValueIndexStore(boost::filesystem::path filename, bool dropIfExist = false)
 			:
-			IndexedValuesStore(filename, new DoubleIndexComparator(), dropIfExist)
+			IndexedValuesStore(filename, dropIfExist)
 		{
 			//dump();
 		}
 
 		virtual ~DoubleValueIndexStore()
 		{
-			delete comparator_;
-			
 		}
 
 		bool add(IndexId indexId, double value, DocumentId documentId) const
@@ -32,16 +30,10 @@ namespace centurion {
 				rocksdb::Slice((const char*)&value, sizeof value),
 				rocksdb::Slice((const char*)&documentId, sizeof documentId) };
 			w.Put(rocksdb::SliceParts(slices, sizeof slices / sizeof slices[0]), rocksdb::SliceParts());
-			auto status = db_->Write(rocksdb::WriteOptions(), &w);
-			if (!status.ok())
-			{
-				auto console = spdlog::get("root");
-				console->error("Error indexing double value. Error: {}", status.ToString());
-				return false;
-			}
-			return true;
+			return writeSlice(&w);
 		}
 
+		/*
 		void dump()
 		{
 			rocksdb::Iterator* iterator = db_->NewIterator(rocksdb::ReadOptions());
@@ -53,5 +45,6 @@ namespace centurion {
 			}
 			delete iterator;
 		}
+		*/
 	};
 }

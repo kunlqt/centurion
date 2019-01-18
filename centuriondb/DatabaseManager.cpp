@@ -126,7 +126,6 @@ namespace centurion {
 			}
 		}
 		onProgress(100.0f);
-		std::cout << std::endl;
 		const auto end = std::chrono::system_clock::now();
 		std::chrono::duration<double> elapsed_seconds = end - start;
 		const auto speed = docs.Size() / elapsed_seconds.count();

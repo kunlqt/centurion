@@ -28,9 +28,7 @@ public:
     }
     
     ParsingOptions(DecimalLiteralTreatment decimalLiteralTreatment)
-    {
-        decimalLiteralTreatment_ = decimalLiteralTreatment;
-    }
+		: decimalLiteralTreatment_ (decimalLiteralTreatment) { }
     
     DecimalLiteralTreatment getDecimalLiteralTreatment() const
     {

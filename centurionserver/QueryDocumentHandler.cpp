@@ -13,8 +13,11 @@ namespace  centurion {
 		log->trace("creating build query...");
 		std::stringstream ss(query);
 		const auto res = builder.buildQuery(ss);
-		log->trace("creating search documents...");		
-		size_t totalDocumentsFound = dbm.searchDocuments(res.qualifiedNames(), res.rootSearchIterator(), results, 0, 100);
+		log->trace("creating search documents...");
+		size_t totalDocumentsFound = 0;
+		if (res.rootSearchIterator().get() != nullptr) {
+			totalDocumentsFound = dbm.searchDocuments(res.qualifiedNames(), res.rootSearchIterator(), results, 0, 100);
+		}
 		log->trace("Search documents finished, found {}", totalDocumentsFound);
 
 	}

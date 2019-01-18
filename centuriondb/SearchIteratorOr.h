@@ -43,48 +43,41 @@ namespace centurion
 
 		virtual void next() override
 		{
-			while (true) {
-				if (!left_->valid())
-				{
-					if (!right_->valid())
-					{
-						setState(AfterLast);
-						return;
-					}
-					currentDocumentId_ = right_->current();
-					setState(None);
-					right_->next();
-					return;
-				} 
+			if (!left_->valid())
+			{
 				if (!right_->valid())
 				{
-					currentDocumentId_ = left_->current();
-					setState(None);
-					left_->next();
+					setState(AfterLast);
 					return;
 				}
-
-				DocumentId doc1 = left_->current();
-				DocumentId doc2 = right_->current();
-				if (doc1 < doc2)
-				{
-					currentDocumentId_ = doc1;
-					left_->next();
-					setState(None);
-					return;
-				}
-				if (doc1 > doc2)
-				{
-					currentDocumentId_ = doc2;
-					right_->next();
-					setState(None);
-					return;
-				}
+				currentDocumentId_ = right_->current();
+				setState(None);
+				right_->next();
+				return;
+			} 
+			if (!right_->valid())
+			{
+				currentDocumentId_ = left_->current();
+				setState(None);
+				left_->next();
+				return;
+			}
+			const DocumentId doc1 = left_->current();
+			const DocumentId doc2 = right_->current();
+			if (doc1 < doc2)
+			{
+				currentDocumentId_ = doc1;
+				left_->next();
+				setState(None);
+			} else if (doc1 > doc2) {
+				currentDocumentId_ = doc2;
+				right_->next();
+				setState(None);
+			} else {
 				currentDocumentId_ = doc2;
 				left_->next();
 				right_->next();
 				setState(None);
-				return;
 			}
 		}
 

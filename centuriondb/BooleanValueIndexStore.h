@@ -7,19 +7,17 @@
 #include "IndexedValuesStore.h"
 
 namespace centurion {
-	class BooleanValueIndexStore : public IndexedValuesStore
+	class BooleanValueIndexStore : public IndexedValuesStore<BooleanIndexComparator>
 	{
 	public:
 		BooleanValueIndexStore(boost::filesystem::path filename, bool dropIfExist = false)
 			:
-			IndexedValuesStore(filename, new BooleanIndexComparator(), dropIfExist)
+			IndexedValuesStore(filename, dropIfExist)
 		{
 		}
 
 		virtual ~BooleanValueIndexStore()
-		{
-			delete comparator_;
-			
+		{	
 		}
 
 		bool add(IndexId indexId, bool b, DocumentId documentId) const
@@ -30,16 +28,8 @@ namespace centurion {
 				rocksdb::Slice((const char*)&indexId, sizeof indexId),
 				rocksdb::Slice((const char*)&value, sizeof value),
 				rocksdb::Slice((const char*)&documentId, sizeof documentId) };
-			w.Put(rocksdb::SliceParts(slices, sizeof slices / sizeof slices[0]), emptySliceParts_);
-			auto status = db_->Write(writeOptions_, &w);
-			if (!status.ok())
-			{
-				auto console = spdlog::get("root");
-				console->error("Error indexing string value. Error: {}", status.ToString());
-				return false;
-			}
-			return true;
-
+			w.Put(rocksdb::SliceParts(slices, sizeof slices / sizeof slices[0]), rocksdb::SliceParts());
+			return writeSlice(&w);
 		}
 	};
 }

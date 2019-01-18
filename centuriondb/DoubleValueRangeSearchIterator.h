@@ -99,7 +99,8 @@ namespace centurion
 				return;
 			}
 			while (documentBufferPos_ < documentBuffer_.size()) {
-				DocumentId tmpDocumentId = documentBuffer_[documentBufferPos_++];
+				const DocumentId tmpDocumentId = documentBuffer_[documentBufferPos_];
+				documentBufferPos_++;
 				if (tmpDocumentId != currentDocumentId_)
 				{
 					currentDocumentId_ = tmpDocumentId;

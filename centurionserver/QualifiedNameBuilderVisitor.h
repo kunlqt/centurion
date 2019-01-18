@@ -152,7 +152,7 @@ namespace centurion {
 
 		}
 
-		SearchIterator* visitFieldComparisonExpression(const ComparisonExpression::Operator oper, std::string fieldName, const antlrcpp::Any& value) const
+		SearchIterator* visitFieldComparisonExpression(const ComparisonExpression::Operator& oper, const std::string& fieldName, const antlrcpp::Any& value) const
 		{
 			if (oper == ComparisonExpression::Operator::EQUAL)
 			{
@@ -206,9 +206,8 @@ namespace centurion {
 			}
 			std::vector<std::shared_ptr<antlrcpp::Any>> literals = process(node->getValueList(), context);
 			std::vector<SearchIterator*> iterators;
-			for (auto literal : literals)
+			for (const auto& literal : literals)
 			{
-				SearchIterator* searchIterator = nullptr;
 				if (literal->is<std::string>())
 				{
 					iterators.emplace_back(StringValueSearchIterator::eq(fieldName, literal->as<std::string>()));
