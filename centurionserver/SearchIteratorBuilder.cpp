@@ -63,7 +63,7 @@ namespace centurion {
 			QualifiedNameBuilder parserContext;
 			visitor.process(statement, &parserContext);
 			console->trace("Parsing done, returning results");
-			return parserContext;
+			return std::move(parserContext);
 		} catch (const antlr4::ParseCancellationException& exc) {
 			console->error("SQL parse error: {}", exc.what());
 			tokens.reset();

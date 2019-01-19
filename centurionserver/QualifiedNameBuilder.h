@@ -7,19 +7,28 @@ namespace centurion {
 	class QualifiedNameBuilder : public antlr4::ParserRuleContext {
 	public:
 		QualifiedNameBuilder() { }
+
+		QualifiedNameBuilder(const QualifiedNameBuilder& other) = delete;
+
 		QualifiedNameBuilder(QualifiedNameBuilder&& other) noexcept
 			: qualifiedNames_(std::move(other.qualifiedNames_))
 			, rootSearchIterator_(other.rootSearchIterator_)
 		{
-			
+			other.rootSearchIterator_ = nullptr;
 		}
-		void add(std::shared_ptr<QualifiedName> qualifiedName) {
+
+		virtual ~QualifiedNameBuilder()
+		{
+			delete rootSearchIterator_;
+		}
+
+		void add(std::string qualifiedName) {
 			qualifiedNames_.emplace_back(qualifiedName);
 		}
 
 		void setRootSearchIterator(SearchIterator* rootSearchIterator)
 		{
-			rootSearchIterator_.reset(rootSearchIterator);
+			rootSearchIterator_ = rootSearchIterator;
 		}
 
 		std::string toString() const 
@@ -27,29 +36,24 @@ namespace centurion {
 			std::stringstream ss;
 			for (const auto& qualifiedName : qualifiedNames_)
 			{
-				ss << qualifiedName->toString() << ";";
+				ss << qualifiedName << ";";
 			}
 			return ss.str();
 		}
 
 		std::vector<std::string> qualifiedNames() const
 		{
-			std::vector<std::string> result;
-			for (const auto& qualifiedName : qualifiedNames_)
-			{
-				result.emplace_back(qualifiedName->toString());
-			}
-			return result;
+			return qualifiedNames_;
 		}
 
-		std::shared_ptr<SearchIterator> rootSearchIterator() const
+		SearchIterator* rootSearchIterator() const
 		{
 			return rootSearchIterator_;
 		}
 
 	private:
-		std::vector<std::shared_ptr<QualifiedName>> qualifiedNames_;
-		std::shared_ptr<SearchIterator> rootSearchIterator_;
+		std::vector<std::string> qualifiedNames_;
+		SearchIterator* rootSearchIterator_;
 	};
 
 }

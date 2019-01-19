@@ -28,7 +28,7 @@ namespace centurion
 		DatabaseManager(boost::filesystem::path databaseRootDir);
 		size_t searchDocuments(
 			std::vector<std::string> qualifiedNames,
-			std::shared_ptr<SearchIterator> rootSearchIterator,
+			SearchIterator* rootSearchIterator,
 			rapidjson::Document& results,
 			DocumentId startFrom,
 			size_t limit);

@@ -43,13 +43,10 @@ namespace centurion {
 
 	inline void removeQuotes(std::string& value)
 	{
-		if (value.size() >= 2)
+		if ((value.size() >= 2) && (value.front() == '\'' && value.back() == '\''))
 		{
-			if (value.front() == '\'' && value.back() == '\'')
-			{
-				value.erase(value.size() - 1);
-				value.erase(0, 1);
-			}
+			value.erase(value.size() - 1);
+			value.erase(0, 1);
 		}
 	}
 
