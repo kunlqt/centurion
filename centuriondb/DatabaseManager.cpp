@@ -17,7 +17,7 @@ namespace centurion {
 
 	size_t DatabaseManager::searchDocuments(
 		std::vector<std::string> selectedFields,
-		std::shared_ptr<SearchIterator> rootSearchIterator,
+		SearchIterator* rootSearchIterator,
 		rapidjson::Document& results, 
 		DocumentId startFrom, 
 		size_t limit)

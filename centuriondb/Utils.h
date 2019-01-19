@@ -63,7 +63,7 @@ using StringSizeType = std::uint32_t;
 static void MergeOverlappingFields(std::vector<std::string>& result) {
 	if (result.size() > 1) {
 		std::sort(result.begin(), result.end());
-		for (auto it = result.begin(); it != result.end(); it++)
+		for (auto it = result.begin(); it != result.end(); ++it)
 		{
 			const auto a = *it;
 			auto it2 = it + 1;
@@ -77,9 +77,7 @@ static void MergeOverlappingFields(std::vector<std::string>& result) {
 			}
 		}
 	}
-	if (result.size() == 1) {
-		if (result.front() == "/") {
-			result.erase(result.begin());
-		}
+	if ((result.size() == 1) && (result.front() == "/")) {
+		result.erase(result.begin());
 	}
 }

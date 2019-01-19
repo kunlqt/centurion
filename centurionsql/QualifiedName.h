@@ -9,6 +9,11 @@ namespace centurion {
 	class QualifiedName {
 	public:
 		QualifiedName() { }
+		QualifiedName(QualifiedName&& other)
+		{
+			parts_ = std::move(other.parts_);
+			originalParts_ = std::move(other.originalParts_);
+		}
 
 		QualifiedName(const std::vector<std::string>& parts, const std::vector<std::string>& originalParts) {
 			for (const auto& s : parts) parts_.push_back(s);

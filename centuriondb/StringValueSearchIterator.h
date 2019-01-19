@@ -130,11 +130,8 @@ namespace centurion
 			const IndexId idxA = GetIndexId(kd);
 			if (idxA == indexId_) {
 				const auto strSizeFound = GetStringSize(kd);
-				if (strSizeFound == fieldValue_.size()) {
-					if (iterator_->key().size() >= lowerBoundSlice_.size())
-					{
-						return memcmp(kd + StringBufferOffset, lowerSliceBuf_ + StringBufferOffset, strSizeFound) == 0;
-					}
+				if ((strSizeFound == fieldValue_.size()) && (iterator_->key().size() >= lowerBoundSlice_.size())) {
+					return memcmp(kd + StringBufferOffset, lowerSliceBuf_ + StringBufferOffset, strSizeFound) == 0;
 				}
 			}
 			return false;

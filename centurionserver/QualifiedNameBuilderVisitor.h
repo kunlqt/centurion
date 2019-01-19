@@ -38,6 +38,7 @@ namespace centurion {
 			if (node->getOrderBy().has_value()) {
 				process(node->getOrderBy().value(), context);
 			}
+			delete node;
 			return antlrcpp::Any();
 		}
 
@@ -51,7 +52,7 @@ namespace centurion {
 
 		antlrcpp::Any visitDereferenceExpression(DereferenceExpression* node, antlr4::ParserRuleContext* context) override
 		{
-			auto result = std::shared_ptr<QualifiedName>(DereferenceExpression::getQualifiedName(node));
+			auto result = DereferenceExpression::getQualifiedName(node);
 			log_->trace("visitDereferenceExpression: {}", result->toString());
 			return result;
 		}
@@ -59,18 +60,18 @@ namespace centurion {
 		antlrcpp::Any visitIdentifier(Identifier* node, antlr4::ParserRuleContext* context) override
 		{
 			log_->trace("visitIdentifier: {}", node->getValue());
-			return std::make_shared<QualifiedName>(node->getValue());
+			return new QualifiedName(node->getValue());
 		}
 
 		antlrcpp::Any visitAllColumns(AllColumns* allColumns, antlr4::ParserRuleContext* context) override
 		{
 			auto builder = dynamic_cast<QualifiedNameBuilder*>(context);
 			if (allColumns->getPrefix().has_value()) {
-				builder->add(allColumns->getPrefix().value());
+				builder->add(allColumns->getPrefix().value()->toString());
 			} 
 			else
 			{
-				builder->add(std::make_shared<QualifiedName>());
+				builder->add("");
 			}
 			return antlrcpp::Any();
 		}
@@ -140,13 +141,13 @@ namespace centurion {
 			log_->trace("visitComparisonExpression");
 			antlrcpp::Any leftResult = process(comparisonExpr->getLeft(), context);
 			antlrcpp::Any rightResult = process(comparisonExpr->getRight(), context);
-			if (leftResult.is<std::shared_ptr<QualifiedName>>())
+			if (leftResult.is<QualifiedName*>())
 			{
-				return visitFieldComparisonExpression(comparisonExpr->getOperator(), leftResult.as<std::shared_ptr<QualifiedName>>()->toString(), rightResult);
+				return visitFieldComparisonExpression(comparisonExpr->getOperator(), leftResult.as<QualifiedName*>()->toString(), rightResult);
 			}
-			else if (rightResult.is<std::shared_ptr<QualifiedName>>())
+			else if (rightResult.is<QualifiedName*>())
 			{
-				return visitFieldComparisonExpression(comparisonExpr->getOperator(), rightResult.as<std::shared_ptr<QualifiedName>>()->toString(), leftResult);
+				return visitFieldComparisonExpression(comparisonExpr->getOperator(), rightResult.as<QualifiedName*>()->toString(), leftResult);
 			}
 			throw std::runtime_error("Unsupported operands for comparison");
 
@@ -199,12 +200,12 @@ namespace centurion {
 			log_->trace("visitInPredicate");
 			antlrcpp::Any identifier = process(node->getValue(), context);
 			std::string fieldName;
-			if (identifier.is<std::shared_ptr<QualifiedName>>()) {
-				fieldName = (identifier.as<std::shared_ptr<QualifiedName>>()->toString());
+			if (identifier.is<QualifiedName*>()) {
+				fieldName = (identifier.as<QualifiedName*>()->toString());
 			} else {
 				throw std::runtime_error("Unsupported identifier for IN predicate");
 			}
-			std::vector<std::shared_ptr<antlrcpp::Any>> literals = process(node->getValueList(), context);
+			std::vector<antlrcpp::Any*> literals = process(node->getValueList(), context);
 			std::vector<SearchIterator*> iterators;
 			for (const auto& literal : literals)
 			{
@@ -234,9 +235,9 @@ namespace centurion {
 		virtual antlrcpp::Any visitInListExpression(InListExpression* node, antlr4::ParserRuleContext* context) override
 		{
 			log_->trace("visitInListExpression");
-			std::vector<std::shared_ptr<antlrcpp::Any>> result;
+			std::vector<antlrcpp::Any*> result;
 			for (Expression* value : node->getValues()) {				
-				result.emplace_back(std::make_shared<antlrcpp::Any>(process(value, context)));
+				result.emplace_back(new antlrcpp::Any(process(value, context)));
 			}
 			return result;
 		}
