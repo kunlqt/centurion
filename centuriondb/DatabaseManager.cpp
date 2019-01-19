@@ -107,6 +107,9 @@ namespace centurion {
 		}
 		auto docs = rootDoc.GetArray();
 		size_t total = docs.Size();
+		size_t min_div = 1;
+		size_t max_div = 1000;
+		size_t div_perc = 10;
 		console->trace("Parsing done!");
 		if (total == 0) {
 			throw std::runtime_error("Empty array of objects");
@@ -115,7 +118,7 @@ namespace centurion {
 		const auto start = std::chrono::system_clock::now();
 		size_t cnt = 0;		
 		// report progress on each 10% but not more than 1k and not less than 1
-		size_t div = std::min(1ull, std::max(total / 10, 1000ull));
+		size_t div = std::min(min_div, std::max(total / div_perc, max_div));
 		for (const auto& doc : docs)
 		{
 			result.push_back(documentIndexer.indexDocument(doc));

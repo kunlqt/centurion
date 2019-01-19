@@ -65,7 +65,7 @@ namespace centurion {
 		}
 
 		virtual size_t hashCode() const override {
-			return std::hash_value(value_);
+			return std::hash<std::string>{}(value_);
 		}
 
 		virtual bool equals(const Node* node) const override {
@@ -216,7 +216,7 @@ namespace centurion {
 		}
 
 		virtual size_t hashCode() const override {
-			return std::hash_value(value_);
+			return std::hash<std::string>{}(value_);
 		}
 
 		virtual bool equals(const Node* node) const override {
@@ -252,7 +252,7 @@ namespace centurion {
 		}
 
 		virtual size_t hashCode() const override {
-			return std::hash_value(value_);
+			return std::hash<std::string>{}(value_);
 		}
 
 		virtual bool equals(const Node* node) const override {
