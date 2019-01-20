@@ -157,6 +157,7 @@ namespace centurion {
 				const auto baseQualifiedName = getQualifiedName(dereferenceExpression);
 				if (baseQualifiedName != nullptr) {
 					auto newList = baseQualifiedName->getParts();
+					delete baseQualifiedName;
 					newList.emplace_back(fieldName);
 					return newList;
 				}
