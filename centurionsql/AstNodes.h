@@ -915,18 +915,8 @@ namespace centurion {
 			, orderBy_(orderBy)
 			, limit_(std::move(limit)) { }
 
-		virtual ~Query()
-		{
-			if (with_.has_value()) {
-				With* with = with_.value();
-				delete with;
-			}
-			delete queryBody_;
-			if (orderBy_.has_value()) {
-				delete orderBy_.value();
-			}
-		}
-
+		virtual ~Query();
+		
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
 		virtual std::vector<Node*> getChildren() const override {
