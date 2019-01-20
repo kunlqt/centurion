@@ -206,7 +206,7 @@ namespace centurion {
 			} else {
 				throw std::runtime_error("Unsupported identifier for IN predicate");
 			}
-			std::vector<antlrcpp::Any*> literals = process(node->getValueList(), context);
+			std::vector<std::shared_ptr<antlrcpp::Any>> literals = process(node->getValueList(), context);
 			std::vector<SearchIterator*> iterators;
 			for (const auto& literal : literals)
 			{
@@ -236,9 +236,9 @@ namespace centurion {
 		virtual antlrcpp::Any visitInListExpression(InListExpression* node, antlr4::ParserRuleContext* context) override
 		{
 			log_->trace("visitInListExpression");
-			std::vector<antlrcpp::Any*> result;
+			std::vector<std::shared_ptr<antlrcpp::Any>> result;
 			for (Expression* value : node->getValues()) {				
-				result.emplace_back(new antlrcpp::Any(process(value, context)));
+				result.emplace_back(std::make_shared<antlrcpp::Any>(process(value, context)));
 			}
 			return result;
 		}
