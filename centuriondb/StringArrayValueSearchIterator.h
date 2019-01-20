@@ -57,7 +57,7 @@ namespace centurion
 			upperSliceBuf_ = (new char[upperSliceBufSize]);
 			CreateStringIndex(lowerSliceBuf_, indexId_, value_.c_str(), value_.size());
 			lowerBoundSlice_ = rocksdb::Slice(lowerSliceBuf_, lowerSliceBufSize);
-			CreateStringIndex(upperSliceBuf_, indexId_ + 1, nullptr, 0);
+			CreateStringIndex(upperSliceBuf_, indexId_ + 1, "", 0);
 			upperBoundSlice_ = rocksdb::Slice(upperSliceBuf_, upperSliceBufSize);			
 			iterator_ = iteratorBuilder(kStringArray, &lowerBoundSlice_, &upperBoundSlice_);
 			iterator_->Seek(lowerBoundSlice_);

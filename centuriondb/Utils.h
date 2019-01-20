@@ -32,7 +32,7 @@ using StringSizeType = std::uint32_t;
 #define CreateStringIndex(buffer, indexId, str, stringSize) \
 	SetIndexId(buffer, indexId); \
 	SetStringSize(buffer, stringSize); \
-	if (str && (stringSize > 0)) std::memcpy(((std::uint8_t*)buffer + StringBufferOffset), str, stringSize); \
+	if (stringSize > 0) std::memcpy(((std::uint8_t*)buffer + StringBufferOffset), str, stringSize); \
 	*(DocumentId*)((std::uint8_t*)buffer + StringBufferOffset + stringSize) = 0;
 
 #define CreateDoubleIndex(buffer, indexId, v) \
@@ -45,7 +45,7 @@ using StringSizeType = std::uint32_t;
 	*(std::uint8_t*)((std::uint8_t*)buffer + sizeof(IndexId)) = (b ? 1 : 0); \
 	*(DocumentId*)((std::uint8_t*)buffer + sizeof(IndexId) + sizeof(std::uint8_t)) = 0;
 
-#define CreateEmptytringIndex(buffer, indexId)  \
+#define CreateEmptyStringIndex(buffer, indexId)  \
 	SetIndexId(buffer, indexId); \
 	SetStringSize(buffer, 0);
 
