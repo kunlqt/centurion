@@ -27,7 +27,8 @@ namespace centurion {
 			}
 			if (node->getWhere().has_value()) {
 				auto builder = dynamic_cast<QualifiedNameBuilder*>(context);
-				builder->setRootSearchIterator(process(node->getWhere().value(), context));
+				SearchIterator* iter = process(node->getWhere().value(), context);
+				builder->setRootSearchIterator(iter);
 			}
 			if (node->getGroupBy().has_value()) {
 				process(node->getGroupBy().value(), context);

@@ -43,7 +43,7 @@ namespace centurion {
 		std::vector<std::tuple<size_t, size_t, std::string>> errors;
 	};
 
-	QualifiedNameBuilder SearchIteratorBuilder::buildQuery(std::istream& query)
+	QualifiedNameBuilder* SearchIteratorBuilder::buildQuery(std::istream& query)
 	{
 		auto console = spdlog::get("root");
 		console->trace("Starting SQL parser...");
@@ -60,10 +60,10 @@ namespace centurion {
 			antlr4::ParserRuleContext* tree = parser.singleStatement();
 			Statement* statement = astBuilder.visitSingleStatement(dynamic_cast<CentSqlParser::SingleStatementContext*>(tree));
 			QualifiedNameBuilderVisitor visitor;
-			QualifiedNameBuilder parserContext;
-			visitor.process(statement, &parserContext);
+			auto parserContext = new QualifiedNameBuilder();
+			visitor.process(statement, parserContext);
 			console->trace("Parsing done, returning results");
-			return std::move(parserContext);
+			return parserContext;
 		} catch (const antlr4::ParseCancellationException& exc) {
 			console->error("SQL parse error: {}", exc.what());
 			tokens.reset();

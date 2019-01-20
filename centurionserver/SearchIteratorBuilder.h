@@ -5,7 +5,7 @@ namespace centurion {
 	class SearchIteratorBuilder
 	{
 	public:
-		QualifiedNameBuilder buildQuery(std::istream& query);
+		QualifiedNameBuilder* buildQuery(std::istream& query);
 
 	};
 }
