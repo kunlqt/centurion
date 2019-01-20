@@ -142,13 +142,13 @@ namespace centurion {
 			log_->trace("visitComparisonExpression");
 			antlrcpp::Any leftResult = process(comparisonExpr->getLeft(), context);
 			antlrcpp::Any rightResult = process(comparisonExpr->getRight(), context);
-			if (leftResult.is<QualifiedName*>())
+			if (leftResult.is<std::shared_ptr<QualifiedName>>())
 			{
-				return visitFieldComparisonExpression(comparisonExpr->getOperator(), leftResult.as<QualifiedName*>()->toString(), rightResult);
+				return visitFieldComparisonExpression(comparisonExpr->getOperator(), leftResult.as<std::shared_ptr<QualifiedName>>()->toString(), rightResult);
 			}
-			else if (rightResult.is<QualifiedName*>())
+			else if (rightResult.is<std::shared_ptr<QualifiedName>>())
 			{
-				return visitFieldComparisonExpression(comparisonExpr->getOperator(), rightResult.as<QualifiedName*>()->toString(), leftResult);
+				return visitFieldComparisonExpression(comparisonExpr->getOperator(), rightResult.as<std::shared_ptr<QualifiedName>>()->toString(), leftResult);
 			}
 			throw std::runtime_error("Unsupported operands for comparison");
 
@@ -201,8 +201,8 @@ namespace centurion {
 			log_->trace("visitInPredicate");
 			antlrcpp::Any identifier = process(node->getValue(), context);
 			std::string fieldName;
-			if (identifier.is<QualifiedName*>()) {
-				fieldName = (identifier.as<QualifiedName*>()->toString());
+			if (identifier.is<std::shared_ptr<QualifiedName>>()) {
+				fieldName = (identifier.as<std::shared_ptr<QualifiedName>>()->toString());
 			} else {
 				throw std::runtime_error("Unsupported identifier for IN predicate");
 			}

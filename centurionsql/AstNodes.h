@@ -137,13 +137,13 @@ namespace centurion {
 			return "DereferenceExpression";
 		}
 
-		static QualifiedName* getQualifiedName(DereferenceExpression* expression)
+		static std::shared_ptr<QualifiedName> getQualifiedName(DereferenceExpression* expression)
 		{
 			std::vector<std::string> parts = 
 				tryParseParts(expression->getBase(), toLowerCopy(expression->getField()->getValue()));
 			if (parts.empty())
 				return nullptr;
-			return new QualifiedName(parts);
+			return std::make_shared<QualifiedName>(parts);
 		}
 
 		static std::vector<std::string> tryParseParts(Expression* base, std::string fieldName)
@@ -157,7 +157,6 @@ namespace centurion {
 				const auto baseQualifiedName = getQualifiedName(dereferenceExpression);
 				if (baseQualifiedName != nullptr) {
 					auto newList = baseQualifiedName->getParts();
-					delete baseQualifiedName;
 					newList.emplace_back(fieldName);
 					return newList;
 				}
