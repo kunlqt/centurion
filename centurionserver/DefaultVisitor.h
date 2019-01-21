@@ -46,7 +46,8 @@ namespace centurion {
 		{
 			log_->trace("visitSingleColumn");
 			auto visitorResult = dynamic_cast<DefaultVisitorResult*>(context);
-			visitorResult->add(process(singleColumn->getExpression().get(), context));
+			std::shared_ptr<QualifiedName> column = process(singleColumn->getExpression().get(), context);
+			visitorResult->add(column->toString());
 			return antlrcpp::Any();
 		}
 
