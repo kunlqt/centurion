@@ -146,8 +146,8 @@ namespace centurion {
 
 		antlrcpp::Any visitInPredicate(InPredicate* node, antlr4::ParserRuleContext* context) override
 		{
-			process(node->getValue(), context);
-			process(node->getValueList(), context);
+			process(node->getValue().get(), context);
+			process(node->getValueList().get(), context);
 
 			return antlrcpp::Any();
 		}
@@ -177,17 +177,16 @@ namespace centurion {
 
 		antlrcpp::Any visitGroupingOperation(GroupingOperation* node, antlr4::ParserRuleContext* context) override
 		{
-			for (Expression* columnArgument : node->getGroupingColumns()) {
-				process(columnArgument, context);
+			for (auto columnArgument : node->getGroupingColumns()) {
+				process(columnArgument.get(), context);
 			}
-
 			return antlrcpp::Any();
 		}
 
 
 		antlrcpp::Any visitDereferenceExpression(DereferenceExpression* node, antlr4::ParserRuleContext* context) override
 		{
-			process(node->getBase(), context);
+			process(node->getBase().get(), context);
 			return antlrcpp::Any();
 		}
 
@@ -247,10 +246,9 @@ namespace centurion {
 
 		antlrcpp::Any visitInListExpression(InListExpression* node, antlr4::ParserRuleContext* context) override
 		{
-			for (Expression* value : node->getValues()) {
-				process(value, context);
+			for (auto value : node->getValues()) {
+				process(value.get(), context);
 			}
-
 			return antlrcpp::Any();
 		}
 

@@ -154,7 +154,7 @@ namespace centurion {
 
 		}
 
-		SearchIterator* visitFieldComparisonExpression(const ComparisonExpression::Operator& oper, const std::string& fieldName, antlrcpp::Any value) const
+		SearchIterator* visitFieldComparisonExpression(const ComparisonExpression::Operator& oper, const std::string& fieldName, const antlrcpp::Any& value) const
 		{
 			if (oper == ComparisonExpression::Operator::EQUAL)
 			{
@@ -199,14 +199,14 @@ namespace centurion {
 		virtual antlrcpp::Any visitInPredicate(InPredicate* node, antlr4::ParserRuleContext* context) override
 		{
 			log_->trace("visitInPredicate");
-			antlrcpp::Any identifier = process(node->getValue(), context);
+			antlrcpp::Any identifier = process(node->getValue().get(), context);
 			std::string fieldName;
 			if (identifier.is<std::shared_ptr<QualifiedName>>()) {
 				fieldName = (identifier.as<std::shared_ptr<QualifiedName>>()->toString());
 			} else {
 				throw std::runtime_error("Unsupported identifier for IN predicate");
 			}
-			std::vector<std::shared_ptr<antlrcpp::Any>> literals = process(node->getValueList(), context);
+			std::vector<std::shared_ptr<antlrcpp::Any>> literals = process(node->getValueList().get(), context);
 			std::vector<SearchIterator*> iterators;
 			for (const auto& literal : literals)
 			{
@@ -237,8 +237,8 @@ namespace centurion {
 		{
 			log_->trace("visitInListExpression");
 			std::vector<std::shared_ptr<antlrcpp::Any>> result;
-			for (Expression* value : node->getValues()) {				
-				result.emplace_back(std::make_shared<antlrcpp::Any>(process(value, context)));
+			for (auto value : node->getValues()) {				
+				result.emplace_back(std::make_shared<antlrcpp::Any>(process(value.get(), context)));
 			}
 			return result;
 		}

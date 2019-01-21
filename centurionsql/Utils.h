@@ -41,6 +41,17 @@ namespace centurion {
 		return to;
 	}
 
+	template<typename T, typename F>
+	inline std::vector<T> castSharedPtrVector(const std::vector<F>& from)
+	{
+		std::vector<T> to(from.size());
+		for (size_t idx = 0; idx < from.size(); idx++) {
+			F a = from[idx];
+			to[idx] = std::dynamic_pointer_cast<T>(a);
+		}
+		return to;
+	}
+
 	inline void removeQuotes(std::string& value)
 	{
 		if ((value.size() >= 2) && (value.front() == '\'' && value.back() == '\''))

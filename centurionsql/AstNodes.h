@@ -96,29 +96,27 @@ namespace centurion {
 
 	class DereferenceExpression : public Expression {
 	private:
-		Expression* base_;
-		Identifier* field_;
+		std::shared_ptr<Expression> base_;
+		std::shared_ptr<Identifier> field_;
 
 	public:
-		DereferenceExpression(Expression* base, Identifier* field)
+		DereferenceExpression(std::shared_ptr<Expression> base, std::shared_ptr<Identifier> field)
 			: DereferenceExpression(std::optional<NodeLocation>(), base, field) { }
 
-		DereferenceExpression(NodeLocation location, Expression* base, Identifier* field)
+		DereferenceExpression(NodeLocation location, std::shared_ptr<Expression> base, std::shared_ptr<Identifier> field)
 			: DereferenceExpression(std::make_optional(location), base, field) { }
 
-		DereferenceExpression(std::optional<NodeLocation> location, Expression* base, Identifier* field)
-			: Expression(location), base_(base), field_(field) { }
+		DereferenceExpression(std::optional<NodeLocation> location, std::shared_ptr<Expression> base, std::shared_ptr<Identifier> field)
+			: Expression(location), base_(std::move(base)), field_(std::move(field)) { }
 
 		virtual ~DereferenceExpression()
 		{
-			delete base_;
-			delete field_;
 		}
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
 		virtual std::vector<Node*> getChildren() const override {
-			return std::vector<Node*>{ base_ };
+			return std::vector<Node*>{ base_.get() };
 		}
 
 		virtual size_t hashCode() const override {
@@ -129,8 +127,8 @@ namespace centurion {
 			if (node == nullptr) return false;
 			const auto expr  = dynamic_cast<const DereferenceExpression*>(node);
 			if (expr == nullptr) return false;
-			if (!expr->getField()->equals(getField())) return false;
-			return expr->getBase()->equals(getBase());
+			if (!expr->getField()->equals(getField().get())) return false;
+			return expr->getBase()->equals(getBase().get());
 		}
 
 		virtual std::string toString() const override {
@@ -146,13 +144,13 @@ namespace centurion {
 			return std::make_shared<QualifiedName>(parts);
 		}
 
-		static std::vector<std::string> tryParseParts(Expression* base, std::string fieldName)
+		static std::vector<std::string> tryParseParts(std::shared_ptr<Expression> base, std::string fieldName)
 		{
-			const auto identifier = dynamic_cast<Identifier*>(base);
+			const auto identifier = dynamic_cast<Identifier*>(base.get());
 			if (identifier) {
 				return std::vector<std::string> { identifier->getValue(), fieldName };
 			} 
-			const auto dereferenceExpression = dynamic_cast<DereferenceExpression*>(base);
+			const auto dereferenceExpression = dynamic_cast<DereferenceExpression*>(base.get());
 			if (dereferenceExpression) {
 				const auto baseQualifiedName = getQualifiedName(dereferenceExpression);
 				if (baseQualifiedName != nullptr) {
@@ -164,23 +162,23 @@ namespace centurion {
 			return std::vector<std::string>();
 		}
 
-		static Expression* from(const QualifiedName* name) {
-			Expression* result = nullptr;
+		static std::shared_ptr<Expression> from(const QualifiedName* name) {
+			std::shared_ptr<Expression> result;
 			for (const auto& part : name->getParts()) {
 				if (result == nullptr) {
-					result = new Identifier(part);
+					result = std::make_shared<Identifier>(part);
 				} else {
-					result = new DereferenceExpression(result, new Identifier(part));
+					result = std::make_shared<DereferenceExpression>(result, std::make_shared<Identifier>(part));
 				}
 			}
 			return result;
 		}
 
-		Expression* getBase() const {
+		std::shared_ptr<Expression> getBase() const {
 			return base_;
 		}
 
-		Identifier* getField() const {
+		std::shared_ptr<Identifier> getField() const {
 			return field_;
 		}
 
@@ -551,25 +549,23 @@ namespace centurion {
 			openum op_;
 		};
 
-		ComparisonExpression(Operator oper, Expression* left, Expression* right)
+		ComparisonExpression(Operator oper, std::shared_ptr<Expression> left, std::shared_ptr<Expression> right)
 			:
 			ComparisonExpression(std::optional<NodeLocation>(), oper, left, right) {
 		}
 
-		ComparisonExpression(NodeLocation location, Operator oper, Expression* left, Expression* right)
+		ComparisonExpression(NodeLocation location, Operator oper, std::shared_ptr<Expression> left, std::shared_ptr<Expression> right)
 			:
 			ComparisonExpression(std::make_optional(location), oper, left, right) {
 		}
 
-		ComparisonExpression(std::optional<NodeLocation> location, Operator oper, Expression* left, Expression* right)
+		ComparisonExpression(std::optional<NodeLocation> location, Operator oper, std::shared_ptr<Expression> left, std::shared_ptr<Expression> right)
 			:
-			Expression(location), operator_(oper), left_(left), right_(right) {
+			Expression(location), operator_(oper), left_(std::move(left)), right_(std::move(right)) {
 		}
 
 		virtual ~ComparisonExpression()
 		{
-			delete left_;
-			delete right_;
 		}
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
@@ -580,8 +576,8 @@ namespace centurion {
 
 		virtual std::vector<Node*> getChildren() const override {
 			std::vector<Node*> result;
-			result.push_back(left_);
-			result.push_back(right_);
+			result.push_back(left_.get());
+			result.push_back(right_.get());
 			return result;
 		}
 
@@ -594,33 +590,30 @@ namespace centurion {
 		}
 
 		Operator getOperator() const { return operator_; }
-		Expression* getLeft() const { return left_; }
-		Expression* getRight() const { return right_; }
+		Expression* getLeft() const { return left_.get(); }
+		Expression* getRight() const { return right_.get(); }
 			   
 	private:
 		Operator operator_;
-		Expression* left_;
-		Expression* right_;
+		std::shared_ptr<Expression> left_;
+		std::shared_ptr<Expression> right_;
 	};
 
 	class InListExpression : public Expression
 	{
 	public:
-		InListExpression(std::vector<Expression*> values)
+		InListExpression(std::vector<std::shared_ptr<Expression>> values)
 			: InListExpression(std::optional<NodeLocation>(), values) {}
 
-		InListExpression(NodeLocation location, std::vector<Expression*> values)
+		InListExpression(NodeLocation location, std::vector<std::shared_ptr<Expression>> values)
 			: InListExpression(std::make_optional(location), values) {}
 
-		InListExpression(std::optional<NodeLocation> location, std::vector<Expression*> values)
+		InListExpression(std::optional<NodeLocation> location, std::vector<std::shared_ptr<Expression>> values)
 			: Expression(location), values_(std::move(values)) {}
 
 		virtual ~InListExpression()
 		{
-			for (Expression* value : values_)
-			{
-				delete value;
-			}
+			
 		}
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
@@ -628,9 +621,9 @@ namespace centurion {
 		virtual std::vector<Node*> getChildren() const override
 		{
 			std::vector<Node*> result;
-			for (Expression* value : values_)
+			for (auto value : values_)
 			{
-				result.push_back(value);
+				result.push_back(value.get());
 			}
 			return result;
 		}
@@ -647,10 +640,10 @@ namespace centurion {
 			return "InListExpression";
 		}
 
-		std::vector<Expression*> getValues() const { return values_; }
+		std::vector<std::shared_ptr<Expression>> getValues() const { return values_; }
 
 	private:
-		std::vector<Expression*> values_;
+		std::vector<std::shared_ptr<Expression>> values_;
 	};
 
 	class LogicalBinaryExpression : public Expression {
@@ -1351,16 +1344,13 @@ namespace centurion {
 		{
 			for (QualifiedName* groupingColumn : groupingColumns)
 			{
-				groupingColumns_.push_back(DereferenceExpression::from(groupingColumn));
+				groupingColumns_.emplace_back(DereferenceExpression::from(groupingColumn));
 			}
 		}
 
 		virtual ~GroupingOperation()
 		{
-			for (auto groupingColumn : groupingColumns_)
-			{
-				delete groupingColumn;
-			}
+			
 		}
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
@@ -1381,37 +1371,35 @@ namespace centurion {
 			return "GroupingOperation";
 		}
 
-		std::vector<Expression*> getGroupingColumns() const {
+		std::vector<std::shared_ptr<Expression>> getGroupingColumns() const {
 			return groupingColumns_;
 		}
 
 	private:
-		std::vector<Expression*> groupingColumns_;
+		std::vector<std::shared_ptr<Expression>> groupingColumns_;
 	};
 
 	class InPredicate : public Expression
 	{
 	public:
-		InPredicate(Expression* value, Expression* valueList)
+		InPredicate(std::shared_ptr < Expression> value, std::shared_ptr < Expression> valueList)
 			: InPredicate(std::optional<NodeLocation>(), value, valueList) {}
 
-		InPredicate(NodeLocation location, Expression* value, Expression* valueList)
+		InPredicate(NodeLocation location, std::shared_ptr < Expression> value, std::shared_ptr < Expression> valueList)
 			: InPredicate(std::make_optional(location), value, valueList) {}
 
-		InPredicate(std::optional<NodeLocation> location, Expression* value, Expression* valueList)
-			: Expression(location), value_(value), valueList_(valueList) {}
+		InPredicate(std::optional<NodeLocation> location, std::shared_ptr < Expression> value, std::shared_ptr < Expression> valueList)
+			: Expression(location), value_(std::move(value)), valueList_(std::move(valueList)) {}
 
 		virtual ~InPredicate()
 		{
-			delete value_;
-			delete valueList_;
 		}
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
 		virtual std::vector<Node*> getChildren() const override
 		{
-			return std::vector<Node*>{ value_, valueList_};
+			return std::vector<Node*>{ value_.get(), valueList_.get()};
 		}
 
 		virtual size_t hashCode() const override
@@ -1429,12 +1417,12 @@ namespace centurion {
 			return "InPredicate";
 		}
 
-		Expression* getValue() const { return value_; }
-		Expression* getValueList() const { return valueList_; }
+		std::shared_ptr<Expression> getValue() const { return value_; }
+		std::shared_ptr<Expression> getValueList() const { return valueList_; }
 
 	private:
-		Expression* value_;
-		Expression* valueList_;
+		std::shared_ptr<Expression> value_;
+		std::shared_ptr<Expression> valueList_;
 	};
 
 	class Select : public Node {

@@ -578,13 +578,14 @@ namespace centurion {
 	}
 
 	antlrcpp::Any AstBuilder::visitInList(CentSqlParser::InListContext *ctx) {
-		Expression* fieldName = CentSqlBaseVisitor::visit(ctx->value);
-		auto fieldValues = visit(castVector<antlr4::ParserRuleContext*>(ctx->expression()));
-		Expression* result = new InPredicate(
+		std::shared_ptr<Expression> fieldName = CentSqlBaseVisitor::visit(ctx->value);
+		const auto fieldValues = visit(castVector<antlr4::ParserRuleContext*>(ctx->expression()));
+		//auto res = castSharedPtrVector<std::shared_ptr<Expression>>(fieldValues);
+		Expression* result = nullptr; /* new InPredicate(
 			getLocation(ctx),
 			fieldName,
-			new InListExpression(getLocation(ctx), castVector<Expression*>(fieldValues)));
-
+			std::make_shared<InListExpression>(getLocation(ctx), castSharedPtrVector<std::shared_ptr<Expression>>(fieldValues)));
+			*/
 		if (ctx->NOT() != nullptr) {
 			result = new NotExpression(getLocation(ctx), result);
 		}
@@ -646,9 +647,13 @@ namespace centurion {
 	}
 
 	antlrcpp::Any AstBuilder::visitDereference(CentSqlParser::DereferenceContext *ctx) {
-		Expression* expr = CentSqlBaseVisitor::visit(ctx->base);
-		Expression* ident = CentSqlBaseVisitor::visit(ctx->fieldName);
-		return implicitCast<Expression*>(new DereferenceExpression(getLocation(ctx), expr, dynamic_cast<Identifier*>(ident)));
+		std::shared_ptr<Expression> expr = CentSqlBaseVisitor::visit(ctx->base);
+		std::shared_ptr<Expression> ident = CentSqlBaseVisitor::visit(ctx->fieldName);
+		return std::dynamic_pointer_cast<Expression>(
+			std::make_shared<DereferenceExpression>(
+				getLocation(ctx),  expr, std::dynamic_pointer_cast<Identifier>(ident)
+				)
+			);
 	}
 
 	antlrcpp::Any AstBuilder::visitTypeConstructor(CentSqlParser::TypeConstructorContext *ctx) {
@@ -772,13 +777,13 @@ namespace centurion {
 	antlrcpp::Any AstBuilder::visitBasicStringLiteral(CentSqlParser::BasicStringLiteralContext *ctx) {
 		std::string value = ctx->getText();
 		removeQuotes(value);
-		return implicitCast<Expression*>(new StringLiteral(getLocation(ctx), value));
+		return std::dynamic_pointer_cast<Expression>(std::make_shared<StringLiteral>(getLocation(ctx), value));
 	}
 
 	antlrcpp::Any AstBuilder::visitUnicodeStringLiteral(CentSqlParser::UnicodeStringLiteralContext *ctx) {
 		std::string value = ctx->getText();
 		removeQuotes(value);
-		return implicitCast<Expression*>(new StringLiteral(getLocation(ctx), value));  // todo: convert to unicode
+		return std::dynamic_pointer_cast<Expression>(std::make_shared<StringLiteral>(getLocation(ctx), value));  // todo: convert to unicode
 	}
 
 	antlrcpp::Any AstBuilder::visitTimeZoneInterval(CentSqlParser::TimeZoneIntervalContext *ctx) {
@@ -914,7 +919,7 @@ namespace centurion {
 	}
 
 	antlrcpp::Any AstBuilder::visitUnquotedIdentifier(CentSqlParser::UnquotedIdentifierContext *ctx) {
-		return implicitCast<Expression*>(new Identifier(getLocation(ctx), ctx->getText(), false));
+		return std::dynamic_pointer_cast<Expression>(std::make_shared<Identifier>(getLocation(ctx), ctx->getText(), false));
 	}
 
 	antlrcpp::Any AstBuilder::visitQuotedIdentifier(CentSqlParser::QuotedIdentifierContext *ctx) {
@@ -946,11 +951,11 @@ namespace centurion {
 	}
 
 	antlrcpp::Any AstBuilder::visitDoubleLiteral(CentSqlParser::DoubleLiteralContext *ctx) {
-		return implicitCast<Expression*>(new DoubleLiteral(getLocation(ctx), ctx->getText()));
+		return std::dynamic_pointer_cast<Expression>(std::make_shared <DoubleLiteral>(getLocation(ctx), ctx->getText()));
 	}
 
 	antlrcpp::Any AstBuilder::visitIntegerLiteral(CentSqlParser::IntegerLiteralContext *ctx) {
-		return implicitCast<Expression*>(new LongLiteral(getLocation(ctx), ctx->getText()));
+		return std::dynamic_pointer_cast<Expression>(std::make_shared<LongLiteral>(getLocation(ctx), ctx->getText()));
 	}
 
 	antlrcpp::Any AstBuilder::visitNonReserved(CentSqlParser::NonReservedContext *ctx) {
@@ -961,8 +966,8 @@ namespace centurion {
 		auto visitResults = visit(castVector<antlr4::ParserRuleContext*>(ctx->identifier()));
 		std::vector<std::string> parts;
 		for (auto& visitResult : visitResults) {
-			Expression* item = visitResult;
-			parts.emplace_back(dynamic_cast<Identifier*>(item)->getValue());
+			std::shared_ptr<Expression> item = visitResult;
+			parts.emplace_back(std::dynamic_pointer_cast<Identifier>(item)->getValue());
 		}
 		return new QualifiedName(parts);
 	}
