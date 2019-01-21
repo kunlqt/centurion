@@ -5,7 +5,7 @@
 namespace centurion {
 	class DefaultVisitorResult : public antlr4::ParserRuleContext {
 	public:
-		DefaultVisitorResult() { }
+		DefaultVisitorResult() : rootSearchIterator_(nullptr) { }
 
 		DefaultVisitorResult(const DefaultVisitorResult& other) = delete;
 

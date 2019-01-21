@@ -62,7 +62,7 @@ namespace centurion {
 		antlrcpp::Any visitIdentifier(Identifier* node, antlr4::ParserRuleContext* context) override
 		{
 			log_->trace("visitIdentifier: {}", node->getValue());
-			return new QualifiedName(node->getValue());
+			return std::make_shared<QualifiedName>(node->getValue());
 		}
 
 		antlrcpp::Any visitAllColumns(AllColumns* allColumns, antlr4::ParserRuleContext* context) override
