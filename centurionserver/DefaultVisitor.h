@@ -1,6 +1,5 @@
 #pragma once
 
-#include "QualifiedNameBuilder.h"
 #include "SearchIterator.h"
 #include "StringValueSearchIterator.h"
 #include "DoubleValueSearchIterator.h"
@@ -10,50 +9,51 @@
 #include "SearchIteratorIn.h"
 #include "SearchIteratorAnd.h"
 #include "AstVisitorImpl.h"
+#include "DefaultVisitorResult.h"
 
 namespace centurion {
-	class QualifiedNameBuilderVisitor : public AstVisitorImpl {
+	class DefaultVisitor : public AstVisitorImpl {
 	public:
-		QualifiedNameBuilderVisitor()
+		DefaultVisitor()
 		{
-			log_ = spdlog::get("root")->clone("QualifiedNameBuilderVisitor");
+			log_ = spdlog::get("root")->clone("DefaultVisitor");
 		}
 
 		antlrcpp::Any visitQuerySpecification(QuerySpecification* node, antlr4::ParserRuleContext* context) override
 		{
-			process(node->getSelect().value(), context);
+			process(node->getSelect().value().get(), context);
 			if (node->getFrom().has_value()) {
-				process(node->getFrom().value(), context);
+				process(node->getFrom().value().get(), context);
 			}
 			if (node->getWhere().has_value()) {
-				auto builder = dynamic_cast<QualifiedNameBuilder*>(context);
-				SearchIterator* iter = process(node->getWhere().value(), context);
-				builder->setRootSearchIterator(iter);
+				auto visitorResult = dynamic_cast<DefaultVisitorResult*>(context);
+				SearchIterator* searchIterator = process(node->getWhere().value().get(), context);
+				visitorResult->setRootSearchIterator(searchIterator);
 			}
 			if (node->getGroupBy().has_value()) {
-				process(node->getGroupBy().value(), context);
+				process(node->getGroupBy().value().get(), context);
 			}
 			if (node->getHaving().has_value()) {
-				process(node->getHaving().value(), context);
+				process(node->getHaving().value().get(), context);
 			}
 			if (node->getOrderBy().has_value()) {
-				process(node->getOrderBy().value(), context);
+				process(node->getOrderBy().value().get(), context);
 			}
-			delete node;
 			return antlrcpp::Any();
 		}
 
 		antlrcpp::Any visitSingleColumn(SingleColumn* singleColumn, antlr4::ParserRuleContext* context) override
 		{
 			log_->trace("visitSingleColumn");
-			auto builder = dynamic_cast<QualifiedNameBuilder*>(context);
-			builder->add(process(singleColumn->getExpression(), context));
+			auto visitorResult = dynamic_cast<DefaultVisitorResult*>(context);
+			visitorResult->add(process(singleColumn->getExpression().get(), context));
 			return antlrcpp::Any();
 		}
 
 		antlrcpp::Any visitDereferenceExpression(DereferenceExpression* node, antlr4::ParserRuleContext* context) override
 		{
-			auto result = DereferenceExpression::getQualifiedName(node);
+			//auto deref = std::shared_ptr<DereferenceExpression>(node);
+			auto result = DereferenceExpression::GetQualifiedName(node);
 			log_->trace("visitDereferenceExpression: {}", result->toString());
 			return result;
 		}
@@ -66,13 +66,13 @@ namespace centurion {
 
 		antlrcpp::Any visitAllColumns(AllColumns* allColumns, antlr4::ParserRuleContext* context) override
 		{
-			auto builder = dynamic_cast<QualifiedNameBuilder*>(context);
+			auto visitorResult = dynamic_cast<DefaultVisitorResult*>(context);
 			if (allColumns->getPrefix().has_value()) {
-				builder->add(allColumns->getPrefix().value()->toString());
+				visitorResult->add(allColumns->getPrefix().value()->toString());
 			} 
 			else
 			{
-				builder->add("");
+				visitorResult->add("");
 			}
 			return antlrcpp::Any();
 		}
@@ -111,8 +111,8 @@ namespace centurion {
 		virtual antlrcpp::Any visitArithmeticBinary(ArithmeticBinaryExpression* expr, antlr4::ParserRuleContext* context) override
 		{
 			log_->trace("visitArithmeticBinary operation");
-			antlrcpp::Any left = process(expr->getLeft(), context);
-			antlrcpp::Any right = process(expr->getRight(), context);
+			antlrcpp::Any left = process(expr->getLeft().get(), context);
+			antlrcpp::Any right = process(expr->getRight().get(), context);
 			if (left.is<double>() && right.is<double>()) {
 				log_->trace("visitArithmeticBinary operation, operands of type Double");
 				double l = left.as<double>();
@@ -140,8 +140,8 @@ namespace centurion {
 		antlrcpp::Any visitComparisonExpression(ComparisonExpression* comparisonExpr, antlr4::ParserRuleContext* context) override
 		{
 			log_->trace("visitComparisonExpression");
-			antlrcpp::Any leftResult = process(comparisonExpr->getLeft(), context);
-			antlrcpp::Any rightResult = process(comparisonExpr->getRight(), context);
+			antlrcpp::Any leftResult = process(comparisonExpr->getLeft().get(), context);
+			antlrcpp::Any rightResult = process(comparisonExpr->getRight().get(), context);
 			if (leftResult.is<std::shared_ptr<QualifiedName>>())
 			{
 				return visitFieldComparisonExpression(comparisonExpr->getOperator(), leftResult.as<std::shared_ptr<QualifiedName>>()->toString(), rightResult);
@@ -228,9 +228,9 @@ namespace centurion {
 			{
 				return iterators.front();
 			} else if (iterators.size() == 2) {
-				return implicitCast<SearchIterator*>(new SearchIteratorOr(iterators.front(), iterators.back()));
+				return (SearchIterator*)(new SearchIteratorOr(iterators.front(), iterators.back()));
 			}
-			return implicitCast<SearchIterator*>(new SearchIteratorIn(iterators));
+			return (SearchIterator*)(new SearchIteratorIn(iterators));
 		}
 
 		virtual antlrcpp::Any visitInListExpression(InListExpression* node, antlr4::ParserRuleContext* context) override
@@ -246,16 +246,16 @@ namespace centurion {
 		antlrcpp::Any visitLogicalBinaryExpression(LogicalBinaryExpression* logicalExpr, antlr4::ParserRuleContext* context) override
 		{
 			log_->trace("visitLogicalBinaryExpression operator");
-			antlrcpp::Any left = process(logicalExpr->getLeft(), context);
-			antlrcpp::Any right = process(logicalExpr->getRight(), context);
+			antlrcpp::Any left = process(logicalExpr->getLeft().get(), context);
+			antlrcpp::Any right = process(logicalExpr->getRight().get(), context);
 			if (logicalExpr->getOperator() == LogicalBinaryExpression::Operator::AND)
 			{
 				log_->trace("visitLogicalBinaryExpression operator AND");
-				return implicitCast<SearchIterator*>(new SearchIteratorAnd(left, right));
+				return (SearchIterator*)(new SearchIteratorAnd(left, right));
 			} else if (logicalExpr->getOperator() == LogicalBinaryExpression::Operator::OR)
 			{
 				log_->trace("visitLogicalBinaryExpression operator OR");
-				return implicitCast<SearchIterator*>(new SearchIteratorOr(left, right));
+				return (SearchIterator*)(new SearchIteratorOr(left, right));
 			}
 			throw std::runtime_error("Unsupported logical binary operator");
 		}

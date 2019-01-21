@@ -8,7 +8,21 @@ namespace centurion {
 
 	class QualifiedName {
 	public:
+
 		QualifiedName() { }
+		
+		QualifiedName(const QualifiedName& other)
+		{
+			for (auto part : other.parts_)
+			{
+				parts_.emplace_back(part);
+			}
+			for (auto part : other.originalParts_)
+			{
+				originalParts_.emplace_back(part);
+			}
+		}
+
 		QualifiedName(QualifiedName&& other)
 		{
 			parts_ = std::move(other.parts_);
@@ -20,8 +34,10 @@ namespace centurion {
 			for (const auto& s : originalParts) originalParts_.push_back(s);
 		}
 
-		QualifiedName(const std::vector<std::string>& originalParts) {
-			for (auto& s : originalParts) {
+		QualifiedName(const std::vector<std::string>& originalParts, bool reverse = false) {
+			if (originalParts.empty()) return;
+			for (size_t idx = originalParts.size(); idx != 0; idx--) {
+				std::string s = originalParts[idx - 1];
 				parts_.emplace_back(toLowerCopy(s));
 				originalParts_.emplace_back(s);
 			}
@@ -32,10 +48,6 @@ namespace centurion {
 			originalParts_.emplace_back(originalPart);
 		}
 
-		QualifiedName(const QualifiedName& other) {
-			for (const auto& s : other.getParts()) parts_.push_back(s);
-			for (const auto& s : other.getOriginalParts()) originalParts_.push_back(s);
-		}
 
 		std::vector<std::string> getParts() const {
 			return parts_;

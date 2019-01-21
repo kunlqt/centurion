@@ -12,13 +12,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AstVisitorImpl.h" />
-    <ClInclude Include="DefaultTraversalVisitor.h" />
     <ClInclude Include="HttpRequestHandler.h" />
     <ClInclude Include="HttpSession.hpp" />
     <ClInclude Include="Listener.hpp" />
     <ClInclude Include="MimeTypes.h" />
-    <ClInclude Include="QualifiedNameBuilder.h" />
-    <ClInclude Include="QualifiedNameBuilderVisitor.h" />
+    <ClInclude Include="DefaultVisitorResult.h" />
+    <ClInclude Include="DefaultVisitor.h" />
     <ClInclude Include="QueryDocumentHandler.h" />
     <ClInclude Include="SearchIteratorBuilder.h" />
     <ClInclude Include="SharedState.hpp" />

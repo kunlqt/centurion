@@ -12,19 +12,19 @@ namespace centurion {
 
 		//antlrcpp::Any visitExtract(Extract* node, antlr4::ParserRuleContext* context) override
 		//{
-		//	return process(node->getExpression(), context);
+		//	return process(node->getExpression().get(), context);
 		//}
 
 		//antlrcpp::Any visitCast(Cast* node, antlr4::ParserRuleContext* context) override
 		//{
-		//	return process(node->getExpression(), context);
+		//	return process(node->getExpression().get(), context);
 		//}
 
 
 		antlrcpp::Any visitArithmeticBinary(ArithmeticBinaryExpression* node, antlr4::ParserRuleContext* context) override
 		{
-			process(node->getLeft(), context);
-			process(node->getRight(), context);
+			process(node->getLeft().get(), context);
+			process(node->getRight().get(), context);
 
 			return antlrcpp::Any();
 		}
@@ -32,9 +32,9 @@ namespace centurion {
 
 		antlrcpp::Any visitBetweenPredicate(BetweenPredicate* node, antlr4::ParserRuleContext* context) override
 		{
-			process(node->getValue(), context);
-			process(node->getMin(), context);
-			process(node->getMax(), context);
+			process(node->getValue().get(), context);
+			process(node->getMin().get(), context);
+			process(node->getMax().get(), context);
 
 			return antlrcpp::Any();
 		}
@@ -52,8 +52,8 @@ namespace centurion {
 
 		//antlrcpp::Any visitAtTimeZone(AtTimeZone* node, antlr4::ParserRuleContext* context) override
 		//{
-		//	process(node->getValue(), context);
-		//	process(node->getTimeZone(), context);
+		//	process(node->getValue().get(), context);
+		//	process(node->getTimeZone().get(), context);
 
 		//	return antlrcpp::Any();
 		//}
@@ -71,8 +71,8 @@ namespace centurion {
 
 		//antlrcpp::Any visitSubscriptExpression(SubscriptExpression* node, antlr4::ParserRuleContext* context) override
 		//{
-		//	process(node->getBase(), context);
-		//	process(node->getIndex(), context);
+		//	process(node->getBase().get(), context);
+		//	process(node->getIndex().get(), context);
 
 		//	return antlrcpp::Any();
 		//}
@@ -80,8 +80,8 @@ namespace centurion {
 
 		antlrcpp::Any visitComparisonExpression(ComparisonExpression* node, antlr4::ParserRuleContext* context) override
 		{
-			process(node->getLeft(), context);
-			process(node->getRight(), context);
+			process(node->getLeft().get(), context);
+			process(node->getRight().get(), context);
 
 			return antlrcpp::Any();
 		}
@@ -90,11 +90,11 @@ namespace centurion {
 		antlrcpp::Any visitQuery(Query* node, antlr4::ParserRuleContext* context) override
 		{
 			if (node->getWith().has_value()) {
-				process(node->getWith().value(), context);
+				process(node->getWith().value().get(), context);
 			}
-			process(node->getQueryBody(), context);
+			process(node->getQueryBody().get(), context);
 			if (node->getOrderBy().has_value()) {
-				process(node->getOrderBy().value(), context);
+				process(node->getOrderBy().value().get(), context);
 			}
 
 			return antlrcpp::Any();
@@ -103,33 +103,31 @@ namespace centurion {
 
 		antlrcpp::Any visitWith(With* node, antlr4::ParserRuleContext* context) override
 		{
-			for (WithQuery* query : node->getQueries()) {
-				process(query, context);
+			for (auto query : node->getQueries()) {
+				process(query.get(), context);
 			}
-
 			return antlrcpp::Any();
 		}
 
 
 		antlrcpp::Any visitWithQuery(WithQuery* node, antlr4::ParserRuleContext* context) override
 		{
-			return process(node->getQuery(), context);
+			return process(node->getQuery().get(), context);
 		}
 
 
 		antlrcpp::Any visitSelect(Select* node, antlr4::ParserRuleContext* context) override
 		{
-			for (SelectItem* item : node->getSelectItems()) {
-				process(item, context);
+			for (auto item : node->getSelectItems()) {
+				process(item.get(), context);
 			}
-
 			return antlrcpp::Any();
 		}
 
 
 		antlrcpp::Any visitSingleColumn(SingleColumn* node, antlr4::ParserRuleContext* context) override
 		{
-			process(node->getExpression(), context);
+			process(node->getExpression().get(), context);
 
 			return antlrcpp::Any();
 		}
@@ -137,8 +135,8 @@ namespace centurion {
 
 		//antlrcpp::Any visitWhenClause(WhenClause* node, antlr4::ParserRuleContext* context) override
 		//{
-		//	process(node->getOperand(), context);
-		//	process(node->getResult(), context);
+		//	process(node->getOperand().get(), context);
+		//	process(node->getResult().get(), context);
 
 		//	return antlrcpp::Any();
 		//}
@@ -160,15 +158,15 @@ namespace centurion {
 		//	}
 
 		//	if (node->getOrderBy().has_value()) {
-		//		process(node->getOrderBy().value(), context);
+		//		process(node->getOrderBy().value().get(), context);
 		//	}
 
 		//	if (node->getWindow().has_value()) {
-		//		process(node->getWindow().value(), context);
+		//		process(node->getWindow().value().get(), context);
 		//	}
 
 		//	if (node->getFilter().has_value()) {
-		//		process(node->getFilter().value(), context);
+		//		process(node->getFilter().value().get(), context);
 		//	}
 
 		//	return antlrcpp::Any();
@@ -198,11 +196,11 @@ namespace centurion {
 			}
 
 			if (node->getOrderBy().has_value()) {
-				process(node->getOrderBy().value(), context);
+				process(node->getOrderBy().value().get(), context);
 			}
 
 			if (node->getFrame().has_value()) {
-				process(node->getFrame().value(), context);
+				process(node->getFrame().value().get(), context);
 			}
 
 			return antlrcpp::Any();
@@ -211,9 +209,9 @@ namespace centurion {
 
 		public antlrcpp::Any visitWindowFrame(WindowFrame* node, antlr4::ParserRuleContext* context) override
 		{
-			process(node->getStart(), context);
+			process(node->getStart().get(), context);
 			if (node->getEnd().has_value()) {
-				process(node->getEnd().value(), context);
+				process(node->getEnd().value().get(), context);
 			}
 
 			return antlrcpp::Any();
@@ -223,7 +221,7 @@ namespace centurion {
 		public antlrcpp::Any visitFrameBound(FrameBound* node, antlr4::ParserRuleContext* context) override
 		{
 			if (node->getValue().has_value()) {
-				process(node->getValue().value(), context);
+				process(node->getValue().value().get(), context);
 			}
 
 			return antlrcpp::Any();
@@ -232,7 +230,7 @@ namespace centurion {
 
 		antlrcpp::Any visitSimpleCaseExpression(SimpleCaseExpression* node, antlr4::ParserRuleContext* context) override
 		{
-			process(node->getOperand(), context);
+			process(node->getOperand().get(), context);
 			for (WhenClause* clause : node->getWhenClauses()) {
 				process(clause, context);
 			}
@@ -255,8 +253,8 @@ namespace centurion {
 
 		/*antlrcpp::Any visitNullIfExpression(NullIfExpression* node, antlr4::ParserRuleContext* context) override
 		{
-			process(node->getFirst(), context);
-			process(node->getSecond(), context);
+			process(node->getFirst().get(), context);
+			process(node->getSecond().get(), context);
 
 			return antlrcpp::Any();
 		}
@@ -264,10 +262,10 @@ namespace centurion {
 
 		antlrcpp::Any visitIfExpression(IfExpression* node, antlr4::ParserRuleContext* context) override
 		{
-			process(node->getCondition(), context);
-			process(node->getTrueValue(), context);
+			process(node->getCondition().get(), context);
+			process(node->getTrueValue().get(), context);
 			if (node->getFalseValue().has_value()) {
-				process(node->getFalseValue().value(), context);
+				process(node->getFalseValue().value().get(), context);
 			}
 
 			return antlrcpp::Any();
@@ -276,7 +274,7 @@ namespace centurion {
 
 		antlrcpp::Any visitTryExpression(TryExpression* node, antlr4::ParserRuleContext* context) override
 		{
-			process(node->getInnerExpression(), context);
+			process(node->getInnerExpression().get(), context);
 			return antlrcpp::Any();
 		}
 
@@ -286,7 +284,7 @@ namespace centurion {
 			for (Expression* value : node->getValues()) {
 				process(value, context);
 			}
-			process(node->getFunction(), context);
+			process(node->getFunction().get(), context);
 
 			return antlrcpp::Any();
 		}*/
@@ -294,13 +292,13 @@ namespace centurion {
 
 		antlrcpp::Any visitArithmeticUnary(ArithmeticUnaryExpression* node, antlr4::ParserRuleContext* context) override
 		{
-			return process(node->getValue(), context);
+			return process(node->getValue().get(), context);
 		}
 
 
 		antlrcpp::Any visitNotExpression(NotExpression* node, antlr4::ParserRuleContext* context) override
 		{
-			return process(node->getValue(), context);
+			return process(node->getValue().get(), context);
 		}
 
 
@@ -310,7 +308,7 @@ namespace centurion {
 				process(clause, context);
 			}
 			if (node->getDefaultValue().has_value()) {
-				process(node->getDefaultValue().value(), context);
+				process(node->getDefaultValue().value().get(), context);
 			}
 			return antlrcpp::Any();
 		}*/
@@ -318,10 +316,10 @@ namespace centurion {
 
 		antlrcpp::Any visitLikePredicate(LikePredicate* node, antlr4::ParserRuleContext* context) override
 		{
-			process(node->getValue(), context);
-			process(node->getPattern(), context);
+			process(node->getValue().get(), context);
+			process(node->getPattern().get(), context);
 			if (node->getEscape().has_value()) {
-				process(node->getEscape().value(), context);
+				process(node->getEscape().value().get(), context);
 			}
 			return antlrcpp::Any();
 		}
@@ -329,20 +327,20 @@ namespace centurion {
 
 		antlrcpp::Any visitIsNotNullPredicate(IsNotNullPredicate* node, antlr4::ParserRuleContext* context) override
 		{
-			return process(node->getValue(), context);
+			return process(node->getValue().get(), context);
 		}
 
 
 		antlrcpp::Any visitIsNullPredicate(IsNullPredicate* node, antlr4::ParserRuleContext* context) override
 		{
-			return process(node->getValue(), context);
+			return process(node->getValue().get(), context);
 		}
 
 
 		antlrcpp::Any visitLogicalBinaryExpression(LogicalBinaryExpression* node, antlr4::ParserRuleContext* context) override
 		{
-			process(node->getLeft(), context);
-			process(node->getRight(), context);
+			process(node->getLeft().get(), context);
+			process(node->getRight().get(), context);
 
 			return antlrcpp::Any();
 		}
@@ -350,14 +348,14 @@ namespace centurion {
 
 		antlrcpp::Any visitSubqueryExpression(SubqueryExpression* node, antlr4::ParserRuleContext* context) override
 		{
-			return process(node->getQuery(), context);
+			return process(node->getQuery().get(), context);
 		}
 
 
 		antlrcpp::Any visitOrderBy(OrderBy* node, antlr4::ParserRuleContext* context) override
 		{
-			for (SortItem* sortItem : node->getSortItems()) {
-				process(sortItem, context);
+			for (auto sortItem : node->getSortItems()) {
+				process(sortItem.get(), context);
 			}
 			return antlrcpp::Any();
 		}
@@ -365,27 +363,27 @@ namespace centurion {
 
 		antlrcpp::Any visitSortItem(SortItem* node, antlr4::ParserRuleContext* context) override
 		{
-			return process(node->getSortKey(), context);
+			return process(node->getSortKey().get(), context);
 		}
 
 
 		antlrcpp::Any visitQuerySpecification(QuerySpecification* node, antlr4::ParserRuleContext* context) override
 		{
-			process(node->getSelect().value(), context);
+			process(node->getSelect().value().get(), context);
 			if (node->getFrom().has_value()) {
-				process(node->getFrom().value(), context);
+				process(node->getFrom().value().get(), context);
 			}
 			if (node->getWhere().has_value()) {
-				process(node->getWhere().value(), context);
+				process(node->getWhere().value().get(), context);
 			}
 			if (node->getGroupBy().has_value()) {
-				process(node->getGroupBy().value(), context);
+				process(node->getGroupBy().value().get(), context);
 			}
 			if (node->getHaving().has_value()) {
-				process(node->getHaving().value(), context);
+				process(node->getHaving().value().get(), context);
 			}
 			if (node->getOrderBy().has_value()) {
-				process(node->getOrderBy().value(), context);
+				process(node->getOrderBy().value().get(), context);
 			}
 			return antlrcpp::Any();
 		}
@@ -420,33 +418,33 @@ namespace centurion {
 
 		antlrcpp::Any visitTableSubquery(TableSubquery* node, antlr4::ParserRuleContext* context) override
 		{
-			return process(node->getQuery(), context);
+			return process(node->getQuery().get(), context);
 		}*/
 
 
 		antlrcpp::Any visitAliasedRelation(AliasedRelation* node, antlr4::ParserRuleContext* context) override
 		{
-			return process(node->getRelation(), context);
+			return process(node->getRelation().get(), context);
 		}
 
 
 		/*antlrcpp::Any visitSampledRelation(SampledRelation* node, antlr4::ParserRuleContext* context) override
 		{
-			process(node->getRelation(), context);
-			process(node->getSamplePercentage(), context);
+			process(node->getRelation().get(), context);
+			process(node->getSamplePercentage().get(), context);
 			return antlrcpp::Any();
 		}*/
 
 
 		antlrcpp::Any visitJoin(Join* node, antlr4::ParserRuleContext* context) override
 		{
-			process(node->getLeft(), context);
-			process(node->getRight(), context);
+			process(node->getLeft().get(), context);
+			process(node->getRight().get(), context);
 
 			if (node->getCriteria().has_value()) {
-				auto criteria = dynamic_cast<JoinOn*>(node->getCriteria().value());
+				auto criteria = std::dynamic_pointer_cast<JoinOn>(node->getCriteria().value());
 				if (criteria) {
-					process(criteria->getExpression(), context);
+					process(criteria->getExpression().get(), context);
 				}
 			}
 			return antlrcpp::Any();
@@ -465,8 +463,8 @@ namespace centurion {
 
 		antlrcpp::Any visitGroupBy(GroupBy* node, antlr4::ParserRuleContext* context) override
 		{
-			for (GroupingElement* groupingElement : node->getGroupingElements()) {
-				process(groupingElement, context);
+			for (auto groupingElement : node->getGroupingElements()) {
+				process(groupingElement.get(), context);
 			}
 
 			return antlrcpp::Any();
@@ -487,8 +485,8 @@ namespace centurion {
 
 		antlrcpp::Any visitSimpleGroupBy(SimpleGroupBy* node, antlr4::ParserRuleContext* context) override
 		{
-			for (Expression* expression : node->getExpressions()) {
-				process(expression, context);
+			for (auto expression : node->getExpressions()) {
+				process(expression.get(), context);
 			}
 
 			return antlrcpp::Any();
@@ -503,7 +501,7 @@ namespace centurion {
 
 		//antlrcpp::Any visitInsert(Insert* node, antlr4::ParserRuleContext* context) override
 		//{
-		//	process(node->getQuery(), context);
+		//	process(node->getQuery().get(), context);
 
 		//	return antlrcpp::Any();
 		//}
@@ -511,9 +509,9 @@ namespace centurion {
 
 		//antlrcpp::Any visitDelete(Delete* node, antlr4::ParserRuleContext* context) override
 		//{
-		//	process(node->getTable(), context);
+		//	process(node->getTable().get(), context);
 		//	if (node->getWhere().has_value()) {
-		//		process(node->getWhere().value(), context);
+		//		process(node->getWhere().value().get(), context);
 		//	}
 		//	return antlrcpp::Any();
 		//}
@@ -521,7 +519,7 @@ namespace centurion {
 
 		//antlrcpp::Any visitCreateTableAsSelect(CreateTableAsSelect* node, antlr4::ParserRuleContext* context) override
 		//{
-		//	process(node->getQuery(), context);
+		//	process(node->getQuery().get(), context);
 		//	for (Property* property : node->getProperties()) {
 		//		process(property, context);
 		//	}
@@ -532,8 +530,8 @@ namespace centurion {
 
 		//antlrcpp::Any visitProperty(Property* node, antlr4::ParserRuleContext* context) override
 		//{
-		//	process(node->getName(), context);
-		//	process(node->getValue(), context);
+		//	process(node->getName().get(), context);
+		//	process(node->getValue().get(), context);
 
 		//	return antlrcpp::Any();
 		//}
@@ -541,7 +539,7 @@ namespace centurion {
 
 		//antlrcpp::Any visitCreateView(CreateView* node, antlr4::ParserRuleContext* context) override
 		//{
-		//	process(node->getQuery(), context);
+		//	process(node->getQuery().get(), context);
 
 		//	return antlrcpp::Any();
 		//}
@@ -549,7 +547,7 @@ namespace centurion {
 
 		//antlrcpp::Any visitSetSession(SetSession* node, antlr4::ParserRuleContext* context) override
 		//{
-		//	process(node->getValue(), context);
+		//	process(node->getValue().get(), context);
 
 		//	return antlrcpp::Any();
 		//}
@@ -557,7 +555,7 @@ namespace centurion {
 
 		//antlrcpp::Any visitAddColumn(AddColumn* node, antlr4::ParserRuleContext* context) override
 		//{
-		//	process(node->getColumn(), context);
+		//	process(node->getColumn().get(), context);
 
 		//	return antlrcpp::Any();
 		//}
@@ -588,7 +586,7 @@ namespace centurion {
 
 		//antlrcpp::Any visitExplain(Explain* node, antlr4::ParserRuleContext* context) override
 		//{
-		//	process(node->getStatement(), context);
+		//	process(node->getStatement().get(), context);
 
 		//	for (ExplainOption* option : node->getOptions()) {
 		//		process(option, context);
@@ -600,8 +598,8 @@ namespace centurion {
 
 		//antlrcpp::Any visitQuantifiedComparisonExpression(QuantifiedComparisonExpression* node, antlr4::ParserRuleContext* context) override
 		//{
-		//	process(node->getValue(), context);
-		//	process(node->getSubquery(), context);
+		//	process(node->getValue().get(), context);
+		//	process(node->getSubquery().get(), context);
 
 		//	return antlrcpp::Any();
 		//}
@@ -609,7 +607,7 @@ namespace centurion {
 
 		//antlrcpp::Any visitExists(ExistsPredicate* node, antlr4::ParserRuleContext* context) override
 		//{
-		//	process(node->getSubquery(), context);
+		//	process(node->getSubquery().get(), context);
 
 		//	return antlrcpp::Any();
 		//}
@@ -617,7 +615,7 @@ namespace centurion {
 
 		//antlrcpp::Any visitLateral(Lateral* node, antlr4::ParserRuleContext* context) override
 		//{
-		//	process(node->getQuery(), context);
+		//	process(node->getQuery().get(), context);
 
 		//	return AstVisitor::visitLateral(node, context);
 		//}

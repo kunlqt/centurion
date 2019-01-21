@@ -6,9 +6,11 @@
 #include <ParsingOptions.h>
 #include <antlr4-runtime.h>
 #include <atn/ParserATNSimulator.h>
-
 #include "SearchIteratorBuilder.h"
-#include "QualifiedNameBuilderVisitor.h"
+#include "DefaultVisitorResult.h"
+#include <spdlog/logger.h>
+#include "AstNodes.h"
+#include "DefaultVisitor.h"
 
 namespace centurion {
 	class QueryErrorErrorStrategy : public antlr4::DefaultErrorStrategy {
@@ -43,7 +45,7 @@ namespace centurion {
 		std::vector<std::tuple<size_t, size_t, std::string>> errors;
 	};
 
-	QualifiedNameBuilder* SearchIteratorBuilder::buildQuery(std::istream& query)
+	std::shared_ptr<DefaultVisitorResult> SearchIteratorBuilder::buildQuery(std::istream& query)
 	{
 		auto console = spdlog::get("root");
 		console->trace("Starting SQL parser...");
@@ -58,10 +60,10 @@ namespace centurion {
 			AstBuilder astBuilder(options);
 			console->trace("Visiting single sql statement");
 			antlr4::ParserRuleContext* tree = parser.singleStatement();
-			Statement* statement = astBuilder.visitSingleStatement(dynamic_cast<CentSqlParser::SingleStatementContext*>(tree));
-			QualifiedNameBuilderVisitor visitor;
-			auto parserContext = new QualifiedNameBuilder();
-			visitor.process(statement, parserContext);
+ 			std::shared_ptr<Statement> statement = astBuilder.visitSingleStatement(dynamic_cast<CentSqlParser::SingleStatementContext*>(tree));
+			DefaultVisitor visitor;
+			auto parserContext = std::make_shared<DefaultVisitorResult>();
+			visitor.process(statement.get(), parserContext.get());
 			console->trace("Parsing done, returning results");
 			return parserContext;
 		} catch (const antlr4::ParseCancellationException& exc) {
@@ -77,8 +79,8 @@ namespace centurion {
 			AstBuilder astBuilder(options);
 			antlr4::ParserRuleContext* tree = parser.singleStatement();
 			Statement* statement = astBuilder.visitSingleStatement(dynamic_cast<CentSqlParser::SingleStatementContext*>(tree));
-			QualifiedNameBuilderVisitor visitor;
-			QualifiedNameBuilder parserContext;
+			DefaultVisitor visitor;
+			DefaultVisitorResult parserContext;
 			visitor.process(statement, &parserContext);			
 			std::stringstream errorMessage;
 			for (const auto& [line, col, err ] : errorListener->errors) {

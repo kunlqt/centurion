@@ -16,9 +16,8 @@ namespace  centurion {
 		log->trace("creating search documents...");
 		size_t totalDocumentsFound = 0;
 		if (res->rootSearchIterator() != nullptr) {
-			totalDocumentsFound = dbm.searchDocuments(res->qualifiedNames(), res->rootSearchIterator(), results, 0, 100);
+			totalDocumentsFound = dbm.searchDocuments(res->selectedColumns(), res->rootSearchIterator(), results, 0, 100);
 		}
-		delete res;
 		log->trace("Search documents finished, found {}", totalDocumentsFound);
 	}
 }

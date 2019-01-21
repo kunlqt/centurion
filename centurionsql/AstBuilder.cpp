@@ -144,7 +144,11 @@ namespace centurion {
 	}
 
 	antlrcpp::Any AstBuilder::visitShowStats(CentSqlParser::ShowStatsContext *ctx) {
-		return implicitCast<Statement*>(new ShowStats(std::make_optional(getLocation(ctx)), new Table(getQualifiedName(ctx->qualifiedName()))));
+		return std::dynamic_pointer_cast<Statement>(
+			std::make_shared<ShowStats>(
+				std::make_optional(getLocation(ctx)), 
+				std::make_shared<Table>(getQualifiedName(ctx->qualifiedName())))
+			);
 	}
 
 	antlrcpp::Any AstBuilder::visitShowStatsForQuery(CentSqlParser::ShowStatsForQueryContext *ctx) {
@@ -204,22 +208,23 @@ namespace centurion {
 	}
 
 	antlrcpp::Any AstBuilder::visitQuery(CentSqlParser::QueryContext *ctx) {
-		Statement* queryStatement = CentSqlBaseVisitor::visit(ctx->queryNoWith());
-		const auto body = dynamic_cast<Query*>(queryStatement);
-		return implicitCast<Statement*>(new Query(
-			getLocation(ctx),
-			visitIfPresent<With*>(ctx->with()),
-			body->getQueryBody(),
-			body->getOrderBy(),
-			body->getLimit())
+		std::shared_ptr<Statement> queryStatement = CentSqlBaseVisitor::visit(ctx->queryNoWith());
+		const auto body = std::dynamic_pointer_cast<Query>(queryStatement);
+		return std::dynamic_pointer_cast<Statement>(
+			std::make_shared<Query>(
+				getLocation(ctx),
+				visitIfPresent<std::shared_ptr<With>>(ctx->with()),
+				body->getQueryBody(),
+				body->getOrderBy(),
+				body->getLimit())
 		);
 	}
 
 	antlrcpp::Any AstBuilder::visitWith(CentSqlParser::WithContext *ctx) {		
-		return new With(
+		return std::make_shared<With>(
 			getLocation(ctx), 
 			ctx->RECURSIVE() != nullptr, 
-			castVector<WithQuery*>(visit(castVector<antlr4::ParserRuleContext*>(ctx->namedQuery())))
+			castSharedPtrVector<WithQuery>(visit(castVector(ctx->namedQuery())))
 		);
 	}
 
@@ -244,40 +249,43 @@ namespace centurion {
 	}
 
 	antlrcpp::Any AstBuilder::visitQueryNoWith(CentSqlParser::QueryNoWithContext *ctx) {
-		Relation* queryTerm = CentSqlBaseVisitor::visit(ctx->queryTerm());
-		std::optional<OrderBy*> orderBy;
+		std::shared_ptr<Relation> queryTerm = CentSqlBaseVisitor::visit(ctx->queryTerm());
+		std::optional<std::shared_ptr<OrderBy>> orderBy;
 		if (ctx->ORDER() != nullptr) {
-			auto sortItems = castVector<SortItem*>(visit(castVector<antlr4::ParserRuleContext*>(ctx->sortItem())));
-			orderBy.emplace(new OrderBy(getLocation(ctx->ORDER()), sortItems));
+			auto sortItems = castSharedPtrVector<SortItem>(visit(castVector(ctx->sortItem())));
+			orderBy.emplace(std::make_shared<OrderBy>(getLocation(ctx->ORDER()), sortItems));
 		}
-		const auto query = dynamic_cast<QuerySpecification*>(queryTerm);
+		const auto query = std::dynamic_pointer_cast<QuerySpecification>(queryTerm);
 		if (query != nullptr) {
-			return implicitCast<Statement*>(new Query(
-				getLocation(ctx),
-				std::optional<With*>(),
-				new QuerySpecification(
+			return std::dynamic_pointer_cast<Statement>(
+				std::make_shared<Query>(
 					getLocation(ctx),
-					query->getSelect(),
-					query->getFrom(),
-					query->getWhere(),
-					query->getGroupBy(),
-					query->getHaving(),
-					orderBy,
-					getTextIfPresent(ctx->limit)),
-				std::optional<OrderBy*>(),
-				std::optional<std::string>()
-			));
+					std::optional<std::shared_ptr<With>>(),
+					std::make_shared<QuerySpecification>(
+						getLocation(ctx),
+						query->getSelect(),
+						query->getFrom(),
+						query->getWhere(),
+						query->getGroupBy(),
+						query->getHaving(),
+						orderBy,
+						getTextIfPresent(ctx->limit)),
+					std::optional<std::shared_ptr<OrderBy>>(),
+					std::optional<std::string>()
+				)
+			);
 		}
-		const auto queryBody = dynamic_cast<QueryBody*>(queryTerm);
+		const auto queryBody = std::dynamic_pointer_cast<QueryBody>(queryTerm);
 		if (queryBody != nullptr) {
-			return implicitCast<Statement*>(
-				new Query(
+			return std::dynamic_pointer_cast<Statement>(
+				std::make_shared<Query>(
 					getLocation(ctx),
-					std::optional<With*>(),
+					std::optional<std::shared_ptr<With>>(),
 					queryBody,
 					orderBy,
-					getTextIfPresent(ctx->limit))
-				);
+					getTextIfPresent(ctx->limit)
+				)
+			);
 		}
 		throw std::runtime_error("Missing query body");
 	}
@@ -295,7 +303,12 @@ namespace centurion {
 	}
 
 	antlrcpp::Any AstBuilder::visitTable(CentSqlParser::TableContext *ctx) {
-		return implicitCast<Relation*>(new Table(getLocation(ctx), getQualifiedName(ctx->qualifiedName())));
+		return std::dynamic_pointer_cast<Relation>(
+			std::make_shared<Table>(
+				getLocation(ctx), 
+				getQualifiedName(ctx->qualifiedName())
+			)
+		);
 	}
 
 	antlrcpp::Any AstBuilder::visitInlineTable(CentSqlParser::InlineTableContext *ctx) {
@@ -309,55 +322,66 @@ namespace centurion {
 	antlrcpp::Any AstBuilder::visitSortItem(CentSqlParser::SortItemContext *ctx) {
 		const auto ordering = getOrderingType(ctx->ordering);
 		const auto nullOrdering = getNullOrderingType(ctx->nullOrdering);
-		return new SortItem(getLocation(ctx),
+		return std::make_shared<SortItem>(
+			getLocation(ctx),
 			CentSqlBaseVisitor::visit(ctx->expression()),
 			ordering,
 			nullOrdering);
 	}
 
 	antlrcpp::Any AstBuilder::visitQuerySpecification(CentSqlParser::QuerySpecificationContext *ctx) {
-		auto selectedItems = visit(castVector<antlr4::ParserRuleContext*>(ctx->selectItem()));
-		auto relations = castVector<Relation*>(visit(castVector<antlr4::ParserRuleContext*>(ctx->relation())));
-		std::optional<Relation*> from;
+		auto selectedItems = castSharedPtrVector<SelectItem>(visit(castVector(ctx->selectItem())));
+		auto relations = castSharedPtrVector<Relation>(visit(castVector(ctx->relation())));
+		std::optional<std::shared_ptr<Relation>> from;
 		if (!relations.empty()) {
 			auto iterator = relations.cbegin();
-			auto relation = *(iterator++);
+			std::shared_ptr<Relation> relation = *(iterator++);
 			while (iterator != relations.cend()) {
-				relation = implicitCast<Relation*>(
-					new Join(
+				relation = std::dynamic_pointer_cast<Relation>(
+					std::make_shared<Join>(
 						getLocation(ctx), 
 						Join::JoinType::IMPLICIT, 
 						relation, 
 						*iterator, 
-						std::optional<JoinCriteria*>()
+						std::optional<std::shared_ptr<JoinCriteria>>()
 					)
 				);
 				++iterator;
 			}
 			from = std::make_optional(relation);
 		}		
-		return implicitCast<Relation*>(new QuerySpecification(
+		return std::dynamic_pointer_cast<Relation>(std::make_shared<QuerySpecification>(
 			getLocation(ctx),
-			new Select(getLocation(ctx->SELECT()), isDistinct(ctx->setQuantifier()), castVector<SelectItem*>(selectedItems)),
+			std::make_shared<Select>(
+				getLocation(ctx->SELECT()), 
+				isDistinct(ctx->setQuantifier()), 
+				selectedItems
+			),
 			from,
-			visitIfPresent<Expression*>(ctx->where),
-			visitIfPresent<GroupBy*>(ctx->groupBy()),
-			visitIfPresent<Expression*>(ctx->having),
-			std::optional<OrderBy*>(),
+			visitIfPresent<std::shared_ptr<Expression>>(ctx->where),
+			visitIfPresent<std::shared_ptr<GroupBy>>(ctx->groupBy()),
+			visitIfPresent<std::shared_ptr<Expression>>(ctx->having),
+			std::optional< std::shared_ptr<OrderBy>>(),
 			std::optional<std::string>()
 		));		
 	}
 
 	antlrcpp::Any AstBuilder::visitGroupBy(CentSqlParser::GroupByContext *ctx) {
-		auto visitResult = visit(castVector<antlr4::ParserRuleContext*>(ctx->groupingElement()));
-		return new GroupBy(getLocation(ctx), isDistinct(ctx->setQuantifier()), castVector<GroupingElement*>(visitResult));
+		auto visitResult = visit(castVector(ctx->groupingElement()));
+		return std::make_shared<GroupBy>(
+			getLocation(ctx), 
+			isDistinct(ctx->setQuantifier()), 
+			castSharedPtrVector<GroupingElement>(visitResult)
+		);
 	}
 
 	antlrcpp::Any AstBuilder::visitSingleGroupingSet(CentSqlParser::SingleGroupingSetContext *ctx) {		
-		return implicitCast<GroupingElement*>(
-			new SimpleGroupBy(
+		return std::dynamic_pointer_cast<GroupingElement>(
+			std::make_shared<SimpleGroupBy>(
 				getLocation(ctx), 
-				castVector<Expression*>(visit(castVector<antlr4::ParserRuleContext*>(ctx->groupingSet()->expression())))
+				castSharedPtrVector<Expression>(
+					visit(castVector(ctx->groupingSet()->expression()))
+				)
 			)
 		);
 	}
@@ -379,11 +403,11 @@ namespace centurion {
 	}
 
 	antlrcpp::Any AstBuilder::visitNamedQuery(CentSqlParser::NamedQueryContext *ctx) {
-		std::optional<std::vector<Identifier*>> aliases;
+		std::optional<std::vector<std::shared_ptr<Identifier>>> aliases;
 		if (ctx->columnAliases() != nullptr) {
-			aliases.emplace(castVector<Identifier*>(visit(castVector<antlr4::ParserRuleContext*>(ctx->columnAliases()->identifier()))));
+			aliases.emplace(castSharedPtrVector<Identifier>(visit(castVector(ctx->columnAliases()->identifier()))));
 		}
-		return new WithQuery(
+		return std::make_shared<WithQuery>(
 			getLocation(ctx),
 			CentSqlBaseVisitor::visit(ctx->name),
 			CentSqlBaseVisitor::visit(ctx->query()),
@@ -396,14 +420,14 @@ namespace centurion {
 	}
 
 	antlrcpp::Any AstBuilder::visitSelectSingle(CentSqlParser::SelectSingleContext *ctx) {
-		Expression* expr = CentSqlBaseVisitor::visit(ctx->expression());
-		auto identifier = visitIfPresent<Expression*>(ctx->identifier());
-		std::optional<Identifier*> alias;
+		std::shared_ptr<Expression> expr = CentSqlBaseVisitor::visit(ctx->expression());
+		auto identifier = visitIfPresent<std::shared_ptr<Expression>>(ctx->identifier());
+		std::optional<std::shared_ptr<Identifier>> alias;
 		if (identifier.has_value()) {
-			alias.emplace(dynamic_cast<Identifier*>(identifier.value()));
+			alias.emplace(std::dynamic_pointer_cast<Identifier>(identifier.value()));
 		}
-		return implicitCast<SelectItem*>(
-			new SingleColumn(
+		return std::dynamic_pointer_cast<SelectItem>(
+			std::make_shared<SingleColumn>(
 				getLocation(ctx), 
 				expr,
 				alias
@@ -413,9 +437,9 @@ namespace centurion {
 
 	antlrcpp::Any AstBuilder::visitSelectAll(CentSqlParser::SelectAllContext *ctx) {
 		if (ctx->qualifiedName() != nullptr) {
-			return implicitCast<SelectItem*>(new AllColumns(getLocation(ctx), getQualifiedName(ctx->qualifiedName())));
+			return std::dynamic_pointer_cast<SelectItem>(std::make_shared<AllColumns>(getLocation(ctx), getQualifiedName(ctx->qualifiedName())));
 		}
-		return implicitCast<SelectItem*>(new AllColumns(getLocation(ctx)));
+		return std::dynamic_pointer_cast<SelectItem>(std::make_shared<AllColumns>(getLocation(ctx)));
 	}
 	
 	antlrcpp::Any AstBuilder::visitRelationDefault(CentSqlParser::RelationDefaultContext *ctx) {
@@ -423,30 +447,37 @@ namespace centurion {
 	}
 
 	antlrcpp::Any AstBuilder::visitJoinRelation(CentSqlParser::JoinRelationContext *ctx) {
-		Relation* left = CentSqlBaseVisitor::visit(ctx->left);		
+		std::shared_ptr<Relation> left = CentSqlBaseVisitor::visit(ctx->left);		
 		if (ctx->CROSS() != nullptr) {
-			Relation* right = CentSqlBaseVisitor::visit(ctx->right);
-			return implicitCast<Relation*>(
-				new Join(getLocation(ctx), Join::CROSS, left, right, std::optional<JoinCriteria*>())
+			std::shared_ptr<Relation> right = CentSqlBaseVisitor::visit(ctx->right);
+			return std::dynamic_pointer_cast<Relation>(
+				std::make_shared<Join>(
+					getLocation(ctx), 
+					Join::CROSS, 
+					left, 
+					right, 
+					std::optional<std::shared_ptr<JoinCriteria>>()
+				)
 			);
 		}
-		Relation* right;
-		JoinCriteria* criteria;
+		//std::shared_ptr<Relation> right;
+		antlrcpp::Any right;
+		std::shared_ptr<JoinCriteria> criteria;
 		if (ctx->NATURAL() != nullptr) {
 			right = CentSqlBaseVisitor::visit(ctx->right);
-			criteria = new NaturalJoin();
+			criteria = std::make_shared<NaturalJoin>();
 		} else {
 			right = CentSqlBaseVisitor::visit(ctx->rightRelation);
 			if (ctx->joinCriteria()->ON() != nullptr) {
-				Expression* joinOnExpr = CentSqlBaseVisitor::visit(ctx->joinCriteria()->booleanExpression());
-				criteria = new JoinOn(joinOnExpr);
+				std::shared_ptr<Expression> joinOnExpr = CentSqlBaseVisitor::visit(ctx->joinCriteria()->booleanExpression());
+				criteria = std::make_shared<JoinOn>(joinOnExpr);
 			} else if (ctx->joinCriteria()->USING() != nullptr) {
-				auto visitResult = visit(castVector<antlr4::ParserRuleContext*>(ctx->joinCriteria()->identifier()));
-				std::vector<Identifier*> columns;
+				auto visitResult = visit(castVector(ctx->joinCriteria()->identifier()));
+				std::vector<std::shared_ptr<Identifier>> columns;
 				for (auto& visitResultItem : visitResult) {
-					columns.emplace_back(visitResultItem);
+					// columns.emplace_back(visitResultItem); todo: fix this
 				}
-				criteria = new JoinUsing(columns);
+				criteria = std::make_shared<JoinUsing>(columns);
 			} else {
 				throw antlr4::IllegalArgumentException("Unsupported join criteria");
 			}
@@ -461,7 +492,7 @@ namespace centurion {
 		} else {
 			joinType = Join::INNER;
 		}
-		return implicitCast<Relation*>(new Join(getLocation(ctx), joinType, left, right, std::make_optional(criteria)));
+		return std::dynamic_pointer_cast<Relation>(std::make_shared<Join>(getLocation(ctx), joinType, left, right, std::make_optional(criteria)));
 	}
 
 	antlrcpp::Any AstBuilder::visitJoinType(CentSqlParser::JoinTypeContext *ctx) {
@@ -473,7 +504,7 @@ namespace centurion {
 	}
 
 	antlrcpp::Any AstBuilder::visitSampledRelation(CentSqlParser::SampledRelationContext *ctx) {
-		Relation* child = CentSqlBaseVisitor::visit(ctx->aliasedRelation());
+		std::shared_ptr<Relation> child = CentSqlBaseVisitor::visit(ctx->aliasedRelation());
 		if (ctx->TABLESAMPLE() == nullptr) {
 			return child;
 		}
@@ -485,18 +516,18 @@ namespace centurion {
 	}
 
 	antlrcpp::Any AstBuilder::visitAliasedRelation(CentSqlParser::AliasedRelationContext *ctx) {
-		Relation* child = CentSqlBaseVisitor::visit(ctx->relationPrimary());
+		std::shared_ptr<Relation> child = CentSqlBaseVisitor::visit(ctx->relationPrimary());
 		if (ctx->identifier() == nullptr) {
 			return child;
 		}
 		auto aliases =
 			(ctx->columnAliases() != nullptr)
-			? castVector<Identifier*>(visit(castVector<antlr4::ParserRuleContext*>(ctx->columnAliases()->identifier())))
-			: std::vector<Identifier*>();		
-		Expression* expr = CentSqlBaseVisitor::visit(ctx->identifier());
-		return implicitCast<Relation*>(
-			new AliasedRelation(
-				getLocation(ctx), child, dynamic_cast<Identifier*>(expr), aliases
+			? castSharedPtrVector<Identifier>(visit(castVector(ctx->columnAliases()->identifier())))
+			: std::vector<std::shared_ptr<Identifier>>();		
+		std::shared_ptr<Expression> expr = CentSqlBaseVisitor::visit(ctx->identifier());
+		return std::dynamic_pointer_cast<Relation>(
+			std::make_shared<AliasedRelation>(
+				getLocation(ctx), child, std::dynamic_pointer_cast<Identifier>(expr), aliases
 			)
 		);
 	}
@@ -506,7 +537,7 @@ namespace centurion {
 	}
 
 	antlrcpp::Any AstBuilder::visitTableName(CentSqlParser::TableNameContext *ctx) {
-		return implicitCast<Relation*>(new Table(getLocation(ctx), getQualifiedName(ctx->qualifiedName())));
+		return std::dynamic_pointer_cast<Relation>(std::make_shared<Table>(getLocation(ctx), getQualifiedName(ctx->qualifiedName())));
 	}
 
 	antlrcpp::Any AstBuilder::visitSubqueryRelation(CentSqlParser::SubqueryRelationContext *ctx) {
@@ -530,9 +561,13 @@ namespace centurion {
 	}
 
 	antlrcpp::Any AstBuilder::visitLogicalNot(CentSqlParser::LogicalNotContext *ctx) {
-		return implicitCast<Expression*>(
-			new NotExpression(getLocation(ctx), (Expression*)CentSqlBaseVisitor::visit(ctx->booleanExpression()))
-			);
+		std::shared_ptr<Expression> expr = CentSqlBaseVisitor::visit(ctx->booleanExpression());
+		return std::dynamic_pointer_cast<Expression>(
+			std::make_shared<NotExpression>(
+				getLocation(ctx), 
+				expr
+			)
+		);
 	}
 
 	antlrcpp::Any AstBuilder::visitPredicated(CentSqlParser::PredicatedContext *ctx) {
@@ -543,7 +578,7 @@ namespace centurion {
 	}
 
 	antlrcpp::Any AstBuilder::visitLogicalBinary(CentSqlParser::LogicalBinaryContext *ctx) {
-		return implicitCast<Expression*>(new LogicalBinaryExpression(
+		return std::dynamic_pointer_cast<Expression>(std::make_shared<LogicalBinaryExpression>(
 			getLocation(ctx->oper),
 			getLogicalBinaryOperator(ctx->oper),
 			CentSqlBaseVisitor::visit(ctx->left),
@@ -560,8 +595,8 @@ namespace centurion {
 		auto token = comparisonOp->getSymbol();
 		antlrcpp::Any left = CentSqlBaseVisitor::visit(ctx->value);
 		antlrcpp::Any right = CentSqlBaseVisitor::visit(ctx->right);
-		return implicitCast<Expression*>(
-			new ComparisonExpression(getLocation(ctx->comparisonOperator()),
+		return std::dynamic_pointer_cast<Expression>(
+			std::make_shared<ComparisonExpression>(getLocation(ctx->comparisonOperator()),
 				getComparisonOperator(token),
 				left,
 				right
@@ -579,15 +614,19 @@ namespace centurion {
 
 	antlrcpp::Any AstBuilder::visitInList(CentSqlParser::InListContext *ctx) {
 		std::shared_ptr<Expression> fieldName = CentSqlBaseVisitor::visit(ctx->value);
-		const auto fieldValues = visit(castVector<antlr4::ParserRuleContext*>(ctx->expression()));
-		//auto res = castSharedPtrVector<std::shared_ptr<Expression>>(fieldValues);
-		Expression* result = nullptr; /* new InPredicate(
-			getLocation(ctx),
-			fieldName,
-			std::make_shared<InListExpression>(getLocation(ctx), castSharedPtrVector<std::shared_ptr<Expression>>(fieldValues)));
-			*/
+		const auto fieldValues = castSharedPtrVector<Expression>(visit(castVector(ctx->expression())));
+		auto result = std::dynamic_pointer_cast<Expression>(
+			std::make_shared<InPredicate>(
+				getLocation(ctx),
+				fieldName,
+				std::make_shared<InListExpression>(
+					getLocation(ctx), 
+					fieldValues
+				)
+			)
+		);			
 		if (ctx->NOT() != nullptr) {
-			result = new NotExpression(getLocation(ctx), result);
+			result = std::make_shared<NotExpression>(getLocation(ctx), result);
 		}
 		return result;
 	}
@@ -601,11 +640,11 @@ namespace centurion {
 	}
 
 	antlrcpp::Any AstBuilder::visitNullPredicate(CentSqlParser::NullPredicateContext *ctx) {
-		Expression* child = CentSqlBaseVisitor::visit(ctx->value);
+		std::shared_ptr<Expression> child = CentSqlBaseVisitor::visit(ctx->value);
 		if (ctx->NOT() == nullptr) {
-			return new IsNullPredicate(getLocation(ctx), child);
+			return std::make_shared<IsNullPredicate>(getLocation(ctx), child);
 		}
-		return new IsNotNullPredicate(getLocation(ctx), child);
+		return std::make_shared<IsNotNullPredicate>(getLocation(ctx), child);
 	}
 
 	antlrcpp::Any AstBuilder::visitDistinctFrom(CentSqlParser::DistinctFromContext *ctx) {
@@ -621,22 +660,26 @@ namespace centurion {
 	}
 
 	antlrcpp::Any AstBuilder::visitArithmeticBinary(CentSqlParser::ArithmeticBinaryContext *ctx) {
-		return implicitCast<Expression*>(new ArithmeticBinaryExpression(
-			getLocation(ctx->oper),
-			getArithmeticBinaryOperator(ctx->oper),
-			(Expression*)CentSqlBaseVisitor::visit(ctx->left),
-			(Expression*)CentSqlBaseVisitor::visit(ctx->right))
+		std::shared_ptr<Expression> left = CentSqlBaseVisitor::visit(ctx->left);
+		std::shared_ptr<Expression> right = CentSqlBaseVisitor::visit(ctx->right);
+		return std::dynamic_pointer_cast<Expression>(
+			std::make_shared<ArithmeticBinaryExpression>(
+				getLocation(ctx->oper),
+				getArithmeticBinaryOperator(ctx->oper),
+				left,
+				right
+			)
 		);
 	}
 
 	antlrcpp::Any AstBuilder::visitArithmeticUnary(CentSqlParser::ArithmeticUnaryContext *ctx) {
-		auto child = (Expression*)CentSqlBaseVisitor::visit(ctx->valueExpression());
+		std::shared_ptr<Expression> child = CentSqlBaseVisitor::visit(ctx->valueExpression());
 		switch (ctx->oper->getType())
 		{
 			case CentSqlLexer::MINUS:
-				return new ArithmeticUnaryExpression(getLocation(ctx), ArithmeticUnaryExpression::MINUS, child);
+				return std::make_shared<ArithmeticUnaryExpression>(getLocation(ctx), ArithmeticUnaryExpression::MINUS, child);
 			case CentSqlLexer::PLUS:
-				return new ArithmeticUnaryExpression(getLocation(ctx), ArithmeticUnaryExpression::PLUS, child);
+				return std::make_shared<ArithmeticUnaryExpression>(getLocation(ctx), ArithmeticUnaryExpression::PLUS, child);
 			default:
 				throw ParsingException("Unsupported sign: " + ctx->oper->getText());
 		}
@@ -651,9 +694,11 @@ namespace centurion {
 		std::shared_ptr<Expression> ident = CentSqlBaseVisitor::visit(ctx->fieldName);
 		return std::dynamic_pointer_cast<Expression>(
 			std::make_shared<DereferenceExpression>(
-				getLocation(ctx),  expr, std::dynamic_pointer_cast<Identifier>(ident)
-				)
-			);
+				getLocation(ctx),  
+				expr, 
+				std::dynamic_pointer_cast<Identifier>(ident)
+			)
+		);
 	}
 
 	antlrcpp::Any AstBuilder::visitTypeConstructor(CentSqlParser::TypeConstructorContext *ctx) {
@@ -725,7 +770,8 @@ namespace centurion {
 	}
 
 	antlrcpp::Any AstBuilder::visitSubqueryExpression(CentSqlParser::SubqueryExpressionContext *ctx) {
-		return new SubqueryExpression(getLocation(ctx), (Query*)CentSqlBaseVisitor::visit(ctx->query()));
+		std::shared_ptr<Query> query = CentSqlBaseVisitor::visit(ctx->query());
+		return std::make_shared<SubqueryExpression>(getLocation(ctx), query);
 	}
 
 	antlrcpp::Any AstBuilder::visitBinaryLiteral(CentSqlParser::BinaryLiteralContext *ctx) {
@@ -767,11 +813,11 @@ namespace centurion {
 	antlrcpp::Any AstBuilder::visitGroupingOperation(CentSqlParser::GroupingOperationContext *ctx) {
 		
 		const auto& qualifiedNames = ctx->qualifiedName();
-		std::vector<QualifiedName*> arguments;
+		std::vector<std::shared_ptr<QualifiedName>> arguments;
 		for (const auto& qualifiedName : qualifiedNames) {
 			arguments.emplace_back(getQualifiedName(qualifiedName));
 		}
-		return new GroupingOperation(std::make_optional(getLocation(ctx)), arguments);
+		return std::make_shared<GroupingOperation>(std::make_optional(getLocation(ctx)), arguments);
 	}
 
 	antlrcpp::Any AstBuilder::visitBasicStringLiteral(CentSqlParser::BasicStringLiteralContext *ctx) {
@@ -803,7 +849,7 @@ namespace centurion {
 	}
 
 	antlrcpp::Any AstBuilder::visitBooleanValue(CentSqlParser::BooleanValueContext *ctx) {
-		return implicitCast<Expression*>(new BooleanLiteral(getLocation(ctx), ctx->getText()));
+		return std::dynamic_pointer_cast<Expression>(std::make_shared<BooleanLiteral>(getLocation(ctx), ctx->getText()));
 	}
 
 	antlrcpp::Any AstBuilder::visitInterval(CentSqlParser::IntervalContext *ctx) {
@@ -919,14 +965,22 @@ namespace centurion {
 	}
 
 	antlrcpp::Any AstBuilder::visitUnquotedIdentifier(CentSqlParser::UnquotedIdentifierContext *ctx) {
-		return std::dynamic_pointer_cast<Expression>(std::make_shared<Identifier>(getLocation(ctx), ctx->getText(), false));
+		return std::dynamic_pointer_cast<Expression>(
+			std::make_shared<Identifier>(
+				getLocation(ctx), ctx->getText(), false
+			)
+		);
 	}
 
 	antlrcpp::Any AstBuilder::visitQuotedIdentifier(CentSqlParser::QuotedIdentifierContext *ctx) {
 		const auto& token = ctx->getText(); 
 		auto identifier = token.substr(1, token.length() - 1); 
 		replace(identifier, "\"\"", "\"");
-		return implicitCast<Expression*>(new Identifier(getLocation(ctx), identifier, true));
+		return std::dynamic_pointer_cast<Expression>(
+			std::make_shared<Identifier>(
+				getLocation(ctx), identifier, true
+			)
+		);
 	}
 
 	antlrcpp::Any AstBuilder::visitBackQuotedIdentifier(CentSqlParser::BackQuotedIdentifierContext *ctx) {
@@ -940,9 +994,9 @@ namespace centurion {
 	antlrcpp::Any AstBuilder::visitDecimalLiteral(CentSqlParser::DecimalLiteralContext *ctx) {
 		switch (parsingOptions_.getDecimalLiteralTreatment()) {
 			case ParsingOptions::AS_DOUBLE:
-				return implicitCast<Expression*>(new DoubleLiteral(getLocation(ctx), ctx->getText()));
+				return std::dynamic_pointer_cast<Expression>(std::make_shared<DoubleLiteral>(getLocation(ctx), ctx->getText()));
 			case ParsingOptions::AS_DECIMAL:
-				return implicitCast<Expression*>(new DecimalLiteral(getLocation(ctx), ctx->getText()));
+				return std::dynamic_pointer_cast<Expression>(std::make_shared<DecimalLiteral>(getLocation(ctx), ctx->getText()));
 			case ParsingOptions::REJECT:
 				throw ParsingException("Unexpected decimal literal");
 			default:
@@ -962,14 +1016,14 @@ namespace centurion {
 		return visitChildren(ctx);
 	}
 		
-	QualifiedName* AstBuilder::getQualifiedName(CentSqlParser::QualifiedNameContext* ctx) {		
-		auto visitResults = visit(castVector<antlr4::ParserRuleContext*>(ctx->identifier()));
+	std::shared_ptr<QualifiedName> AstBuilder::getQualifiedName(CentSqlParser::QualifiedNameContext* ctx) {		
+		auto visitResults = visit(castVector(ctx->identifier()));
 		std::vector<std::string> parts;
 		for (auto& visitResult : visitResults) {
 			std::shared_ptr<Expression> item = visitResult;
 			parts.emplace_back(std::dynamic_pointer_cast<Identifier>(item)->getValue());
 		}
-		return new QualifiedName(parts);
+		return std::make_shared<QualifiedName>(parts);
 	}
 
 	std::optional<std::string> AstBuilder::getTextIfPresent(antlr4::ParserRuleContext* ctx)

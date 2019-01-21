@@ -30,9 +30,6 @@
     <ClInclude Include="SearchIteratorBuilder.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="DefaultTraversalVisitor.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="QueryDocumentHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -45,10 +42,10 @@
     <ClInclude Include="AstVisitorImpl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="QualifiedNameBuilderVisitor.h">
+    <ClInclude Include="DefaultVisitor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="QualifiedNameBuilder.h">
+    <ClInclude Include="DefaultVisitorResult.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -18,6 +18,27 @@
 #include <optional>
 
 namespace centurion {
+	template<typename F>
+	inline std::vector<antlr4::ParserRuleContext*> castVector(const std::vector<F>& from)
+	{
+		std::vector<antlr4::ParserRuleContext*> to(from.size());
+		for (size_t idx = 0; idx < from.size(); idx++) {
+			F a = from[idx];
+			to[idx] = a;
+		}
+		return to;
+	}
+
+	template<typename T>
+	std::vector<std::shared_ptr<T>> castSharedPtrVector(const std::vector<antlrcpp::Any>& from)
+	{
+		std::vector<std::shared_ptr<T>> to(from.size());
+		for (size_t idx = 0; idx < from.size(); idx++) {
+			to[idx] = from[idx];
+		}
+		return to;
+	}
+
 	class AstBuilder : public CentSqlBaseVisitor  {
         int parameterPosition_;
         ParsingOptions parsingOptions_;
@@ -49,7 +70,7 @@ namespace centurion {
 			return result;
 		}
 
-		QualifiedName* getQualifiedName(CentSqlParser::QualifiedNameContext* ctx);
+		std::shared_ptr<QualifiedName> getQualifiedName(CentSqlParser::QualifiedNameContext* ctx);
 		template<typename T> inline std::optional<T> visitIfPresent(antlr4::ParserRuleContext* context);
 
     public:

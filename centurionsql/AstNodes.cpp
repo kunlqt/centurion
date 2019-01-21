@@ -94,14 +94,6 @@ namespace centurion {
 
 	Query::~Query()
 	{
-		if (with_.has_value()) {
-			With* with = with_.value();
-			delete with;
-		}
-		delete queryBody_;
-		if (orderBy_.has_value()) {
-			delete orderBy_.value();
-		}
 	}
 
 	antlrcpp::Any WithQuery::accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) {

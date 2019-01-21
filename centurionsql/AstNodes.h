@@ -14,9 +14,9 @@ namespace centurion {
 	class Node {
 	public:
 		virtual std::optional<NodeLocation> getLocation() const { return location_; }
-		virtual std::vector<Node*> getChildren()  const = 0;
+		virtual std::vector<std::shared_ptr<Node>> getChildren()  const = 0;
 		virtual size_t hashCode() const = 0;
-		virtual bool equals(const Node* node) const = 0;
+		virtual bool equals(std::shared_ptr<Node> node) const = 0;
 		virtual std::string toString() const = 0;
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context);
 		std::optional<NodeLocation> location() const { return location_; }
@@ -60,17 +60,17 @@ namespace centurion {
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::vector<Node*> getChildren() const override {
-			return std::vector<Node*>();
+		virtual std::vector<std::shared_ptr<Node>> getChildren() const override {
+			return std::vector<std::shared_ptr<Node>>();
 		}
 
 		virtual size_t hashCode() const override {
 			return std::hash<std::string>{}(value_);
 		}
 
-		virtual bool equals(const Node* node) const override {
+		virtual bool equals(std::shared_ptr<Node> node) const override {
 			if (node == nullptr) return false;
-			const auto identifier = dynamic_cast<const Identifier*>(node);
+			const auto identifier = std::dynamic_pointer_cast<Identifier>(node);
 			if (identifier == nullptr) return false;
 			return getValue() == identifier->getValue();
 		}
@@ -95,10 +95,6 @@ namespace centurion {
 	};
 
 	class DereferenceExpression : public Expression {
-	private:
-		std::shared_ptr<Expression> base_;
-		std::shared_ptr<Identifier> field_;
-
 	public:
 		DereferenceExpression(std::shared_ptr<Expression> base, std::shared_ptr<Identifier> field)
 			: DereferenceExpression(std::optional<NodeLocation>(), base, field) { }
@@ -115,44 +111,74 @@ namespace centurion {
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::vector<Node*> getChildren() const override {
-			return std::vector<Node*>{ base_.get() };
+		virtual std::vector<std::shared_ptr<Node>> getChildren() const override {
+			return std::vector<std::shared_ptr<Node>>{ base_ };
 		}
 
 		virtual size_t hashCode() const override {
 			return hashCombine(base_->hashCode(), field_->hashCode());
 		}
 
-		virtual bool equals(const Node* node) const override {
+		virtual bool equals(std::shared_ptr<Node> node) const override {
 			if (node == nullptr) return false;
-			const auto expr  = dynamic_cast<const DereferenceExpression*>(node);
+			const auto expr  = std::dynamic_pointer_cast<DereferenceExpression>(node);
 			if (expr == nullptr) return false;
-			if (!expr->getField()->equals(getField().get())) return false;
-			return expr->getBase()->equals(getBase().get());
+			if (!expr->getField()->equals(getField())) return false;
+			return expr->getBase()->equals(getBase());
 		}
 
 		virtual std::string toString() const override {
 			return "DereferenceExpression";
 		}
 
-		static std::shared_ptr<QualifiedName> getQualifiedName(DereferenceExpression* expression)
+		
+		static std::shared_ptr<QualifiedName> GetQualifiedName(DereferenceExpression* expression)
+		{
+			std::vector<std::string> parts;
+			DereferenceExpression* current = expression;
+			while (current)
+			{				
+				parts.push_back(current->getField()->getValue());
+				if (current->getBase())
+				{
+					auto ident = dynamic_cast<Identifier*>(current->getBase().get());
+					if (ident)
+					{
+						parts.push_back(ident->getValue());
+						break;
+					}
+					auto deref = dynamic_cast<DereferenceExpression*>(current->getBase().get());
+					if (deref)
+					{
+						current = deref;
+					} else
+					{
+						throw std::runtime_error("err");
+					}
+				}
+			}
+			return std::make_shared<QualifiedName>(parts, true);
+		}
+		
+		/*
+		static std::shared_ptr<QualifiedName> GetQualifiedName_(std::shared_ptr<DereferenceExpression> expression)
 		{
 			std::vector<std::string> parts = 
-				tryParseParts(expression->getBase(), toLowerCopy(expression->getField()->getValue()));
+				TryParseParts(expression->getBase(), toLowerCopy(expression->getField()->getValue()));
 			if (parts.empty())
 				return nullptr;
 			return std::make_shared<QualifiedName>(parts);
 		}
 
-		static std::vector<std::string> tryParseParts(std::shared_ptr<Expression> base, std::string fieldName)
+		static std::vector<std::string> TryParseParts(std::shared_ptr<Expression> base, std::string fieldName)
 		{
-			const auto identifier = dynamic_cast<Identifier*>(base.get());
+			const auto identifier = std::dynamic_pointer_cast<Identifier>(base);
 			if (identifier) {
 				return std::vector<std::string> { identifier->getValue(), fieldName };
 			} 
-			const auto dereferenceExpression = dynamic_cast<DereferenceExpression*>(base.get());
+			const auto dereferenceExpression = std::dynamic_pointer_cast<DereferenceExpression>(base);
 			if (dereferenceExpression) {
-				const auto baseQualifiedName = getQualifiedName(dereferenceExpression);
+				const auto baseQualifiedName = GetQualifiedName_(dereferenceExpression);
 				if (baseQualifiedName != nullptr) {
 					auto newList = baseQualifiedName->getParts();
 					newList.emplace_back(fieldName);
@@ -161,8 +187,9 @@ namespace centurion {
 			}
 			return std::vector<std::string>();
 		}
+		*/
 
-		static std::shared_ptr<Expression> from(const QualifiedName* name) {
+		static std::shared_ptr<Expression> From(std::shared_ptr<QualifiedName> name) {
 			std::shared_ptr<Expression> result;
 			for (const auto& part : name->getParts()) {
 				if (result == nullptr) {
@@ -182,6 +209,10 @@ namespace centurion {
 			return field_;
 		}
 
+	private:
+		std::shared_ptr<Expression> base_;
+		std::shared_ptr<Identifier> field_;
+
 	};
 
 	class Literal : public Expression {
@@ -195,8 +226,8 @@ namespace centurion {
 			return "Literal";
 		}
 
-		virtual std::vector<Node*> getChildren() const override {
-			return std::vector<Node*>();
+		virtual std::vector<std::shared_ptr<Node>> getChildren() const override {
+			return std::vector<std::shared_ptr<Node>>();
 		}
 	};
 
@@ -222,9 +253,9 @@ namespace centurion {
 			return std::hash<std::string>{}(value_);
 		}
 
-		virtual bool equals(const Node* node) const override {
+		virtual bool equals(std::shared_ptr<Node> node) const override {
 			if (node == nullptr) return false;
-			const auto identifier = dynamic_cast<const StringLiteral*>(node);
+			const auto identifier = std::dynamic_pointer_cast<StringLiteral>(node);
 			if (identifier == nullptr) return false;
 			return getValue() == identifier->getValue();
 		}
@@ -258,9 +289,9 @@ namespace centurion {
 			return std::hash<std::string>{}(value_);
 		}
 
-		virtual bool equals(const Node* node) const override {
+		virtual bool equals(std::shared_ptr<Node> node) const override {
 			if (node == nullptr) return false;
-			const auto identifier = dynamic_cast<const DecimalLiteral*>(node);
+			const auto identifier = std::dynamic_pointer_cast<DecimalLiteral>(node);
 			if (identifier == nullptr) return false;
 			return getValue() == identifier->getValue();
 		}
@@ -303,9 +334,9 @@ namespace centurion {
 			return ((size_t)value_);
 		}
 
-		virtual bool equals(const Node* node) const override {
+		virtual bool equals(std::shared_ptr<Node> node) const override {
 			if (node == nullptr) return false;
-			const auto identifier = dynamic_cast<const DoubleLiteral*>(node);
+			const auto identifier = std::dynamic_pointer_cast<DoubleLiteral>(node);
 			if (identifier == nullptr) return false;
 			return getValue() == identifier->getValue();
 		}
@@ -342,9 +373,9 @@ namespace centurion {
 			return ((size_t)value_);
 		}
 
-		virtual bool equals(const Node* node) const override {
+		virtual bool equals(std::shared_ptr<Node> node) const override {
 			if (node == nullptr) return false;
-			const auto identifier = dynamic_cast<const LongLiteral*>(node);
+			const auto identifier = std::dynamic_pointer_cast<LongLiteral>(node);
 			if (identifier == nullptr) return false;
 			return getValue() == identifier->getValue();
 		}
@@ -382,9 +413,9 @@ namespace centurion {
 			return value_ ? 1 : 0;
 		}
 
-		virtual bool equals(const Node* node) const override {
+		virtual bool equals(std::shared_ptr<Node> node) const override {
 			if (node == nullptr) return false;
-			const auto identifier = dynamic_cast<const BooleanLiteral*>(node);
+			const auto identifier = std::dynamic_pointer_cast<BooleanLiteral>(node);
 			if (identifier == nullptr) return false;
 			return getValue() == identifier->getValue();
 		}
@@ -419,25 +450,23 @@ namespace centurion {
 			openum op_;
 		};
 
-		ArithmeticBinaryExpression(Operator oper, Expression* left, Expression* right)
+		ArithmeticBinaryExpression(Operator oper, std::shared_ptr<Expression> left, std::shared_ptr<Expression> right)
 			:
 			ArithmeticBinaryExpression(std::optional<NodeLocation>(), oper, left, right) {
 		}
 
-		ArithmeticBinaryExpression(NodeLocation location, Operator oper, Expression* left, Expression* right)
+		ArithmeticBinaryExpression(NodeLocation location, Operator oper, std::shared_ptr<Expression> left, std::shared_ptr<Expression> right)
 			:
 			ArithmeticBinaryExpression(std::make_optional(location), oper, left, right) {
 		}
 
-		ArithmeticBinaryExpression(std::optional<NodeLocation> location, Operator oper, Expression* left, Expression* right)
+		ArithmeticBinaryExpression(std::optional<NodeLocation> location, Operator oper, std::shared_ptr<Expression> left, std::shared_ptr<Expression> right)
 			:
 			Expression(location), operator_(std::move(oper)), left_(left), right_(right) {
 		}
 
 		virtual ~ArithmeticBinaryExpression()
 		{
-			delete left_;
-			delete right_;
 		}
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
@@ -446,26 +475,26 @@ namespace centurion {
 			return "ArithmeticBinaryExpression";
 		}
 
-		virtual std::vector<Node*> getChildren() const override {
-			return std::vector<Node*>{ left_, right_ };
+		virtual std::vector<std::shared_ptr<Node>> getChildren() const override {
+			return std::vector<std::shared_ptr<Node>>{ left_, right_ };
 		}
 
 		virtual size_t hashCode() const override {
 			return 0;
 		}
 
-		virtual bool equals(const Node* node) const override {
+		virtual bool equals(std::shared_ptr<Node> node) const override {
 			return false;
 		}
 
 		Operator getOperator() const { return operator_; }
-		Expression* getLeft() const { return left_; }
-		Expression* getRight() const { return right_; }
+		std::shared_ptr<Expression> getLeft() const { return left_; }
+		std::shared_ptr<Expression> getRight() const { return right_; }
 
 	private:
 		Operator operator_;
-		Expression* left_;
-		Expression* right_;
+		std::shared_ptr<Expression> left_;
+		std::shared_ptr<Expression> right_;
 	};
 
 	class ArithmeticUnaryExpression : public Expression {
@@ -474,24 +503,23 @@ namespace centurion {
 			PLUS, MINUS
 		};
 
-		ArithmeticUnaryExpression(Sign sign, Expression* left)
+		ArithmeticUnaryExpression(Sign sign, std::shared_ptr<Expression> left)
 			:
 			ArithmeticUnaryExpression(std::optional<NodeLocation>(), sign, left) {
 		}
 
-		ArithmeticUnaryExpression(NodeLocation location, Sign sign, Expression* value)
+		ArithmeticUnaryExpression(NodeLocation location, Sign sign, std::shared_ptr<Expression> value)
 			:
 			ArithmeticUnaryExpression(std::make_optional(location), sign, value) {
 		}
 
-		ArithmeticUnaryExpression(std::optional<NodeLocation> location, Sign sign, Expression* value)
+		ArithmeticUnaryExpression(std::optional<NodeLocation> location, Sign sign, std::shared_ptr<Expression> value)
 			:
 			Expression(location), sign_(sign), value_(value) {
 		}
 
 		virtual ~ArithmeticUnaryExpression()
 		{
-			delete value_;
 		}
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
@@ -500,25 +528,25 @@ namespace centurion {
 			return "ArithmeticUnaryExpression";
 		}
 
-		virtual std::vector<Node*> getChildren() const override {
-			return std::vector<Node*>{ value_};
+		virtual std::vector<std::shared_ptr<Node>> getChildren() const override {
+			return std::vector<std::shared_ptr<Node>>{ value_};
 		}
 
 		virtual size_t hashCode() const override {
 			return 0;
 		}
 
-		virtual bool equals(const Node* node) const override {
+		virtual bool equals(std::shared_ptr<Node> node) const override {
 			return false;
 		}
 
 		Sign getSign() const { return sign_; }
-		Expression* getValue() const { return value_; }
+		std::shared_ptr<Expression> getValue() const { return value_; }
 
 
 	private:
 		Sign sign_;
-		Expression* value_;
+		std::shared_ptr<Expression> value_;
 
 	};
 
@@ -574,10 +602,10 @@ namespace centurion {
 			return "ComparisonExpression";
 		}
 
-		virtual std::vector<Node*> getChildren() const override {
-			std::vector<Node*> result;
-			result.push_back(left_.get());
-			result.push_back(right_.get());
+		virtual std::vector<std::shared_ptr<Node>> getChildren() const override {
+			std::vector<std::shared_ptr<Node>> result;
+			result.push_back(left_);
+			result.push_back(right_);
 			return result;
 		}
 
@@ -585,13 +613,13 @@ namespace centurion {
 			return 0;
 		}
 
-		virtual bool equals(const Node* node) const override {
+		virtual bool equals(std::shared_ptr<Node> node) const override {
 			return false;
 		}
 
 		Operator getOperator() const { return operator_; }
-		Expression* getLeft() const { return left_.get(); }
-		Expression* getRight() const { return right_.get(); }
+		std::shared_ptr<Expression> getLeft() const { return left_; }
+		std::shared_ptr<Expression> getRight() const { return right_; }
 			   
 	private:
 		Operator operator_;
@@ -618,12 +646,12 @@ namespace centurion {
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::vector<Node*> getChildren() const override
+		virtual std::vector<std::shared_ptr<Node>> getChildren() const override
 		{
-			std::vector<Node*> result;
+			std::vector<std::shared_ptr<Node>> result;
 			for (auto value : values_)
 			{
-				result.push_back(value.get());
+				result.push_back(value);
 			}
 			return result;
 		}
@@ -631,7 +659,7 @@ namespace centurion {
 		{
 			return 0;
 		}
-		virtual bool equals(const Node* node) const override
+		virtual bool equals(std::shared_ptr<Node> node) const override
 		{
 			return false;
 		}
@@ -668,19 +696,18 @@ namespace centurion {
 			openum op_;
 		};
 
-		LogicalBinaryExpression(Operator oper, Expression* left, Expression* right)
+		LogicalBinaryExpression(Operator oper, std::shared_ptr<Expression> left, std::shared_ptr<Expression> right)
 			: LogicalBinaryExpression(std::optional<NodeLocation>(), oper, left, right) { }
 
-		LogicalBinaryExpression(NodeLocation location, Operator oper, Expression* left, Expression* right)
+		LogicalBinaryExpression(NodeLocation location, Operator oper, std::shared_ptr<Expression> left, std::shared_ptr<Expression> right)
 			: LogicalBinaryExpression(std::make_optional(location), oper, left, right) { }
 
-		LogicalBinaryExpression(std::optional<NodeLocation> location, Operator oper, Expression* left, Expression* right)
+		LogicalBinaryExpression(std::optional<NodeLocation> location, Operator oper, std::shared_ptr<Expression> left, std::shared_ptr<Expression> right)
 			: Expression(location), operator_(oper), left_(left), right_(right) { }
 
 		virtual ~LogicalBinaryExpression()
 		{
-			delete left_;
-			delete right_;
+
 		}
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
@@ -689,8 +716,8 @@ namespace centurion {
 			return "LogicalBinaryExpression";
 		}
 
-		virtual std::vector<Node*> getChildren() const override {
-			std::vector<Node*> result;
+		virtual std::vector<std::shared_ptr<Node>> getChildren() const override {
+			std::vector<std::shared_ptr<Node>> result;
 			result.push_back(left_);
 			result.push_back(right_);
 			return result;
@@ -700,40 +727,39 @@ namespace centurion {
 			return 0;
 		}
 
-		virtual bool equals(const Node* node) const override {
+		virtual bool equals(std::shared_ptr<Node> node) const override {
 			return false;
 		}
 
 		Operator getOperator() const { return operator_; }
-		Expression* getLeft() const { return left_; }
-		Expression* getRight() const { return right_; }
+		std::shared_ptr<Expression> getLeft() const { return left_; }
+		std::shared_ptr<Expression> getRight() const { return right_; }
 
 	private:
 		Operator operator_;
-		Expression* left_;
-		Expression* right_;
+		std::shared_ptr<Expression> left_;
+		std::shared_ptr<Expression> right_;
 	};
 
 	class NotExpression : public Expression {
 	public:
-		NotExpression(Expression* value)
+		NotExpression(std::shared_ptr<Expression> value)
 			:
 			NotExpression(std::optional<NodeLocation>(), value) {
 		}
 
-		NotExpression(NodeLocation location, Expression* value)
+		NotExpression(NodeLocation location, std::shared_ptr<Expression> value)
 			:
 			NotExpression(std::make_optional(location), value) {
 		}
 
-		NotExpression(std::optional<NodeLocation> location, Expression* value)
+		NotExpression(std::optional<NodeLocation> location, std::shared_ptr<Expression> value)
 			:
 			Expression(location), value_(value) {
 		}
 
 		virtual ~NotExpression()
 		{
-			delete value_;
 		}
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
@@ -742,8 +768,8 @@ namespace centurion {
 			return "NotExpression";
 		}
 
-		virtual std::vector<Node*> getChildren() const override {
-			std::vector<Node*> result;
+		virtual std::vector<std::shared_ptr<Node>> getChildren() const override {
+			std::vector<std::shared_ptr<Node>> result;
 			result.push_back(value_);
 			return result;
 		}
@@ -752,14 +778,14 @@ namespace centurion {
 			return 0;
 		}
 
-		virtual bool equals(const Node* node) const override {
+		virtual bool equals(std::shared_ptr<Node> node) const override {
 			return false;
 		}
 
-		Expression* getValue() const { return value_; }
+		std::shared_ptr<Expression> getValue() const { return value_; }
 
 	private:
-		Expression* value_;
+		std::shared_ptr<Expression> value_;
 	};
 
 	class Statement : public Node {
@@ -785,18 +811,17 @@ namespace centurion {
 		enum Ordering { Ascending, Descending };
 		enum NullOrdering { First, Last, Undefined };
 
-		SortItem(std::optional<NodeLocation> location, Expression* sortKey, Ordering ordering, NullOrdering nullOrdering)
+		SortItem(std::optional<NodeLocation> location, std::shared_ptr<Expression> sortKey, Ordering ordering, NullOrdering nullOrdering)
 			: Node(location), sortKey_(sortKey), ordering_(ordering), nullOrdering_(nullOrdering) { }
 
 		virtual ~SortItem()
 		{
-			delete sortKey_;
 		}
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::vector<Node*> getChildren() const override {
-			std::vector<Node*> result{ sortKey_ };
+		virtual std::vector<std::shared_ptr<Node>> getChildren() const override {
+			std::vector<std::shared_ptr<Node>> result{ sortKey_ };
 			return result;
 		}
 
@@ -804,7 +829,7 @@ namespace centurion {
 			return 0;
 		}
 
-		virtual bool equals(const Node* node) const override {
+		virtual bool equals(std::shared_ptr<Node> node) const override {
 			return false;
 		}
 
@@ -812,7 +837,7 @@ namespace centurion {
 			return "SortItem";
 		}
 
-		Expression* getSortKey() const {
+		std::shared_ptr<Expression> getSortKey() const {
 			return sortKey_;
 		}
 
@@ -826,7 +851,7 @@ namespace centurion {
 
 
 	private:
-		Expression* sortKey_;
+		std::shared_ptr<Expression> sortKey_;
 		SortItem::Ordering ordering_;
 		SortItem::NullOrdering nullOrdering_;
 
@@ -834,27 +859,24 @@ namespace centurion {
 
 	class OrderBy : public Node {
 	public:
-		OrderBy(std::vector<SortItem*> sortItems)
+		OrderBy(std::vector<std::shared_ptr<SortItem>> sortItems)
 			: OrderBy(std::optional<NodeLocation>(), sortItems) { }
 
-		OrderBy(const NodeLocation& location, std::vector<SortItem*> sortItems)
+		OrderBy(const NodeLocation& location, std::vector<std::shared_ptr<SortItem>> sortItems)
 			: OrderBy(std::make_optional(location), sortItems) { }
 
-		OrderBy(std::optional<NodeLocation> location, std::vector<SortItem*> sortItems)
+		OrderBy(std::optional<NodeLocation> location, std::vector<std::shared_ptr<SortItem>> sortItems)
 			: Node(location), sortItems_(std::move(sortItems)) { }
 
 		virtual ~OrderBy()
 		{
-			for (SortItem* sortItem : sortItems_) {
-				delete sortItem;
-			}
 		}
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::vector<Node*> getChildren() const override {
-			std::vector<Node*> result;
-			for (const auto& sortItem : sortItems_) {
+		virtual std::vector<std::shared_ptr<Node>> getChildren() const override {
+			std::vector<std::shared_ptr<Node>> result;
+			for (auto sortItem : sortItems_) {
 				result.push_back(sortItem);
 			}
 			return result;
@@ -864,7 +886,7 @@ namespace centurion {
 			return 0;
 		}
 
-		virtual bool equals(const Node* node) const override {
+		virtual bool equals(std::shared_ptr<Node> node) const override {
 			return false;
 		}
 
@@ -872,53 +894,54 @@ namespace centurion {
 			return "OrderBy";
 		}
 
-		std::vector<SortItem*> getSortItems() const {
+		std::vector<std::shared_ptr<SortItem>> getSortItems() const {
 			return sortItems_;
 		}
 
 	private:
-		std::vector<SortItem*> sortItems_;
+		std::vector<std::shared_ptr<SortItem>> sortItems_;
 	};
 
 	class With;
 
 	class Query : public Statement {
 	public:
-		Query(std::optional<With*> with,
-			QueryBody* queryBody,
-			std::optional<OrderBy*> orderBy,
+		Query(std::optional<std::shared_ptr<With>> with,
+			std::shared_ptr<QueryBody> queryBody,
+			std::optional<std::shared_ptr<OrderBy>> orderBy,
 			std::optional<std::string> limit)
 			: Query(std::optional<NodeLocation>(), with, queryBody, orderBy, limit) { }
 
 		Query(const NodeLocation& location,
-			std::optional<With*> with,
-			QueryBody* queryBody,
-			std::optional<OrderBy*> orderBy,
+			std::optional<std::shared_ptr<With>> with,
+			std::shared_ptr<QueryBody> queryBody,
+			std::optional<std::shared_ptr<OrderBy>> orderBy,
 			std::optional<std::string> limit)
 			: Query(std::optional<NodeLocation>(location), with, queryBody, orderBy, limit) { }
 
 		Query(std::optional<NodeLocation> location,
-			std::optional<With*> with,
-			QueryBody* queryBody,
-			std::optional<OrderBy*> orderBy,
+			std::optional<std::shared_ptr<With>> with,
+			std::shared_ptr<QueryBody> queryBody,
+			std::optional<std::shared_ptr<OrderBy>> orderBy,
 			std::optional<std::string> limit)
 			: Statement(location)
-			, with_(with)
-			, queryBody_(queryBody)
-			, orderBy_(orderBy)
+			, with_(std::move(with))
+			, queryBody_(std::move(queryBody))
+			, orderBy_(std::move(orderBy))
 			, limit_(std::move(limit)) { }
 
 		virtual ~Query();
 		
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::vector<Node*> getChildren() const override {
-			std::vector<Node*> result;
+		virtual std::vector<std::shared_ptr<Node>> getChildren() const override {
+			std::vector<std::shared_ptr<Node>> result;
 			if (with_.has_value()) {
-				result.push_back((Node*)(with_.value()));
+				std::shared_ptr<With> with = with_.value();
+				//result.push_back(with); // todo: fix this
 			}
 			if (orderBy_.has_value()) {
-				result.push_back((Node*)(orderBy_.value()));
+				result.push_back(orderBy_.value());
 			}
 			return result;
 		}
@@ -927,7 +950,7 @@ namespace centurion {
 			return 0;
 		}
 
-		virtual bool equals(const Node* node) const override {
+		virtual bool equals(std::shared_ptr<Node> node) const override {
 			return false;
 		}
 
@@ -935,17 +958,17 @@ namespace centurion {
 			return "Query";
 		}
 
-		std::optional<With*> getWith() const
+		std::optional<std::shared_ptr<With>> getWith() const
 		{
 			return with_;
 		}
 
-		QueryBody* getQueryBody() const
+		std::shared_ptr<QueryBody> getQueryBody() const
 		{
 			return queryBody_;
 		}
 
-		std::optional<OrderBy*> getOrderBy() const
+		std::optional<std::shared_ptr<OrderBy>> getOrderBy() const
 		{
 			return orderBy_;
 		}
@@ -957,21 +980,21 @@ namespace centurion {
 
 
 	private:
-		std::optional<With*> with_;
-		QueryBody* queryBody_;
-		std::optional<OrderBy*> orderBy_;
+		std::optional<std::shared_ptr<With>> with_;
+		std::shared_ptr<QueryBody> queryBody_;
+		std::optional<std::shared_ptr<OrderBy>> orderBy_;
 		std::optional<std::string> limit_;
 	};
 
 	class WithQuery : public Node {
 	public:
-		WithQuery(Identifier* name, Query* query, std::optional<std::vector<Identifier*>> columnNames)
+		WithQuery(std::shared_ptr<Identifier> name, std::shared_ptr<Query> query, std::optional<std::vector<std::shared_ptr<Identifier>>> columnNames)
 			: WithQuery(std::optional<NodeLocation>(), name, query, columnNames) { }
 
-		WithQuery(const NodeLocation& location, Identifier* name, Query* query, std::optional<std::vector<Identifier*>> columnNames)
+		WithQuery(const NodeLocation& location, std::shared_ptr<Identifier> name, std::shared_ptr<Query> query, std::optional<std::vector<std::shared_ptr<Identifier>>> columnNames)
 			: WithQuery(std::optional<NodeLocation>(location), name, query, columnNames) { }
 
-		WithQuery(std::optional<NodeLocation> location, Identifier* name, Query* query, std::optional<std::vector<Identifier*>> columnNames)
+		WithQuery(std::optional<NodeLocation> location, std::shared_ptr<Identifier> name, std::shared_ptr<Query> query, std::optional<std::vector<std::shared_ptr<Identifier>>> columnNames)
 			: Node(location)
 			, name_(name)
 			, query_(query)
@@ -979,28 +1002,19 @@ namespace centurion {
 
 		virtual ~WithQuery()
 		{
-			delete name_;
-			delete query_;
-			if (columnNames_.has_value())
-			{
-				for (Identifier* ident : columnNames_.value())
-				{
-					delete ident;
-				}
-			}			
 		}
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::vector<Node*> getChildren() const override {
-			return std::vector<Node*>{ query_ };
+		virtual std::vector<std::shared_ptr<Node>> getChildren() const override {
+			return std::vector<std::shared_ptr<Node>>{ query_ };
 		}
 
 		virtual size_t hashCode() const override {
 			return 0;
 		}
 
-		virtual bool equals(const Node* node) const override {
+		virtual bool equals(std::shared_ptr<Node> node) const override {
 			return false;
 		}
 
@@ -1008,46 +1022,43 @@ namespace centurion {
 			return "WithQuery";
 		}
 
-		Identifier* getName() const {
+		std::shared_ptr<Identifier> getName() const {
 			return name_;
 		}
 
-		Query* getQuery() const {
+		std::shared_ptr<Query> getQuery() const {
 			return query_;
 		}
 
-		std::optional<std::vector<Identifier*>> getColumnNames() const {
+		std::optional<std::vector<std::shared_ptr<Identifier>>> getColumnNames() const {
 			return columnNames_;
 		}
 
 	private:
-		Identifier* name_;
-		centurion::Query* query_;
-		std::optional<std::vector<Identifier*>> columnNames_;
+		std::shared_ptr<Identifier> name_;
+		std::shared_ptr<Query> query_;
+		std::optional<std::vector<std::shared_ptr<Identifier>>> columnNames_;
 	};
 
 	class With : public Node {
 	public:
-		With(bool recursive, std::vector<WithQuery*> queries)
+		With(bool recursive, std::vector<std::shared_ptr<WithQuery>> queries)
 			: With(std::optional<NodeLocation>(), recursive, std::move(queries)) { }
 
-		With(const NodeLocation& location, bool recursive, std::vector<WithQuery*> queries)
+		With(const NodeLocation& location, bool recursive, std::vector<std::shared_ptr<WithQuery>> queries)
 			: With(std::optional<NodeLocation>(location), recursive, std::move(queries)) { }
 
-		With(std::optional<NodeLocation> location, bool recursive, std::vector<WithQuery*> queries)
+		With(std::optional<NodeLocation> location, bool recursive, std::vector<std::shared_ptr<WithQuery>> queries)
 			: Node(location), recursive_(recursive), queries_(std::move(queries)) { }
 
 		virtual ~With()
 		{
-			for (auto& item : queries_) {
-				delete item;
-			}
 		}
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::vector<Node*> getChildren() const override {
-			std::vector<Node*> result;
+		virtual std::vector<std::shared_ptr<Node>> getChildren() const override {
+			std::vector<std::shared_ptr<Node>> result;
 			for (auto& item : queries_) {
 				result.push_back(item);
 			}
@@ -1058,7 +1069,7 @@ namespace centurion {
 			return 0;
 		}
 
-		virtual bool equals(const Node* node) const override {
+		virtual bool equals(std::shared_ptr<Node> node) const override {
 			return false;
 		}
 
@@ -1070,27 +1081,26 @@ namespace centurion {
 			return recursive_;
 		}
 
-		std::vector<WithQuery*> getQueries() const {
+		std::vector<std::shared_ptr<WithQuery>> getQueries() const {
 			return queries_;
 		};
 
 
 	private:
 		bool recursive_;
-		std::vector<WithQuery*> queries_;
+		std::vector<std::shared_ptr<WithQuery>> queries_;
 	};
 
 	class SubqueryExpression : public Expression
 	{
 	public:
-		SubqueryExpression(Query* query) : SubqueryExpression(std::optional<NodeLocation>(), query) { }
-		SubqueryExpression(NodeLocation location, Query* query) : SubqueryExpression(std::make_optional(location), query) { }
-		SubqueryExpression(std::optional<NodeLocation> location, Query* query)
+		SubqueryExpression(std::shared_ptr<Query> query) : SubqueryExpression(std::optional<NodeLocation>(), query) { }
+		SubqueryExpression(NodeLocation location, std::shared_ptr<Query> query) : SubqueryExpression(std::make_optional(location), query) { }
+		SubqueryExpression(std::optional<NodeLocation> location, std::shared_ptr<Query> query)
 			: Expression(location), query_(query) { }
 
 		virtual ~SubqueryExpression()
 		{
-			delete query_;
 		}
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
@@ -1099,22 +1109,22 @@ namespace centurion {
 			return "SubqueryExpression";
 		}
 
-		virtual std::vector<Node*> getChildren() const override {
-			return std::vector<Node*>{ query_ };
+		virtual std::vector<std::shared_ptr<Node>> getChildren() const override {
+			return std::vector<std::shared_ptr<Node>>{ query_ };
 		}
 
 		virtual size_t hashCode() const override {
 			return 0;
 		}
 
-		virtual bool equals(const Node* node) const override {
+		virtual bool equals(std::shared_ptr<Node> node) const override {
 			return false;
 		}
 
-		Query* getQuery() const { return query_; }
+		std::shared_ptr<Query> getQuery() const { return query_; }
 
 	private:
-		Query* query_;
+		std::shared_ptr<Query> query_;
 	};
 
 	class SelectItem : public Node {
@@ -1124,48 +1134,44 @@ namespace centurion {
 
 	class SingleColumn : public SelectItem {
 	public:
-		SingleColumn(Expression* expression)
-			: SingleColumn(std::optional<NodeLocation>(), expression, std::optional<Identifier*>()) { }
+		SingleColumn(std::shared_ptr < Expression> expression)
+			: SingleColumn(std::optional<NodeLocation>(), expression, std::optional< std::shared_ptr<Identifier>>()) { }
 
 		SingleColumn(
-			Expression* expression,
-			std::optional<Identifier*> alias)
-			: SingleColumn(std::optional<NodeLocation>(), expression, std::optional<Identifier*>(alias)) { }
+			std::shared_ptr < Expression> expression,
+			std::optional< std::shared_ptr<Identifier>> alias)
+			: SingleColumn(std::optional<NodeLocation>(), expression, std::optional< std::shared_ptr<Identifier>>(alias)) { }
 
 		SingleColumn(
 			const NodeLocation& location,
-			Expression* expression,
-			std::optional<Identifier*> alias)
-			: SingleColumn(std::optional<NodeLocation>(location), expression, std::optional<Identifier*>(alias)) { }
+			std::shared_ptr < Expression> expression,
+			std::optional< std::shared_ptr<Identifier>> alias)
+			: SingleColumn(std::optional<NodeLocation>(location), expression, std::optional< std::shared_ptr<Identifier>>(alias)) { }
 
 		SingleColumn(
 			std::optional<NodeLocation> location,
-			Expression* expression,
-			std::optional<Identifier*> alias)
+			std::shared_ptr < Expression> expression,
+			std::optional< std::shared_ptr<Identifier>> alias)
 			: SelectItem(location)
-			, expression_(expression)
-			, alias_(alias) { }
+			, expression_(std::move(expression))
+			, alias_(std::move(alias)) { }
 
 		virtual ~SingleColumn()
 		{
-			delete expression_;
-			if (alias_.has_value())
-			{
-				delete alias_.value();
-			}
+			
 		}
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::vector<Node*> getChildren() const override {
-			return std::vector<Node*>{ expression_ };
+		virtual std::vector<std::shared_ptr<Node>> getChildren() const override {
+			return std::vector<std::shared_ptr<Node>>{ expression_};
 		}
 
 		virtual size_t hashCode() const override {
 			return 0;
 		}
 
-		virtual bool equals(const Node* node) const override {
+		virtual bool equals(std::shared_ptr<Node> node) const override {
 			return false;
 		}
 
@@ -1173,40 +1179,35 @@ namespace centurion {
 			return "SingleColumn";
 		}
 
-		std::optional<Identifier*> getAlias() const { return alias_; }
-		Expression* getExpression() const { return expression_; }
+		std::optional< std::shared_ptr<Identifier>> getAlias() const { return alias_; }
+		std::shared_ptr < Expression> getExpression() const { return expression_; }
 
 	private:
-		Expression* expression_;
-		std::optional<Identifier*> alias_;		
+		std::shared_ptr<Expression> expression_;
+		std::optional<std::shared_ptr<Identifier>> alias_;
 	};
 
 	class AliasedRelation : public Relation {
 	public:
-		AliasedRelation(std::optional<NodeLocation> location, Relation* relation, Identifier* alias, std::vector<Identifier*> columnNames)
+		AliasedRelation(std::optional<NodeLocation> location, std::shared_ptr<Relation> relation, std::shared_ptr<Identifier> alias, std::vector<std::shared_ptr<Identifier>> columnNames)
 			: Relation(location), relation_(relation), alias_(alias), columnNames_(std::move(columnNames)) { }
 
 		virtual ~AliasedRelation()
 		{
-			delete relation_;
-			delete alias_;
-			for (auto ident : columnNames_)
-			{
-				delete ident;
-			}
+			
 		}
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::vector<Node*> getChildren() const override {
-			return std::vector<Node*> { relation_ };
+		virtual std::vector<std::shared_ptr<Node>> getChildren() const override {
+			return std::vector<std::shared_ptr<Node>> { relation_ };
 		}
 
 		virtual size_t hashCode() const override {
 			return 0;
 		}
 
-		virtual bool equals(const Node* node) const override {
+		virtual bool equals(std::shared_ptr<Node> node) const override {
 			return false;
 		}
 
@@ -1214,54 +1215,52 @@ namespace centurion {
 			return "AliasedRelation";
 		}
 
-		Relation* getRelation() const { return relation_; }
-		Identifier* getAlias() const { return alias_; }
-		std::vector<Identifier*> getColumnNames() const { return columnNames_; }
+		std::shared_ptr<Relation> getRelation() const { return relation_; }
+		std::shared_ptr<Identifier> getAlias() const { return alias_; }
+		std::vector<std::shared_ptr<Identifier>> getColumnNames() const { return columnNames_; }
 
 	private:
 		std::optional<NodeLocation> location_;
-		Relation* relation_;
-		Identifier* alias_;
-		std::vector<Identifier*> columnNames_;
+		std::shared_ptr<Relation> relation_;
+		std::shared_ptr<Identifier> alias_;
+		std::vector<std::shared_ptr<Identifier>> columnNames_;
 	};
 
 	class AllColumns : public SelectItem {
 	public:
 		AllColumns()
 			: SelectItem(std::optional<NodeLocation>())
-			, prefix_(std::optional<QualifiedName*>()) { }
+			, prefix_(std::optional<std::shared_ptr<QualifiedName>>()) { }
 
 		AllColumns(const NodeLocation& location)
 			: SelectItem(std::optional<NodeLocation>(location))
-			, prefix_(std::optional<QualifiedName*>()) { }
+			, prefix_(std::optional<std::shared_ptr<QualifiedName>>()) { }
 
-		AllColumns(QualifiedName* prefix)
+		AllColumns(std::shared_ptr<QualifiedName> prefix)
 			: AllColumns(std::optional<NodeLocation>(), prefix)  { }
 
-		AllColumns(const NodeLocation& location, QualifiedName* prefix)
+		AllColumns(const NodeLocation& location, std::shared_ptr<QualifiedName> prefix)
 			: AllColumns(std::optional<NodeLocation>(location), prefix)  { }
 
-		AllColumns(std::optional<NodeLocation> location, QualifiedName* prefix)
+		AllColumns(std::optional<NodeLocation> location, std::shared_ptr<QualifiedName> prefix)
 			: SelectItem(location), prefix_(prefix) { }
 
 		virtual ~AllColumns()
 		{
-			if (prefix_.has_value()) {
-				delete prefix_.value();
-			}
+			
 		}
 
 		antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::vector<Node*> getChildren() const override {
-			return std::vector<Node*>();
+		virtual std::vector<std::shared_ptr<Node>> getChildren() const override {
+			return std::vector<std::shared_ptr<Node>>();
 		}
 
 		virtual size_t hashCode() const override {
 			return 0;
 		}
 
-		virtual bool equals(const Node* node) const override {
+		virtual bool equals(std::shared_ptr<Node> node) const override {
 			return false;
 		}
 
@@ -1269,44 +1268,41 @@ namespace centurion {
 			return "AllColumns";
 		}
 
-		std::optional<QualifiedName*> getPrefix() const {
+		std::optional<std::shared_ptr<QualifiedName>> getPrefix() const {
 			return prefix_;
 		}
 
 	private:
-		std::optional<QualifiedName*> prefix_;
+		std::optional<std::shared_ptr<QualifiedName>> prefix_;
 	};
 
 	class GroupingElement : public Node {
 	public:
 		GroupingElement(std::optional<NodeLocation> location) : Node(location) { }
-		virtual std::vector<Expression*> getExpressions() const = 0;
+		virtual std::vector<std::shared_ptr<Expression>> getExpressions() const = 0;
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 	};
 
 	class GroupBy : public Node {
 	public:
-		GroupBy(bool distinct, const std::vector<GroupingElement*> groupingElements)
+		GroupBy(bool distinct, const std::vector<std::shared_ptr<GroupingElement>> groupingElements)
 			: GroupBy(std::nullopt, distinct, groupingElements) { }
 
-		GroupBy(const NodeLocation& location, bool distinct, const std::vector<GroupingElement*> groupingElements)
+		GroupBy(const NodeLocation& location, bool distinct, const std::vector<std::shared_ptr<GroupingElement>> groupingElements)
 			: GroupBy(std::optional<NodeLocation>(location), distinct, groupingElements) { }
 
-		GroupBy(const std::optional<NodeLocation>& location, bool distinct, const std::vector<GroupingElement*> groupingElements)
+		GroupBy(const std::optional<NodeLocation>& location, bool distinct, const std::vector<std::shared_ptr<GroupingElement>> groupingElements)
 			: Node(location), distinct_(distinct), groupingElements_(groupingElements) { }
 
 		virtual ~GroupBy()
 		{
-			for (auto groupingElement : groupingElements_)
-			{
-				delete groupingElement;
-			}
+			
 		}
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::vector<Node*> getChildren() const override {
-			std::vector<Node*> result;
+		virtual std::vector<std::shared_ptr<Node>> getChildren() const override {
+			std::vector<std::shared_ptr<Node>> result;
 			for (const auto& selectItem : groupingElements_) {
 				result.push_back(selectItem);
 			}
@@ -1317,7 +1313,7 @@ namespace centurion {
 			return 0;
 		}
 
-		virtual bool equals(const Node* node) const override {
+		virtual bool equals(std::shared_ptr<Node> node) const override {
 			return false;
 		}
 
@@ -1327,24 +1323,24 @@ namespace centurion {
 
 		bool isDistinct() const { return distinct_; }
 
-		std::vector<GroupingElement*> getGroupingElements() const { return groupingElements_; };
+		std::vector<std::shared_ptr<GroupingElement>> getGroupingElements() const { return groupingElements_; };
 
 
 	private:
 		bool distinct_;
-		std::vector<GroupingElement*> groupingElements_;
+		std::vector<std::shared_ptr<GroupingElement>> groupingElements_;
 	};
 
 	class GroupingOperation : public Expression {
 	public:
 		GroupingOperation(
 			const std::optional<NodeLocation>& location, 
-			std::vector<QualifiedName*> groupingColumns) 
+			std::vector<std::shared_ptr<QualifiedName>> groupingColumns) 
 		: Expression(location)
 		{
-			for (QualifiedName* groupingColumn : groupingColumns)
+			for (std::shared_ptr<QualifiedName> groupingColumn : groupingColumns)
 			{
-				groupingColumns_.emplace_back(DereferenceExpression::from(groupingColumn));
+				groupingColumns_.emplace_back(DereferenceExpression::From(groupingColumn));
 			}
 		}
 
@@ -1355,15 +1351,15 @@ namespace centurion {
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::vector<Node*> getChildren() const override {
-			return std::vector<Node*>();
+		virtual std::vector<std::shared_ptr<Node>> getChildren() const override {
+			return std::vector<std::shared_ptr<Node>>();
 		}
 
 		virtual size_t hashCode() const override {
 			return 0;
 		}
 
-		virtual bool equals(const Node* node) const override {
+		virtual bool equals(std::shared_ptr<Node> node) const override {
 			return false;
 		}
 
@@ -1397,9 +1393,9 @@ namespace centurion {
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::vector<Node*> getChildren() const override
+		virtual std::vector<std::shared_ptr<Node>> getChildren() const override
 		{
-			return std::vector<Node*>{ value_.get(), valueList_.get()};
+			return std::vector<std::shared_ptr<Node>>{ value_, valueList_ };
 		}
 
 		virtual size_t hashCode() const override
@@ -1407,7 +1403,7 @@ namespace centurion {
 			return 0;
 		}
 
-		virtual bool equals(const Node* node) const override
+		virtual bool equals(std::shared_ptr<Node> node) const override
 		{
 			return false;
 		}
@@ -1427,26 +1423,24 @@ namespace centurion {
 
 	class Select : public Node {
 	public:
-		Select(bool distinct, std::vector<SelectItem*> selectItems)
+		Select(bool distinct, std::vector<std::shared_ptr<SelectItem>> selectItems)
 			: Select(std::nullopt, distinct, selectItems) { }
 
-		Select(const NodeLocation& location, bool distinct, std::vector<SelectItem*> selectItems)
+		Select(const NodeLocation& location, bool distinct, std::vector<std::shared_ptr<SelectItem>> selectItems)
 			: Select(std::optional<NodeLocation>(location), distinct, selectItems) { }
 
-		Select(const std::optional<NodeLocation>& location, bool distinct, std::vector<SelectItem*> selectItems)
+		Select(const std::optional<NodeLocation>& location, bool distinct, std::vector<std::shared_ptr<SelectItem>> selectItems)
 			: Node(location), distinct_(distinct), selectItems_(std::move(selectItems)) { }
 
 		virtual ~Select()
 		{
-			for (SelectItem* selectItem : selectItems_) {
-				delete selectItem;
-			}
+			
 		}
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::vector<Node*> getChildren() const override {
-			std::vector<Node*> result;
+		virtual std::vector<std::shared_ptr<Node>> getChildren() const override {
+			std::vector<std::shared_ptr<Node>> result;
 			for (const auto& selectItem : selectItems_) {
 				result.push_back(selectItem);
 			}
@@ -1457,7 +1451,7 @@ namespace centurion {
 			return 0;
 		}
 
-		virtual bool equals(const Node* node) const override {
+		virtual bool equals(std::shared_ptr<Node> node) const override {
 			return false;
 		}
 
@@ -1466,40 +1460,40 @@ namespace centurion {
 		}
 
 		bool isDistinct() const { return distinct_; }
-		std::vector<SelectItem*> getSelectItems() const { return selectItems_; };
+		std::vector<std::shared_ptr<SelectItem>> getSelectItems() const { return selectItems_; };
 
 	private:
 		bool distinct_;
-		std::vector<SelectItem*> selectItems_;
+		std::vector<std::shared_ptr<SelectItem>> selectItems_;
 	};
 
 	class IsNotNullPredicate : public Expression {
 	public:
-		IsNotNullPredicate(Expression* value)
+		IsNotNullPredicate(std::shared_ptr<Expression> value)
 			: IsNotNullPredicate(std::optional<NodeLocation>(), value) { }
 
-		IsNotNullPredicate(NodeLocation location, Expression* value)
+		IsNotNullPredicate(NodeLocation location, std::shared_ptr<Expression> value)
 			: IsNotNullPredicate(std::make_optional(location), value) { }
 
-		IsNotNullPredicate(std::optional<NodeLocation> location, Expression* value)
+		IsNotNullPredicate(std::optional<NodeLocation> location, std::shared_ptr<Expression> value)
 			: Expression(location), value_(value) { }
 
 		virtual ~IsNotNullPredicate()
 		{
-			delete value_;
+			
 		}
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::vector<Node*> getChildren() const override {
-			return std::vector<Node*>{ value_ };
+		virtual std::vector<std::shared_ptr<Node>> getChildren() const override {
+			return std::vector<std::shared_ptr<Node>>{ value_ };
 		}
 
 		virtual size_t hashCode() const override {
 			return 0;
 		}
 
-		virtual bool equals(const Node* node) const override {
+		virtual bool equals(std::shared_ptr<Node> node) const override {
 			return false;
 		}
 
@@ -1507,42 +1501,42 @@ namespace centurion {
 			return "IsNotNullPredicate";
 		}
 
-		Expression* getValue() const {
+		std::shared_ptr<Expression> getValue() const {
 			return value_;
 		}
 
 
 	private:
-		Expression* value_;
+		std::shared_ptr<Expression> value_;
 	};
 
 	class IsNullPredicate : public Expression {
 	public:
-		IsNullPredicate(Expression* value)
+		IsNullPredicate(std::shared_ptr<Expression> value)
 			: IsNullPredicate(std::optional<NodeLocation>(), value) { }
 
-		IsNullPredicate(NodeLocation location, Expression* value)
+		IsNullPredicate(NodeLocation location, std::shared_ptr<Expression> value)
 			: IsNullPredicate(std::make_optional(location), value) { }
 
-		IsNullPredicate(std::optional<NodeLocation> location, Expression* value)
+		IsNullPredicate(std::optional<NodeLocation> location, std::shared_ptr<Expression> value)
 			: Expression(location), value_(value) { }
 
 		virtual ~IsNullPredicate()
 		{
-			delete value_;
+			
 		}
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::vector<Node*> getChildren() const override {
-			return std::vector<Node*>{ value_ };
+		virtual std::vector<std::shared_ptr<Node>> getChildren() const override {
+			return std::vector<std::shared_ptr<Node>>{ value_ };
 		}
 
 		virtual size_t hashCode() const override {
 			return 0;
 		}
 
-		virtual bool equals(const Node* node) const override {
+		virtual bool equals(std::shared_ptr<Node> node) const override {
 			return false;
 		}
 
@@ -1550,25 +1544,25 @@ namespace centurion {
 			return "IsNullPredicate";
 		}
 
-		Expression* getValue() const {
+		std::shared_ptr<Expression> getValue() const {
 			return value_;
 		}
 
 	private:
-		Expression* value_;
+		std::shared_ptr<Expression> value_;
 	};
 
 	class LikePredicate : public Expression {
 	public:
-		LikePredicate(Expression* value, Expression* pattern, Expression* escape)
+		LikePredicate(std::shared_ptr<Expression> value, std::shared_ptr<Expression> pattern, std::shared_ptr<Expression> escape)
 			: LikePredicate(std::optional<NodeLocation>(), value, pattern, std::make_optional(escape)) {
 		}
 
-		LikePredicate(NodeLocation location, Expression* value, Expression* pattern, std::optional<Expression*> escape)
+		LikePredicate(NodeLocation location, std::shared_ptr<Expression> value, std::shared_ptr<Expression> pattern, std::optional<std::shared_ptr<Expression>> escape)
 			: LikePredicate(std::make_optional(location), value, pattern, escape) {
 		}
 
-		LikePredicate(std::optional<NodeLocation> location, Expression* value, Expression* pattern, std::optional<Expression*> escape)
+		LikePredicate(std::optional<NodeLocation> location, std::shared_ptr<Expression> value, std::shared_ptr<Expression> pattern, std::optional<std::shared_ptr<Expression>> escape)
 			: Expression(location)
 			, value_(value)
 			, pattern_(pattern)
@@ -1577,25 +1571,20 @@ namespace centurion {
 
 		virtual ~LikePredicate()
 		{
-			delete value_;
-			delete pattern_;
-			if (escape_.has_value())
-			{
-				delete escape_.value();
-			}
+			
 		}
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::vector<Node*> getChildren() const override {
-			return std::vector<Node*>{ value_, pattern_ };
+		virtual std::vector<std::shared_ptr<Node>> getChildren() const override {
+			return std::vector<std::shared_ptr<Node>>{ value_, pattern_ };
 		}
 
 		virtual size_t hashCode() const override {
 			return 0;
 		}
 
-		virtual bool equals(const Node* node) const override {
+		virtual bool equals(std::shared_ptr<Node> node) const override {
 			return false;
 		}
 
@@ -1603,35 +1592,35 @@ namespace centurion {
 			return "LikePredicate";
 		}
 
-		Expression* getValue() const {
+		std::shared_ptr<Expression> getValue() const {
 			return value_;
 		}
 
-		Expression* getPattern() const {
+		std::shared_ptr<Expression> getPattern() const {
 			return pattern_;
 		}
 
-		std::optional<Expression*> getEscape() const {
+		std::optional<std::shared_ptr<Expression>> getEscape() const {
 			return escape_;
 		}
 
 	private:
-		Expression* value_;
-		Expression* pattern_;
-		std::optional<Expression*> escape_;
+		std::shared_ptr<Expression> value_;
+		std::shared_ptr<Expression> pattern_;
+		std::optional<std::shared_ptr<Expression>> escape_;
 	};
 
 	class BetweenPredicate: public Expression {
 	public:
-		BetweenPredicate(Expression* value, Expression* min, Expression* max)
+		BetweenPredicate(std::shared_ptr<Expression> value, std::shared_ptr<Expression> min, std::shared_ptr<Expression> max)
 			: BetweenPredicate(std::optional<NodeLocation>(), value, min, max) {
 		}
 
-		BetweenPredicate(NodeLocation location, Expression* value, Expression* min, Expression* max)
+		BetweenPredicate(NodeLocation location, std::shared_ptr<Expression> value, std::shared_ptr<Expression> min, std::shared_ptr<Expression> max)
 			: BetweenPredicate(std::make_optional(location), value, min, max) {
 		}
 
-		BetweenPredicate(std::optional<NodeLocation> location, Expression* value, Expression* min, Expression* max)
+		BetweenPredicate(std::optional<NodeLocation> location, std::shared_ptr<Expression> value, std::shared_ptr<Expression> min, std::shared_ptr<Expression> max)
 			: Expression(location)
 			, value_(value)
 			, min_(min)
@@ -1640,22 +1629,20 @@ namespace centurion {
 
 		virtual ~BetweenPredicate()
 		{
-			delete value_;
-			delete min_;
-			delete max_;
+			
 		}
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::vector<Node*> getChildren() const override {
-			return std::vector<Node*>{ value_, min_, max_ };
+		virtual std::vector<std::shared_ptr<Node>> getChildren() const override {
+			return std::vector<std::shared_ptr<Node>>{ value_, min_, max_ };
 		}
 
 		virtual size_t hashCode() const override {
 			return 0;
 		}
 
-		virtual bool equals(const Node* node) const override {
+		virtual bool equals(std::shared_ptr<Node> node) const override {
 			return false;
 		}
 
@@ -1663,46 +1650,46 @@ namespace centurion {
 			return "BetweenPredicate";
 		}
 
-		Expression* getValue() const {
+		std::shared_ptr<Expression> getValue() const {
 			return value_;
 		}
 
-		Expression* getMin() const {
+		std::shared_ptr<Expression> getMin() const {
 			return min_;
 		}
 
-		Expression* getMax() const {
+		std::shared_ptr<Expression> getMax() const {
 			return max_;
 		}
 
 	private:
-		Expression* value_;
-		Expression* min_;
-		Expression* max_;
+		std::shared_ptr<Expression> value_;
+		std::shared_ptr<Expression> min_;
+		std::shared_ptr<Expression> max_;
 	};
 
 	class Table : public QueryBody {
 	public:
-		Table(std::optional<NodeLocation> location, QualifiedName* name) : QueryBody(location), name_(name) { }
-		Table(QualifiedName* name) : QueryBody(std::nullopt), name_(name) { }
-		Table(NodeLocation location, QualifiedName* name) : QueryBody(location), name_(name) { }
+		Table(std::optional<NodeLocation> location, std::shared_ptr<QualifiedName> name) : QueryBody(location), name_(name) { }
+		Table(std::shared_ptr<QualifiedName> name) : QueryBody(std::nullopt), name_(name) { }
+		Table(NodeLocation location, std::shared_ptr<QualifiedName> name) : QueryBody(location), name_(name) { }
 
 		virtual ~Table()
 		{
-			delete name_;
+			
 		}
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::vector<Node*> getChildren() const override {
-			return std::vector<Node*>();
+		virtual std::vector<std::shared_ptr<Node>> getChildren() const override {
+			return std::vector<std::shared_ptr<Node>>();
 		}
 
 		virtual size_t hashCode() const override {
 			return 0;
 		}
 
-		virtual bool equals(const Node* node) const override {
+		virtual bool equals(std::shared_ptr<Node> node) const override {
 			return false;
 		}
 
@@ -1710,10 +1697,10 @@ namespace centurion {
 			return "Table";
 		}
 
-		const QualifiedName* getName() const { return name_; }
+		std::shared_ptr<QualifiedName> getName() const { return name_; }
 
 	private:
-		QualifiedName* name_;
+		std::shared_ptr<QualifiedName> name_;
 
 	};
 
@@ -1722,7 +1709,7 @@ namespace centurion {
 		virtual bool equals(const JoinCriteria& obj) = 0;
 		virtual size_t hashCode() = 0;
 		virtual std::string toString() = 0;
-		virtual std::vector<Node*> getNodes() const = 0;
+		virtual std::vector<std::shared_ptr<Node>> getNodes() const = 0;
 		virtual ~JoinCriteria() = default;
 	};
 
@@ -1733,29 +1720,31 @@ namespace centurion {
 			CROSS, INNER, LEFT, RIGHT, FULL, IMPLICIT
 		};
 
-		Join(JoinType type, Relation* left, Relation* right, std::optional<JoinCriteria*> criteria)
-			: Join(std::nullopt, type, left, right, criteria) { }
+		Join(JoinType type, std::shared_ptr < Relation> left, std::shared_ptr < Relation> right, std::optional< std::shared_ptr<JoinCriteria>> criteria)
+			: Join(std::optional<NodeLocation>(), type, left, right, criteria) { }
 
-		Join(NodeLocation location, JoinType type, Relation* left, Relation* right, std::optional<JoinCriteria*> criteria)
+		Join(NodeLocation location, JoinType type, std::shared_ptr < Relation> left, std::shared_ptr < Relation> right, std::optional< std::shared_ptr<JoinCriteria>> criteria)
 			: Join(std::make_optional(location), type, left, right, criteria) { }
 
-		Join(std::optional<NodeLocation> location, JoinType type, Relation* left, Relation* right, std::optional<JoinCriteria*> criteria)
-			: Relation(location), type_(type), left_(left), right_(right), criteria_(criteria) { }
+		Join(std::optional<NodeLocation> location, JoinType type, 
+			std::shared_ptr<Relation> left, 
+			std::shared_ptr<Relation> right, 
+			std::optional<std::shared_ptr<JoinCriteria>> criteria)
+			: Relation(location), 
+		type_(type), 
+		left_(std::move(left)), 
+		right_(std::move(right)),
+		criteria_(std::move(criteria)) { }
 
 		virtual ~Join()
 		{
-			delete left_;
-			delete right_;
-			if (criteria_.has_value())
-			{
-				delete criteria_.value();
-			}
+		
 		}
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::vector<Node*> getChildren() const override {
-			std::vector<Node*> result{ left_, right_ };
+		virtual std::vector<std::shared_ptr<Node>> getChildren() const override {
+			std::vector<std::shared_ptr<Node>> result{ left_, right_ };
 			if (criteria_.has_value()) {
 				const auto& nodes = criteria_.value()->getNodes();
 				for (auto& node : nodes) {
@@ -1769,7 +1758,7 @@ namespace centurion {
 			return 0;
 		}
 
-		virtual bool equals(const Node* node) const override {
+		virtual bool equals(std::shared_ptr<Node> node) const override {
 			return false;
 		}
 
@@ -1778,24 +1767,23 @@ namespace centurion {
 		}
 
 		JoinType getType() const { return type_; }
-		Relation* getLeft() const { return left_; }
-		Relation* getRight() const { return right_; }
-		std::optional<JoinCriteria*> getCriteria() const { return criteria_; }
+		std::shared_ptr < Relation> getLeft() const { return left_; }
+		std::shared_ptr < Relation> getRight() const { return right_; }
+		std::optional< std::shared_ptr<JoinCriteria>> getCriteria() const { return criteria_; }
 
 	private:
 		JoinType type_;
-		Relation* left_;
-		Relation* right_;
-		std::optional<JoinCriteria*> criteria_;
+		std::shared_ptr<Relation> left_;
+		std::shared_ptr<Relation> right_;
+		std::optional<std::shared_ptr<JoinCriteria>> criteria_;
 	};
 
 	class JoinOn : public JoinCriteria
 	{
 	public:
-		JoinOn(Expression* expression) : expression_(expression) { }
+		JoinOn(std::shared_ptr<Expression> expression) : expression_(std::move(expression)) { }
 		virtual ~JoinOn()
 		{
-			delete expression_;
 		}
 
 		virtual bool equals(const JoinCriteria& obj) override
@@ -1813,28 +1801,25 @@ namespace centurion {
 			return "JoinOn";
 		}
 
-		virtual std::vector<Node*> getNodes() const override
+		virtual std::vector<std::shared_ptr<Node>> getNodes() const override
 		{
-			return std::vector<Node*>{ expression_ };
+			return std::vector<std::shared_ptr<Node>>{ expression_ };
 		}
 
-		Expression* getExpression() const { return expression_; }
+		std::shared_ptr<Expression> getExpression() const { return expression_; }
 
 	private:
-		Expression* expression_;
+		std::shared_ptr<Expression> expression_;
 
 	};
 
 	class JoinUsing : public JoinCriteria
 	{
 	public:
-		JoinUsing(std::vector<Identifier*> columns) : columns_(std::move(columns)) { }
+		JoinUsing(std::vector<std::shared_ptr<Identifier>> columns) : columns_(std::move(columns)) { }
 		virtual ~JoinUsing()
 		{
-			for (auto column : columns_)
-			{
-				delete column;
-			}
+			
 		}
 
 		virtual bool equals(const JoinCriteria& obj) override
@@ -1852,15 +1837,15 @@ namespace centurion {
 			return "JoinUsing";
 		}
 
-		virtual std::vector<Node*> getNodes() const override
+		virtual std::vector<std::shared_ptr<Node>> getNodes() const override
 		{
-			return std::vector<Node*>();
+			return std::vector<std::shared_ptr<Node>>();
 		}
 
-		std::vector<Identifier*> getColumns() const { return columns_; }
+		std::vector<std::shared_ptr<Identifier>> getColumns() const { return columns_; }
 
 	private:
-		std::vector<Identifier*> columns_;
+		std::vector<std::shared_ptr<Identifier>> columns_;
 
 	};
 
@@ -1884,21 +1869,21 @@ namespace centurion {
 			return "NaturalJoin";
 		}
 
-		virtual std::vector<Node*> getNodes() const override
+		virtual std::vector<std::shared_ptr<Node>> getNodes() const override
 		{
-			return std::vector<Node*>();
+			return std::vector<std::shared_ptr<Node>>();
 		}
 	};
 
 	class QuerySpecification : public QueryBody {
 	public:
 		QuerySpecification(
-			std::optional<Select*> select,
-			std::optional<Relation*> from,
-			std::optional<Expression*> where,
-			std::optional<GroupBy*> groupBy,
-			std::optional<Expression*> having,
-			std::optional<OrderBy*> orderBy,
+			std::optional<std::shared_ptr<Select>> select,
+			std::optional<std::shared_ptr<Relation>> from,
+			std::optional<std::shared_ptr<Expression>> where,
+			std::optional<std::shared_ptr<GroupBy>> groupBy,
+			std::optional<std::shared_ptr<Expression>> having,
+			std::optional<std::shared_ptr<OrderBy>> orderBy,
 			std::optional<std::string> limit)
 			: QuerySpecification(
 				std::nullopt,
@@ -1913,12 +1898,12 @@ namespace centurion {
 
 		QuerySpecification(
 			const NodeLocation& location,
-			std::optional<Select*> select,
-			std::optional<Relation*> from,
-			std::optional<Expression*> where,
-			std::optional<GroupBy*> groupBy,
-			std::optional<Expression*> having,
-			std::optional<OrderBy*> orderBy,
+			std::optional<std::shared_ptr<Select>> select,
+			std::optional<std::shared_ptr<Relation>> from,
+			std::optional<std::shared_ptr<Expression>> where,
+			std::optional<std::shared_ptr<GroupBy>> groupBy,
+			std::optional<std::shared_ptr<Expression>> having,
+			std::optional<std::shared_ptr<OrderBy>> orderBy,
 			std::optional<std::string> limit)
 			: QuerySpecification(
 				std::optional<NodeLocation>(location),
@@ -1933,12 +1918,12 @@ namespace centurion {
 
 		QuerySpecification(
 			const std::optional<NodeLocation>& location,
-			std::optional<Select*> select,
-			std::optional<Relation*> from,
-			std::optional<Expression*> where,
-			std::optional<GroupBy*> groupBy,
-			std::optional<Expression*> having,
-			std::optional<OrderBy*> orderBy,
+			std::optional<std::shared_ptr<Select>> select,
+			std::optional<std::shared_ptr<Relation>> from,
+			std::optional<std::shared_ptr<Expression>> where,
+			std::optional<std::shared_ptr<GroupBy>> groupBy,
+			std::optional<std::shared_ptr<Expression>> having,
+			std::optional<std::shared_ptr<OrderBy>> orderBy,
 			std::optional<std::string> limit)
 			:
 			QueryBody(location),
@@ -1954,18 +1939,13 @@ namespace centurion {
 
 		virtual ~QuerySpecification()
 		{
-			if (select_.has_value()) delete (select_.value());
-			if (from_.has_value()) delete (from_.value());
-			if (where_.has_value()) delete (where_.value());
-			if (groupBy_.has_value()) delete (groupBy_.value());
-			if (having_.has_value()) delete (having_.value());
-			if (orderBy_.has_value()) delete (orderBy_.value());
+			
 		}
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::vector<Node*> getChildren() const override {
-			std::vector<Node*> result;
+		virtual std::vector<std::shared_ptr<Node>> getChildren() const override {
+			std::vector<std::shared_ptr<Node>> result;
 			if (select_.has_value()) result.push_back(select_.value());
 			if (from_.has_value()) result.push_back(from_.value());
 			if (where_.has_value()) result.push_back(where_.value());
@@ -1979,7 +1959,7 @@ namespace centurion {
 			return 0;
 		}
 
-		virtual bool equals(const Node* node) const override {
+		virtual bool equals(std::shared_ptr<Node> node) const override {
 			return false;
 		}
 
@@ -1987,39 +1967,39 @@ namespace centurion {
 			return "QuerySpecification";
 		}
 
-		std::optional<Select*> getSelect() const { return select_; }
-		std::optional<Relation*> getFrom() const { return from_; }
-		std::optional<Expression*> getWhere() const { return where_; }
-		std::optional<GroupBy*> getGroupBy() const { return groupBy_; }
-		std::optional<Expression*> getHaving() const { return having_; }
-		std::optional<OrderBy*> getOrderBy() const { return orderBy_; }
+		std::optional<std::shared_ptr<Select>> getSelect() const { return select_; }
+		std::optional<std::shared_ptr<Relation>> getFrom() const { return from_; }
+		std::optional<std::shared_ptr<Expression>> getWhere() const { return where_; }
+		std::optional<std::shared_ptr<GroupBy>> getGroupBy() const { return groupBy_; }
+		std::optional<std::shared_ptr<Expression>> getHaving() const { return having_; }
+		std::optional<std::shared_ptr<OrderBy>> getOrderBy() const { return orderBy_; }
 		std::optional<std::string> getLimit() const { return limit_; }
 
 	private:
-		std::optional<Select*> select_;
-		std::optional<Relation*> from_;
-		std::optional<Expression*> where_;
-		std::optional<GroupBy*> groupBy_;
-		std::optional<Expression*> having_;
-		std::optional<OrderBy*> orderBy_;
+		std::optional<std::shared_ptr<Select>> select_;
+		std::optional<std::shared_ptr<Relation>> from_;
+		std::optional<std::shared_ptr<Expression>> where_;
+		std::optional<std::shared_ptr<GroupBy>> groupBy_;
+		std::optional<std::shared_ptr<Expression>> having_;
+		std::optional<std::shared_ptr<OrderBy>> orderBy_;
 		std::optional<std::string> limit_;
 	};
 
 	class ShowStats : public Statement
 	{
 	public:
-		ShowStats(Relation* relation) : ShowStats(std::optional<NodeLocation>(), relation) {}
-		ShowStats(NodeLocation location, Relation* relation) : ShowStats(std::make_optional(location), relation) {}
-		ShowStats(std::optional<NodeLocation> location, Relation* relation) : Statement(location), relation_(relation) {}
+		ShowStats(std::shared_ptr<Relation> relation) : ShowStats(std::optional<NodeLocation>(), relation) {}
+		ShowStats(NodeLocation location, std::shared_ptr<Relation> relation) : ShowStats(std::make_optional(location), relation) {}
+		ShowStats(std::optional<NodeLocation> location, std::shared_ptr<Relation> relation) : Statement(location), relation_(relation) {}
 
 		virtual  ~ShowStats()
 		{
-			delete relation_;
+			
 		}
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual bool equals(const Node* node) const override
+		virtual bool equals(std::shared_ptr<Node> node) const override
 		{
 			return false;
 		}
@@ -2034,39 +2014,41 @@ namespace centurion {
 			return "ShowStats";
 		}
 
-		virtual std::vector<Node*> getChildren() const override
+		virtual std::vector<std::shared_ptr<Node>> getChildren() const override
 		{
-			return std::vector<Node*>{ relation_ };
+			return std::vector<std::shared_ptr<Node>>{ relation_ };
 		}
 
 
 	private:
-		Relation* relation_;
+		std::shared_ptr<Relation> relation_;
 	};
 
 	class SimpleGroupBy : public GroupingElement {
 	public:
-		SimpleGroupBy(std::vector<Expression*> columns)
+		SimpleGroupBy(std::vector<std::shared_ptr<Expression>> columns)
 			: SimpleGroupBy(std::optional<NodeLocation>(), std::move(columns)) { }
 
-		SimpleGroupBy(NodeLocation location, std::vector<Expression*> columns)
+		SimpleGroupBy(NodeLocation location, std::vector<std::shared_ptr<Expression>> columns)
 			: SimpleGroupBy(std::make_optional(location), std::move(columns)) { }
 
-		SimpleGroupBy(std::optional<NodeLocation> location, std::vector<Expression*> columns)
+		SimpleGroupBy(std::optional<NodeLocation> location, std::vector<std::shared_ptr<Expression>> columns)
 			: GroupingElement(location), columns_(std::move(columns)) { }
 
 		virtual  ~SimpleGroupBy()
 		{
-			for (auto column : columns_)
-			{
-				delete column;
-			}
+			
 		}
 
 		virtual antlrcpp::Any accept(AstVisitor* visitor, antlr4::ParserRuleContext* context) override;
 
-		virtual std::vector<Node*> getChildren() const override {
-			return castVector<Node*>(columns_);
+		virtual std::vector<std::shared_ptr<Node>> getChildren() const override {
+			std::vector<std::shared_ptr<Node>> result;
+			for (auto value : columns_)
+			{
+				result.push_back(value);
+			}
+			return result;
 		};
 
 		virtual size_t hashCode() const override {
@@ -2075,7 +2057,7 @@ namespace centurion {
 			return result;
 		}
 
-		virtual bool equals(const Node* node) const override {
+		virtual bool equals(std::shared_ptr<Node> node) const override {
 			return false;
 		}
 
@@ -2083,12 +2065,12 @@ namespace centurion {
 			return "SimpleGroupBy";
 		}
 
-		virtual std::vector<Expression*> getExpressions() const {
+		virtual std::vector<std::shared_ptr<Expression>> getExpressions() const override {
 			return columns_;
 		}
 
 	private:
-		std::vector<Expression*> columns_;
+		std::vector<std::shared_ptr<Expression>> columns_;
 	};
 	
 

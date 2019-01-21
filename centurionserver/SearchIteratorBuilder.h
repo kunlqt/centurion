@@ -1,11 +1,11 @@
 #pragma once
-#include "QualifiedNameBuilder.h"
+#include "DefaultVisitorResult.h"
 
 namespace centurion {
 	class SearchIteratorBuilder
 	{
 	public:
-		QualifiedNameBuilder* buildQuery(std::istream& query);
+		std::shared_ptr<DefaultVisitorResult> buildQuery(std::istream& query);
 
 	};
 }

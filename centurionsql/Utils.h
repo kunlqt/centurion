@@ -23,34 +23,8 @@ namespace centurion {
 		return result;
 	}
 
-
-	template<typename T, typename P>
-	inline T implicitCast(P v)
-	{
-		return v;
-	}
-	
-	template<typename T, typename F>
-	inline std::vector<T> castVector(const std::vector<F>& from)
-	{
-		std::vector<T> to(from.size());
-		for (size_t idx = 0; idx < from.size(); idx++) {
-			F a = from[idx];
-			to[idx] = (T)a;
-		}
-		return to;
-	}
-
-	template<typename T, typename F>
-	inline std::vector<T> castSharedPtrVector(const std::vector<F>& from)
-	{
-		std::vector<T> to(from.size());
-		for (size_t idx = 0; idx < from.size(); idx++) {
-			F a = from[idx];
-			to[idx] = std::dynamic_pointer_cast<T>(a);
-		}
-		return to;
-	}
+	template<typename T> struct is_shared_ptr : std::false_type {};
+	template<typename T> struct is_shared_ptr<std::shared_ptr<T>> : std::true_type {};
 
 	inline void removeQuotes(std::string& value)
 	{
