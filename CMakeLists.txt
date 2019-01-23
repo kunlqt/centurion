@@ -27,6 +27,7 @@ if(UNIX)
 	)
 	include_directories(
 		${LIB_BASE_DIR}/spdlog/include 
+		${LIB_BASE_DIR}/jwt-cpp/include
 		${LIB_BASE_DIR}/rapidjson/include 
 		${LIB_BASE_DIR}/antlr4/runtime/Cpp/runtime/src
 		${LIB_BASE_DIR}/rocksdb/include

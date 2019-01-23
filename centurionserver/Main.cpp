@@ -5,6 +5,7 @@
 #include "DatabaseManager.h"
 #include "Listener.hpp"
 #include "SharedState.hpp"
+#include <jwt-cpp/jwt.h>
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <boost/asio/ip/address.hpp>
@@ -25,6 +26,8 @@ int main(int argc, char* argv[])
 	std::uint16_t port;
 	fs::path db_root;
 	fs::path doc_root;
+	int logLevel;
+	std::string jwtSecret;
 
 	po::options_description desc("Allowed options");
 	desc.add_options()
@@ -33,6 +36,8 @@ int main(int argc, char* argv[])
 		("port", po::value<std::uint16_t>(&port)->required()->default_value(8080), "listen on port")
 		("db", po::value<fs::path>(&db_root)->required(), "database files directory")
 		("web", po::value<fs::path>(&doc_root)->required(), "website static files directory")
+		("jwt", po::value<std::string>(&jwtSecret)->required(), "JWT secret used to sign JWT tokens")
+		("log-level", po::value<int>(&logLevel)->default_value(spdlog::level::trace), "log level: 0 - trace, 1 - debug, 2 - info, 3 - warnings, 4 - errors, 5 - critical, 6 - disable logging")
 	;
 	po::variables_map vm;
 	po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -40,6 +45,7 @@ int main(int argc, char* argv[])
 		po::notify(vm);
 	} catch (const po::required_option& exc) {
 		std::cerr << exc.what() << std::endl;
+		std::cerr << desc << std::endl;
 		return EXIT_FAILURE;
 	}
 	if (vm.count("help")) {
@@ -48,7 +54,14 @@ int main(int argc, char* argv[])
 	}
 
 	auto rootLogger = spdlog::stdout_color_mt("root");
-	rootLogger->set_level(spdlog::level::trace);	
+	rootLogger->set_level(static_cast<spdlog::level::level_enum>(logLevel));
+	rootLogger->info("Service started...");
+
+	std::string token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXUyJ9.eyJpc3MiOiJhdXRoMCJ9.AbIJTDMFc7yUa5MhvcP03nJPyCPzZtQcGEp-zWfOkEE";
+	auto decoded = jwt::decode(token);
+	for(auto& e : decoded.get_payload_claims())
+		std::cout << e.first << " = " << e.second.to_json() << std::endl;
+
 	boost::system::error_code ec;
 	auto ipAddress = net::ip::make_address(address, ec);
 	if (ec) {
@@ -76,7 +89,7 @@ int main(int argc, char* argv[])
 
 	rootLogger->trace("Service started..");	
 	startService(ipAddress, port, db_root, doc_root);
-	rootLogger->trace("Service stopped!");
+	rootLogger->info("Service stopped!");
 
 	// rootLogger->trace("Dumping memory...");
 	// _CrtDumpMemoryLeaks();
