@@ -5,7 +5,6 @@
 #include "DatabaseManager.h"
 #include "Listener.hpp"
 #include "SharedState.hpp"
-#include <jwt-cpp/jwt.h>
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <boost/asio/ip/address.hpp>
@@ -18,7 +17,15 @@
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
-void startService(const net::ip::address& ipAddress, std::uint16_t port, const fs::path& db_root, const fs::path& doc_root);
+struct ServiceConfig {
+	std::shared_ptr<tcp::endpoint> listenEndpoint;
+        std::shared_ptr<shared_state> sharedState;
+        std::shared_ptr<fs::path> dbRoot;
+       	std::shared_ptr<fs::path> webRoot;
+       	std::shared_ptr<std::string> jwtSecret;
+};
+
+void startService(ServiceConfig& config);
 
 int main(int argc, char* argv[])
 {
@@ -56,12 +63,6 @@ int main(int argc, char* argv[])
 	auto rootLogger = spdlog::stdout_color_mt("root");
 	rootLogger->set_level(static_cast<spdlog::level::level_enum>(logLevel));
 	rootLogger->info("Service started...");
-
-	std::string token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXUyJ9.eyJpc3MiOiJhdXRoMCJ9.AbIJTDMFc7yUa5MhvcP03nJPyCPzZtQcGEp-zWfOkEE";
-	auto decoded = jwt::decode(token);
-	for(auto& e : decoded.get_payload_claims())
-		std::cout << e.first << " = " << e.second.to_json() << std::endl;
-
 	boost::system::error_code ec;
 	auto ipAddress = net::ip::make_address(address, ec);
 	if (ec) {
@@ -99,10 +100,9 @@ int main(int argc, char* argv[])
 	return EXIT_SUCCESS;
 }
 
-void startService(const net::ip::address& ipAddress, std::uint16_t port, const fs::path& db_root, const fs::path& doc_root) {
+void startService(ServiceConfig& config) {
 	// The io_context is required for all I/O
 	net::io_context ioc;
-
 	// Create and launch a listening port
 	std::make_shared<listener>(
 		ioc,
