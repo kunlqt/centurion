@@ -30,9 +30,6 @@
     <ClInclude Include="SearchIteratorBuilder.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="QueryDocumentHandler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="HttpRequestHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -49,6 +46,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ServiceConfig.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="InsertSingleDocumentHandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="InsertMultipleDocumentsHandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="QueryDocumentsHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -71,7 +77,7 @@
     <ClCompile Include="SearchIteratorBuilder.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="QueryDocumentHandler.cpp">
+    <ClCompile Include="QueryDocumentsHandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

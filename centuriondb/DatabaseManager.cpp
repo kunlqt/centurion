@@ -89,33 +89,15 @@ namespace centurion {
 		return result;
 	}
 
-	DocumentIds DatabaseManager::insertDocuments(DocumentIds documentIds, rapidjson::Document& rootDoc, std::function<void(size_t)> onProgress)
-	{
-		if (rootDoc.IsObject())
-		{
-			if (documentIds.size() == 1) {
-				return DocumentIds{ insertSingleDocument(documentIds.front(), rootDoc, onProgress) };
-			}
-		}
-		if (rootDoc.IsArray())
-		{
-			return insertMultipleDocuments(documentIds, rootDoc, onProgress);
-		}
-		throw std::runtime_error("Only json object or json array are supported as root object");	
-		
-	}
-
-	DocumentId DatabaseManager::insertSingleDocument(DocumentId documentId, rapidjson::Document& rootDoc, std::function<void(size_t)> onProgress)
+	DocumentId DatabaseManager::insertSingleDocument(DocumentId documentId, const rapidjson::Document& rootDoc, std::function<void(size_t)> onProgress)
 	{
 		DocumentIndexer documentIndexer(documentStore_, indexNameStore_, isvs_, idvs_, ibvs_, savs_);
 		return (documentIndexer.indexDocument(documentId, rootDoc));
 	}
 
-	DocumentIds DatabaseManager::insertMultipleDocuments(DocumentIds documentIds, rapidjson::Document& rootDoc, std::function<void(size_t)> onProgress)
+	void DatabaseManager::insertMultipleDocuments(DocumentIds& documentIds, const rapidjson::Document::Array& rootDocs, std::function<void(size_t)> onProgress)
 	{
-		DocumentIds result;
-		auto docs = rootDoc.GetArray();
-		size_t total = docs.Size();
+		size_t total = rootDocs.Size();
 		if (total != documentIds.size())
 		{
 			throw std::runtime_error("The count of document ids doesn't match with count of provided documents");
@@ -133,20 +115,20 @@ namespace centurion {
 		size_t div = std::min(min_div, std::max(total / div_perc, max_div));
 		DocumentIndexer documentIndexer(documentStore_, indexNameStore_, isvs_, idvs_, ibvs_, savs_);
 		size_t cnt = 0;
-		for (const auto& doc : docs)
+		for (const auto& doc : rootDocs)
 		{
-			result.push_back(documentIndexer.indexDocument(documentIds[cnt++], doc));
+			documentIds[cnt] = documentIndexer.indexDocument(documentIds[cnt], doc);
+			cnt++;
 			if ((cnt % div) == 0)
 			{
-				onProgress(((double)cnt / (double)total)*100.0f);
+				onProgress(((double)cnt / (double)total)*100.0F);
 			}
 		}
-		onProgress(100.0f);
+		onProgress(100.0F);
 		const auto end = std::chrono::system_clock::now();
 		std::chrono::duration<double> elapsed_seconds = end - start;
-		const auto speed = docs.Size() / elapsed_seconds.count();
+		const auto speed = total / elapsed_seconds.count();
 		logger_->trace("Insertion done! Total elapsed time: {}s. Insertion speed: {} docs/sec", elapsed_seconds.count(), speed);
-		return result;
 	}
 
 }

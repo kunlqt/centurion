@@ -1,4 +1,7 @@
 #pragma once
+#include "InsertSingleDocumentHandler.h"
+#include "InsertMultipleDocumentsHandler.h"
+#include "QueryDocumentsHandler.h"
 #include "SharedState.hpp"
 #include "DatabaseManager.h"
 #include "MimeTypes.h"
@@ -23,7 +26,7 @@ using tcp = boost::asio::ip::tcp;               // from <boost/asio/ip/tcp.hpp>
 // caller to pass a generic lambda for receiving the response.
 template<class Body, class Allocator, class Send>
 	void handle_request(
-		centurion::DatabaseManager* dbm,
+		std::shared_ptr<centurion::DatabaseManager> dbm,
 		std::shared_ptr<shared_state> const& state,
 		std::shared_ptr<boost::filesystem::path> doc_root,
 		http::request<Body, http::basic_fields<Allocator>>&& req,
@@ -77,112 +80,39 @@ template<class Body, class Allocator, class Send>
 		rapidjson::StringBuffer result;
 		rapidjson::Writer<rapidjson::StringBuffer> writer(result);
 		doc.Accept(writer);
-		std::string str(result.GetString(), result.GetSize());
-		return str;
-	};
-		
-	auto const buildInsertResult = [](centurion::DocumentIds& docsInserted) {
-		rapidjson::Document doc(rapidjson::kObjectType);
-		doc.AddMember(rapidjson::StringRef("status"), rapidjson::StringRef("insert_done"), doc.GetAllocator());
-		rapidjson::Value documentIds(rapidjson::kArrayType);
-		rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
-		documentIds.Reserve(docsInserted.size(), allocator);
-		for (auto docInserted : docsInserted) {
-			documentIds.PushBack(docInserted, allocator);
-		}
-		doc.AddMember(rapidjson::StringRef("documents"), documentIds, doc.GetAllocator());
-		rapidjson::StringBuffer result;
-		rapidjson::Writer<rapidjson::StringBuffer> writer(result);
-		doc.Accept(writer);
-		std::string str(result.GetString(), result.GetSize());
-		return str;
-	};
+		return std::string(result.GetString(), result.GetSize());
+	};		
 
 	if (req.method() == http::verb::post)
 	{
 		if (boost::iends_with(req.target(), "/insert")) {
 			if (req[http::field::content_type] == "application/json") {
-				try {
-					rapidjson::Document rootDoc;
-					log->trace("Parsing json file...");
-					rootDoc.Parse(req.body().data());
-					if (rootDoc.HasParseError())
-					{
-						throw std::runtime_error("an error occured while parsing JSON document");
-					}
-					auto docsInserted = dbm->insertDocuments(rootDoc, [&buildStatusProgress, &state](size_t progress) { state->send(buildStatusProgress(progress)); });
-					http::response<http::string_body> res{ http::status::ok, req.version() };
-					res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
-					res.set(http::field::content_type, "application/json");
-					const auto insertResult = buildInsertResult(docsInserted);
-					state->send(insertResult);
-					res.body() = insertResult;
-					res.keep_alive(req.keep_alive());
-					return send(std::move(res));
-				} catch (std::runtime_error& err)
-				{
-					http::response<http::string_body> res{ http::status::internal_server_error, req.version() };
-					res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
-					res.set(http::field::content_type, "text/html");
-					res.keep_alive(req.keep_alive());
-					res.body() = "An error occurred: '" + std::string(err.what()) + "'";
-					res.prepare_payload();
-					return send(std::move(res));
-				}
+				InsertSingleDocumentHandler insertSingleDocumentHandler;
+				return send(
+					insertSingleDocumentHandler.handle<Body, Allocator>(
+						dbm,
+						req,
+						[&buildStatusProgress, &state](size_t progress) { state->send(buildStatusProgress(progress)); })
+					);
+			}
+		}
+
+		if (boost::iends_with(req.target(), "/insert_multiple")) {
+			if (req[http::field::content_type] == "application/json") {
+				InsertMultipleDocumentsHandler insertMutipleDocumentsHandler;
+				return send(
+					insertMutipleDocumentsHandler.handle<Body, Allocator>(
+						dbm,
+						req,
+						[&buildStatusProgress, &state](size_t progress) { state->send(buildStatusProgress(progress)); })
+				);
 			}
 		}
 
 		if (boost::iends_with(req.target(), "/query")) {
 			if (req[http::field::content_type] == "application/sql") {
-				try {
-					log->trace("handling /query sql request");
-					http::response<http::string_body> res{ http::status::ok, req.version() };
-					res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
-					res.set(http::field::content_type, "application/json");
-					centurion::QueryDocumentHandler queryDocumentHandler;
-					rapidjson::StringBuffer resultsString;
-					rapidjson::Writer<rapidjson::StringBuffer> writer(resultsString);
-					rapidjson::Document results;
-					queryDocumentHandler.handle(*dbm, req.body(), results);
-					if (results.Accept(writer)) {
-						res.body() = resultsString.GetString();
-					}
-					res.keep_alive(req.keep_alive());
-					return send(std::move(res));
-				} 
-				catch (std::runtime_error& err)
-				{
-					log->error("An error while query db: {0}", err.what());
-					http::response<http::string_body> res{ http::status::bad_request, req.version() };
-					res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
-					res.set(http::field::content_type, "application/json");
-					rapidjson::Document doc(rapidjson::kObjectType);
-					doc.AddMember(rapidjson::StringRef("status"), rapidjson::StringRef("error"), doc.GetAllocator());
-					doc.AddMember(rapidjson::StringRef("message"), rapidjson::StringRef(err.what()), doc.GetAllocator());
-					rapidjson::StringBuffer result;
-					rapidjson::Writer<rapidjson::StringBuffer> writer(result);
-					doc.Accept(writer);
-					res.body() = result.GetString();
-					res.keep_alive(req.keep_alive());
-					res.prepare_payload();
-					return send(std::move(res));
-				} catch (...)
-				{
-					log->error("Unknown error while query DB");
-					http::response<http::string_body> res{ http::status::internal_server_error, req.version() };
-					res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
-					res.set(http::field::content_type, "application/json");
-					rapidjson::Document doc(rapidjson::kObjectType);
-					doc.AddMember(rapidjson::StringRef("status"), rapidjson::StringRef("error"), doc.GetAllocator());
-					doc.AddMember(rapidjson::StringRef("message"), rapidjson::StringRef("Internal error"), doc.GetAllocator());
-					rapidjson::StringBuffer result;
-					rapidjson::Writer<rapidjson::StringBuffer> writer(result);
-					doc.Accept(writer);
-					res.body() = result.GetString();
-					res.keep_alive(req.keep_alive());
-					res.prepare_payload();
-					return send(std::move(res));
-				}
+				QueryDocumentsHandler queryDocumentsHandler;
+				return send(queryDocumentsHandler.handle<Body, Allocator>(dbm,req));
 			}
 		}
 	}

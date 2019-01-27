@@ -1,6 +1,5 @@
 #include "HttpSession.hpp"
 #include "WebsocketSession.hpp"
-#include "QueryDocumentHandler.h"
 #include "HttpRequestHandler.h"
 #include <boost/config.hpp>
 #include <boost/algorithm/string.hpp>
@@ -117,7 +116,7 @@ void http_session::on_read(beast::error_code ec, std::size_t)
     // place of a generic lambda which is not available in C++11
     //
     handle_request(
-		dbm_.get(),
+		dbm_,
 		state_,
         state_->doc_root(),
         std::move(parser_.get()),

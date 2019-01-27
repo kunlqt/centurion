@@ -31,7 +31,9 @@ namespace centurion
 			rapidjson::Document& results,
 			DocumentId startFrom,
 			size_t limit);
-		DocumentIds insertDocuments(DocumentIds documentIds, rapidjson::Document& rootDoc, std::function<void(size_t)> onProgress);
+		DocumentId insertSingleDocument(DocumentId documentId, const rapidjson::Document& rootDoc, std::function<void(size_t)> onProgress);
+		void insertMultipleDocuments(DocumentIds& documentIds, const rapidjson::Document::Array& rootDocs, std::function<void(size_t)> onProgress);
+
 		std::vector<bool> removeDocuments(const DocumentIds& documentIds);
 		const DocumentStore& documentStore() const { return documentStore_; };
 		const IndexNameStore& indexNameStore() const { return indexNameStore_; };
@@ -41,8 +43,6 @@ namespace centurion
 		const StringArrayValueIndexStore& savs() const { return savs_; };
 
 	private:
-		DocumentId insertSingleDocument(DocumentId documentId, rapidjson::Document& rootDoc, std::function<void(size_t)> onProgress);
-		DocumentIds insertMultipleDocuments(DocumentIds documentIds, rapidjson::Document& rootDoc, std::function<void(size_t)> onProgress);
 
 		std::shared_ptr<spdlog::logger> logger_;
 		DocumentStore documentStore_;

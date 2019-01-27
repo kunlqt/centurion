@@ -13,12 +13,14 @@
   <ItemGroup>
     <ClInclude Include="AstVisitorImpl.h" />
     <ClInclude Include="HttpRequestHandler.h" />
+    <ClInclude Include="InsertMultipleDocumentsHandler.h" />
+    <ClInclude Include="InsertSingleDocumentHandler.h" />
     <ClInclude Include="HttpSession.hpp" />
     <ClInclude Include="Listener.hpp" />
     <ClInclude Include="MimeTypes.h" />
     <ClInclude Include="DefaultVisitorResult.h" />
     <ClInclude Include="DefaultVisitor.h" />
-    <ClInclude Include="QueryDocumentHandler.h" />
+    <ClInclude Include="QueryDocumentsHandler.h" />
     <ClInclude Include="SearchIteratorBuilder.h" />
     <ClInclude Include="ServiceConfig.h" />
     <ClInclude Include="SharedState.hpp" />
@@ -28,7 +30,7 @@
     <ClCompile Include="HttpSession.cpp" />
     <ClCompile Include="Listener.cpp" />
     <ClCompile Include="Main.cpp" />
-    <ClCompile Include="QueryDocumentHandler.cpp" />
+    <ClCompile Include="QueryDocumentsHandler.cpp" />
     <ClCompile Include="SearchIteratorBuilder.cpp" />
     <ClCompile Include="SharedState.cpp" />
     <ClCompile Include="WebsocketSession.cpp" />
