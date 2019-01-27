@@ -21,7 +21,7 @@ namespace centurion {
 		{	
 		}
 
-		bool add(IndexId indexId, bool b, DocumentId documentId) const
+		bool add(IndexId indexId, bool b, DocumentId documentId, bool removeFromIndex) const
 		{
 			rocksdb::WriteBatch w;
 			std::uint8_t value = b ? 1 : 0;
@@ -29,7 +29,12 @@ namespace centurion {
 				rocksdb::Slice((const char*)&indexId, sizeof indexId),
 				rocksdb::Slice((const char*)&value, sizeof value),
 				rocksdb::Slice((const char*)&documentId, sizeof documentId) };
-			w.Put(rocksdb::SliceParts(slices, sizeof slices / sizeof slices[0]), rocksdb::SliceParts());
+			if (removeFromIndex)
+			{
+				w.Delete(rocksdb::SliceParts(slices, sizeof slices / sizeof slices[0]));
+			} else {
+				w.Put(rocksdb::SliceParts(slices, sizeof slices / sizeof slices[0]), rocksdb::SliceParts());
+			}
 			return writeSlice(&w);
 		}
 	};

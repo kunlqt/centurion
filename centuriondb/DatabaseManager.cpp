@@ -4,16 +4,17 @@
 
 namespace centurion {
 
-	DatabaseManager::DatabaseManager(boost::filesystem::path databaseRootDir)
+	DatabaseManager::DatabaseManager(std::shared_ptr<boost::filesystem::path> databaseRootDir)
 		:
-		databaseRootDir_(std::move(databaseRootDir)),
-		documentStore_(databaseRootDir_ / docDirName),
-		indexNameStore_(databaseRootDir_ / insDirName),
-		isvs_(databaseRootDir_ / isvDirName),
-		idvs_(databaseRootDir_ / idvDirName),
-		ibvs_(databaseRootDir_ / ibvDirName),
-		savs_(databaseRootDir_ / iasDirName)
-	{}
+		documentStore_(*databaseRootDir / docDirName),
+		indexNameStore_(*databaseRootDir / insDirName),
+		isvs_(*databaseRootDir / isvDirName),
+		idvs_(*databaseRootDir / idvDirName),
+		ibvs_(*databaseRootDir / ibvDirName),
+		savs_(*databaseRootDir / iasDirName)
+	{
+		logger_ = spdlog::get("root");
+	}
 
 	size_t DatabaseManager::searchDocuments(
 		std::vector<std::string> selectedFields,
@@ -22,7 +23,6 @@ namespace centurion {
 		DocumentId startFrom, 
 		size_t limit)
 	{
-		auto console = spdlog::get("root");
 		auto selectFields = std::move(selectedFields);
 		MergeOverlappingFields(selectFields);
 		rootSearchIterator->seek(
@@ -52,11 +52,11 @@ namespace centurion {
 				break;
 			}
 			const auto documentId = rootSearchIterator->current();
-			console->trace("Found document id: {}", documentId);
+			logger_->trace("Found document id: {}", documentId);
 			totalDocumentsFound++;
 			auto result = documentStore_.loadDocument(documentId, allocator);
 			if (result.IsNull()) {
-				console->error("Document with id: {} not found in database", documentId);
+				logger_->error("Document with id: {} not found in database", documentId);
 			} else {
 				if (selectFields.empty()) {
 					results.PushBack(result, allocator);
@@ -74,68 +74,79 @@ namespace centurion {
 			}
 			rootSearchIterator->next();
 		}
-		console->trace("Total: {} documents found", totalDocumentsFound);
+		logger_->trace("Total: {} documents found", totalDocumentsFound);
 		return totalDocumentsFound;
 	}
 
-	DocumentIds DatabaseManager::insertDocuments(rapidjson::StringStream& is, std::function<void(size_t)> onProgress)
+	std::vector<bool> DatabaseManager::removeDocuments(const DocumentIds& documentIds)
 	{
-		DocumentIds result;
-		centurion::DocumentIndexer documentIndexer(documentStore_, indexNameStore_, isvs_, idvs_, ibvs_, savs_);
-
-		bool dropDatabase = false;
-		auto console = spdlog::get("root");
-
-		console->trace("Loading json file...");
-		const size_t readBufferSize = 16535 * 1024;
-		const auto readBuffer = new char[readBufferSize];
-		rapidjson::Document rootDoc;
-		console->trace("Parsing json file...");
-		rootDoc.ParseStream(is);
-		if (rootDoc.HasParseError())
+		DocumentIndexer documentIndexer(documentStore_, indexNameStore_, isvs_, idvs_, ibvs_, savs_);
+		std::vector<bool> result;
+		for (const auto& documentId : documentIds)
 		{
-			throw std::runtime_error("an error occured while parsing JSON document");
+			result.push_back(documentIndexer.unindexDocument(documentId));
 		}
+		return result;
+	}
+
+	DocumentIds DatabaseManager::insertDocuments(DocumentIds documentIds, rapidjson::Document& rootDoc, std::function<void(size_t)> onProgress)
+	{
 		if (rootDoc.IsObject())
 		{
-			result.push_back(documentIndexer.indexDocument(rootDoc));
-			return result;
+			if (documentIds.size() == 1) {
+				return DocumentIds{ insertSingleDocument(documentIds.front(), rootDoc, onProgress) };
+			}
 		}
-		if (!rootDoc.IsArray())
+		if (rootDoc.IsArray())
 		{
-			throw std::runtime_error("Only json object or json array are supported as root object");
+			return insertMultipleDocuments(documentIds, rootDoc, onProgress);
 		}
+		throw std::runtime_error("Only json object or json array are supported as root object");	
+		
+	}
+
+	DocumentId DatabaseManager::insertSingleDocument(DocumentId documentId, rapidjson::Document& rootDoc, std::function<void(size_t)> onProgress)
+	{
+		DocumentIndexer documentIndexer(documentStore_, indexNameStore_, isvs_, idvs_, ibvs_, savs_);
+		return (documentIndexer.indexDocument(documentId, rootDoc));
+	}
+
+	DocumentIds DatabaseManager::insertMultipleDocuments(DocumentIds documentIds, rapidjson::Document& rootDoc, std::function<void(size_t)> onProgress)
+	{
+		DocumentIds result;
 		auto docs = rootDoc.GetArray();
 		size_t total = docs.Size();
+		if (total != documentIds.size())
+		{
+			throw std::runtime_error("The count of document ids doesn't match with count of provided documents");
+		}
 		size_t min_div = 1;
 		size_t max_div = 1000;
 		size_t div_perc = 10;
-		console->trace("Parsing done!");
+		logger_->trace("Parsing done!");
 		if (total == 0) {
 			throw std::runtime_error("Empty array of objects");
 		}
-		console->trace("Inserting {} documents...", total);
+		logger_->trace("Inserting {} documents...", total);
 		const auto start = std::chrono::system_clock::now();
-		size_t cnt = 0;		
 		// report progress on each 10% but not more than 1k and not less than 1
 		size_t div = std::min(min_div, std::max(total / div_perc, max_div));
+		DocumentIndexer documentIndexer(documentStore_, indexNameStore_, isvs_, idvs_, ibvs_, savs_);
+		size_t cnt = 0;
 		for (const auto& doc : docs)
 		{
-			result.push_back(documentIndexer.indexDocument(doc));
-			cnt++;
+			result.push_back(documentIndexer.indexDocument(documentIds[cnt++], doc));
 			if ((cnt % div) == 0)
 			{
-				onProgress(((double)cnt/(double)total)*100.0f);
+				onProgress(((double)cnt / (double)total)*100.0f);
 			}
 		}
 		onProgress(100.0f);
 		const auto end = std::chrono::system_clock::now();
 		std::chrono::duration<double> elapsed_seconds = end - start;
 		const auto speed = docs.Size() / elapsed_seconds.count();
-		console->trace("Insertion done! Total elapsed time: {}s. Insertion speed: {} docs/sec", elapsed_seconds.count(), speed);
-		delete[] readBuffer;
+		logger_->trace("Insertion done! Total elapsed time: {}s. Insertion speed: {} docs/sec", elapsed_seconds.count(), speed);
 		return result;
 	}
-
 
 }

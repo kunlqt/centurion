@@ -56,9 +56,11 @@ namespace centurion {
 			if (dropIfExist_) rocksdb::DestroyDB(filename_.string(), rocksdb::Options());
 		}
 
-		DocumentId storeDocument(const rapidjson::Value& doc)
+		DocumentId storeDocument(DocumentId documentId, const rapidjson::Value& doc)
 		{
-			DocumentId documentId = ++maxDocumentId_;
+			if (documentId == InvalidDocumentId) {
+				documentId = ++maxDocumentId_;
+			}
 			rapidjson::StringBuffer buffer;
 			rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
 			if (doc.Accept(writer)) {
@@ -88,6 +90,19 @@ namespace centurion {
 				return rapidjson::Value(doc, allocator);
 			}
 			return rapidjson::Value(rapidjson::kNullType);
+		}
+
+		bool deleteDocument(DocumentId documentId) const
+		{
+			auto deleteResult = db_->Delete(
+				rocksdb::WriteOptions(),
+				rocksdb::Slice(reinterpret_cast<char*>(&documentId), sizeof(documentId)));
+			if (deleteResult.ok())
+			{
+				return true;
+			}
+			// log error
+			return false;
 		}
 
 	private:

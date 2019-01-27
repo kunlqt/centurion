@@ -23,17 +23,16 @@ namespace centurion
 
 	class DatabaseManager
 	{
-
 	public:
-		DatabaseManager(boost::filesystem::path databaseRootDir);
+		DatabaseManager(std::shared_ptr<boost::filesystem::path> databaseRootDir);
 		size_t searchDocuments(
 			std::vector<std::string> qualifiedNames,
 			SearchIterator* rootSearchIterator,
 			rapidjson::Document& results,
 			DocumentId startFrom,
 			size_t limit);
-		DocumentIds insertDocuments(rapidjson::StringStream& is, std::function<void(size_t)> onProgress);
-	
+		DocumentIds insertDocuments(DocumentIds documentIds, rapidjson::Document& rootDoc, std::function<void(size_t)> onProgress);
+		std::vector<bool> removeDocuments(const DocumentIds& documentIds);
 		const DocumentStore& documentStore() const { return documentStore_; };
 		const IndexNameStore& indexNameStore() const { return indexNameStore_; };
 		const StringValueIndexStore& isvs() const { return isvs_; };
@@ -42,14 +41,15 @@ namespace centurion
 		const StringArrayValueIndexStore& savs() const { return savs_; };
 
 	private:
-	
-		boost::filesystem::path databaseRootDir_;
-		centurion::DocumentStore documentStore_;
-		centurion::IndexNameStore indexNameStore_;
-		centurion::StringValueIndexStore isvs_;
-		centurion::DoubleValueIndexStore idvs_;
-		centurion::BooleanValueIndexStore ibvs_;
-		centurion::StringArrayValueIndexStore savs_;
+		DocumentId insertSingleDocument(DocumentId documentId, rapidjson::Document& rootDoc, std::function<void(size_t)> onProgress);
+		DocumentIds insertMultipleDocuments(DocumentIds documentIds, rapidjson::Document& rootDoc, std::function<void(size_t)> onProgress);
 
+		std::shared_ptr<spdlog::logger> logger_;
+		DocumentStore documentStore_;
+		IndexNameStore indexNameStore_;
+		StringValueIndexStore isvs_;
+		DoubleValueIndexStore idvs_;
+		BooleanValueIndexStore ibvs_;
+		StringArrayValueIndexStore savs_;
 	};
 }

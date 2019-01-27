@@ -1,8 +1,8 @@
 #include "SharedState.hpp"
 #include "WebsocketSession.hpp"
 
-shared_state::shared_state(boost::filesystem::path doc_root)
-    : doc_root_(std::move(doc_root))
+shared_state::shared_state(std::shared_ptr<boost::filesystem::path> doc_root)
+    : doc_root_(doc_root)
 {
 }
 

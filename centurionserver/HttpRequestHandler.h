@@ -25,7 +25,7 @@ template<class Body, class Allocator, class Send>
 	void handle_request(
 		centurion::DatabaseManager* dbm,
 		std::shared_ptr<shared_state> const& state,
-		boost::filesystem::path doc_root,
+		std::shared_ptr<boost::filesystem::path> doc_root,
 		http::request<Body, http::basic_fields<Allocator>>&& req,
 		Send&& send)
 {
@@ -103,8 +103,14 @@ template<class Body, class Allocator, class Send>
 		if (boost::iends_with(req.target(), "/insert")) {
 			if (req[http::field::content_type] == "application/json") {
 				try {
-					rapidjson::StringStream ss(req.body().data());
-					auto docsInserted = dbm->insertDocuments(ss, [&buildStatusProgress, &state](size_t progress) { state->send(buildStatusProgress(progress)); });
+					rapidjson::Document rootDoc;
+					log->trace("Parsing json file...");
+					rootDoc.Parse(req.body().data());
+					if (rootDoc.HasParseError())
+					{
+						throw std::runtime_error("an error occured while parsing JSON document");
+					}
+					auto docsInserted = dbm->insertDocuments(rootDoc, [&buildStatusProgress, &state](size_t progress) { state->send(buildStatusProgress(progress)); });
 					http::response<http::string_body> res{ http::status::ok, req.version() };
 					res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
 					res.set(http::field::content_type, "application/json");
@@ -193,7 +199,7 @@ template<class Body, class Allocator, class Send>
 		return send(bad_request("Illegal request-target"));
 
 	// Build the path to the requested file
-	boost::filesystem::path path = doc_root / req.target().to_string();
+	boost::filesystem::path path = *doc_root / req.target().to_string();
 	if (req.target().back() == '/')
 		path.append("index.html");
 

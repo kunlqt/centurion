@@ -34,41 +34,56 @@ namespace centurion {
 			
 		}
 
-		DocumentId indexDocument(const rapidjson::Value& doc)
+		DocumentId indexDocument(DocumentId documentId, const rapidjson::Value& doc)
 		{
-			DocumentId documentId = documentStore_.storeDocument(doc);
-			const rapidjson::Pointer root;
-			extractPaths(doc, root, [&](const char* fieldName, size_t fieldNameSize, const rapidjson::Value& fieldValue) {
-				const auto indexId = indexNameStore_.ensureIndexId(fieldName, fieldNameSize);
-				bool addResult;
-				if (fieldValue.IsArray()) {
-					const auto& arr = fieldValue.GetArray();
-					for (size_t idx = 0; idx < arr.Size(); idx++)
-					{
-						const auto& arrayElement = arr[idx];
-						if (arrayElement.IsString())
-						{
-							addResult = stringArrayValueIndexStore_.add(indexId, idx, arrayElement.GetString(), arrayElement.GetStringLength(), documentId);
-						}
-					}
-				} else {
-					if (fieldValue.IsString()) {
-						addResult = stringValueIndexStore_.add(indexId, fieldValue.GetString(), fieldValue.GetStringLength(), documentId);
-					} else if (fieldValue.IsNumber()) {
-						addResult = indexedDoubleValuesStore_.add(indexId, fieldValue.GetDouble(), documentId);
-					} else if (fieldValue.IsBool()) {
-						addResult = indexedBooleanValuesStore_.add(indexId, fieldValue.GetBool(), documentId);
-					} else if (fieldValue.IsNull()) {
-						// ignore for now
-					} else {
-						throw std::runtime_error("unsupported type");
-					}
-				}
-			});
+			documentId = documentStore_.storeDocument(documentId, doc);
+			addOrRemoveDocument(documentId, doc, false);
 			return documentId;
 		}
 
+		bool unindexDocument(DocumentId documentId)
+		{
+			rapidjson::Document doc;
+			auto documentLoaded = documentStore_.loadDocument(documentId, doc.GetAllocator());
+			addOrRemoveDocument(documentId, documentLoaded, true);
+			return documentStore_.deleteDocument(documentId);
+		}
+
 	private:
+
+		void addOrRemoveDocument(DocumentId documentId, const rapidjson::Value& doc, bool removeFromIndex)
+		{
+			const rapidjson::Pointer root;
+			extractPaths(doc, root, [&](const char* fieldName, size_t fieldNameSize, const rapidjson::Value& fieldValue) {
+			const auto indexId = indexNameStore_.ensureIndexId(fieldName, fieldNameSize);
+			bool addResult;
+			if (fieldValue.IsArray()) {
+				const auto& arr = fieldValue.GetArray();
+				for (size_t idx = 0; idx < arr.Size(); idx++)
+				{
+					const auto& arrayElement = arr[idx];
+					if (arrayElement.IsString())
+					{
+						addResult = stringArrayValueIndexStore_.add(
+							indexId, idx, arrayElement.GetString(), arrayElement.GetStringLength(), documentId, removeFromIndex);
+					}
+				}
+			} else {
+				if (fieldValue.IsString()) {
+					addResult = stringValueIndexStore_.add(indexId, fieldValue.GetString(), fieldValue.GetStringLength(), documentId, removeFromIndex);
+				} else if (fieldValue.IsNumber()) {
+					addResult = indexedDoubleValuesStore_.add(indexId, fieldValue.GetDouble(), documentId, removeFromIndex);
+				} else if (fieldValue.IsBool()) {
+					addResult = indexedBooleanValuesStore_.add(indexId, fieldValue.GetBool(), documentId, removeFromIndex);
+				} else if (fieldValue.IsNull()) {
+					// ignore for now
+				} else {
+					throw std::runtime_error("unsupported type");
+				}
+			}
+		});
+	}
+
 		static void extractPaths(
 			const rapidjson::Value& v,
 			const rapidjson::Pointer& parent,

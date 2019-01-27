@@ -4,7 +4,7 @@
 
 listener::listener(
     net::io_context& ioc,
-    tcp::endpoint endpoint,
+	std::shared_ptr<tcp::endpoint> const& endpoint,
     std::shared_ptr<shared_state> const& state,
 	std::shared_ptr<centurion::DatabaseManager> dbm)
     : acceptor_(ioc)
@@ -17,7 +17,7 @@ listener::listener(
     beast::error_code ec;
 
     // Open the acceptor
-    acceptor_.open(endpoint.protocol(), ec);
+    acceptor_.open(endpoint->protocol(), ec);
     if(ec)
     {
         fail(ec, "open");
@@ -33,7 +33,7 @@ listener::listener(
     }
 
     // Bind to the server address
-    acceptor_.bind(endpoint, ec);
+    acceptor_.bind(*endpoint, ec);
     if(ec)
     {
         fail(ec, "bind");

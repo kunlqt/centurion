@@ -20,6 +20,7 @@
     <ClInclude Include="DefaultVisitor.h" />
     <ClInclude Include="QueryDocumentHandler.h" />
     <ClInclude Include="SearchIteratorBuilder.h" />
+    <ClInclude Include="ServiceConfig.h" />
     <ClInclude Include="SharedState.hpp" />
     <ClInclude Include="WebsocketSession.hpp" />
   </ItemGroup>

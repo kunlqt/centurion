@@ -11,7 +11,7 @@ class websocket_session;
 // Represents the shared server state
 class shared_state
 {
-	boost::filesystem::path doc_root_;
+	std::shared_ptr<boost::filesystem::path> doc_root_;
 
     // This simple method of tracking
     // sessions only works with an implicit
@@ -19,10 +19,9 @@ class shared_state
     std::unordered_set<websocket_session*> sessions_;
 
 public:
-    explicit shared_state(boost::filesystem::path doc_root);
+    explicit shared_state(std::shared_ptr<boost::filesystem::path> doc_root);
 
-	boost::filesystem::path const&
-    doc_root() const noexcept
+	std::shared_ptr<boost::filesystem::path> doc_root() const noexcept
     {
         return doc_root_;
     }

@@ -22,14 +22,19 @@ namespace centurion {
 		{
 		}
 
-		bool add(IndexId indexId, double value, DocumentId documentId) const
+		bool add(IndexId indexId, double value, DocumentId documentId, bool removeFromIndex) const
 		{
 			rocksdb::WriteBatch w;
 			rocksdb::Slice slices[] = {
 				rocksdb::Slice((const char*)&indexId, sizeof indexId),
 				rocksdb::Slice((const char*)&value, sizeof value),
 				rocksdb::Slice((const char*)&documentId, sizeof documentId) };
-			w.Put(rocksdb::SliceParts(slices, sizeof slices / sizeof slices[0]), rocksdb::SliceParts());
+			if (removeFromIndex)
+			{
+				w.Delete(rocksdb::SliceParts(slices, sizeof slices / sizeof slices[0]));
+			} else {
+				w.Put(rocksdb::SliceParts(slices, sizeof slices / sizeof slices[0]), rocksdb::SliceParts());
+			}
 			return writeSlice(&w);
 		}
 

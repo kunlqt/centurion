@@ -30,7 +30,7 @@ class listener : public std::enable_shared_from_this<listener>
 public:
     listener(
         net::io_context& ioc,
-        tcp::endpoint endpoint,
+		std::shared_ptr<tcp::endpoint> const& endpoint,
         std::shared_ptr<shared_state> const& state,
 		std::shared_ptr<centurion::DatabaseManager> dbm);
 

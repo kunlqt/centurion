@@ -119,7 +119,7 @@ void http_session::on_read(beast::error_code ec, std::size_t)
     handle_request(
 		dbm_.get(),
 		state_,
-        state_->doc_root().string(),
+        state_->doc_root(),
         std::move(parser_.get()),
         send_lambda(*this));
 
