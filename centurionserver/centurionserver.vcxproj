@@ -24,6 +24,7 @@
     <ClInclude Include="SearchIteratorBuilder.h" />
     <ClInclude Include="ServiceConfig.h" />
     <ClInclude Include="SharedState.hpp" />
+    <ClInclude Include="UriExtractor.h" />
     <ClInclude Include="WebsocketSession.hpp" />
   </ItemGroup>
   <ItemGroup>
@@ -33,6 +34,7 @@
     <ClCompile Include="QueryDocumentsHandler.cpp" />
     <ClCompile Include="SearchIteratorBuilder.cpp" />
     <ClCompile Include="SharedState.cpp" />
+    <ClCompile Include="UriExtractor.cpp" />
     <ClCompile Include="WebsocketSession.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -83,7 +85,7 @@
       <PreprocessorDefinitions>_WIN32_WINNT=0x0A00;_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS;ANTLR4CPP_STATIC;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)antlr4cpp-runtime\src;$(SolutionDir)centuriondb;$(SolutionDir)centurionsql;$(VCPKG_ROOT)\installed\x64-windows-static\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)uriparser\include;$(SolutionDir)antlr4cpp-runtime\src;$(SolutionDir)centuriondb;$(SolutionDir)centurionsql;$(VCPKG_ROOT)\installed\x64-windows-static\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
@@ -91,7 +93,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(VCPKG_ROOT)\installed\x64-windows-static\Debug\lib;$(TargetDir)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>antlr4-runtime.lib;centurionsql.lib;centuriondb.lib;boost_program_options-vc140-mt-gd.lib;boost_filesystem-vc140-mt-gd.lib;boost_system-vc140-mt-gd.lib;fmtd.lib;lz4d.lib;zlibd.lib;snappyd.lib;rocksdbd.lib;Shlwapi.lib;Rpcrt4.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>uriparser.lib;centurionsql.lib;centuriondb.lib;antlr4-runtime.lib;boost_program_options-vc140-mt-gd.lib;boost_filesystem-vc140-mt-gd.lib;boost_system-vc140-mt-gd.lib;fmtd.lib;lz4d.lib;zlibd.lib;snappyd.lib;rocksdbd.lib;Shlwapi.lib;Rpcrt4.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -105,7 +107,7 @@
       <PreprocessorDefinitions>_WIN32_WINNT=0x0A00;_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS;ANTLR4CPP_STATIC;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)antlr4cpp-runtime\src;$(SolutionDir)centuriondb;$(SolutionDir)centurionsql;$(VCPKG_ROOT)\installed\x64-windows-static\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)uriparser\include;$(SolutionDir)antlr4cpp-runtime\src;$(SolutionDir)centuriondb;$(SolutionDir)centurionsql;$(VCPKG_ROOT)\installed\x64-windows-static\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
@@ -115,7 +117,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(VCPKG_ROOT)\installed\x64-windows-static\lib;$(TargetDir)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>antlr4-runtime.lib;centurionsql.lib;centuriondb.lib;boost_program_options-vc140-mt.lib;boost_filesystem-vc140-mt.lib;boost_system-vc140-mt.lib;fmt.lib;lz4.lib;zlib.lib;snappy.lib;rocksdb.lib;Shlwapi.lib;Rpcrt4.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>uriparser.lib;centurionsql.lib;centuriondb.lib;antlr4-runtime.lib;boost_program_options-vc140-mt.lib;boost_filesystem-vc140-mt.lib;boost_system-vc140-mt.lib;fmt.lib;lz4.lib;zlib.lib;snappy.lib;rocksdb.lib;Shlwapi.lib;Rpcrt4.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

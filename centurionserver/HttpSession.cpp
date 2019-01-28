@@ -115,7 +115,8 @@ void http_session::on_read(beast::error_code ec, std::size_t)
     // This code uses the function object type send_lambda in
     // place of a generic lambda which is not available in C++11
     //
-    handle_request(
+	handle_request(
+		socket_.local_endpoint(),
 		dbm_,
 		state_,
         state_->doc_root(),

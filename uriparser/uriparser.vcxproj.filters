@@ -15,75 +15,72 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="HttpSession.hpp">
+    <ClInclude Include="targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Listener.hpp">
+    <ClInclude Include="UriCommon.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SharedState.hpp">
+    <ClInclude Include="UriIp4Base.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="WebsocketSession.hpp">
+    <ClInclude Include="UriMemory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SearchIteratorBuilder.h">
+    <ClInclude Include="UriNormalizeBase.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="HttpRequestHandler.h">
+    <ClInclude Include="UriParseBase.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="MimeTypes.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="AstVisitorImpl.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="DefaultVisitor.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="DefaultVisitorResult.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ServiceConfig.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="InsertSingleDocumentHandler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="InsertMultipleDocumentsHandler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="QueryDocumentsHandler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="UriExtractor.h">
+    <ClInclude Include="config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="HttpSession.cpp">
+    <ClCompile Include="UriCommon.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Listener.cpp">
+    <ClCompile Include="UriCompare.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Main.cpp">
+    <ClCompile Include="UriEscape.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SharedState.cpp">
+    <ClCompile Include="UriFile.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="WebsocketSession.cpp">
+    <ClCompile Include="UriIp4.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SearchIteratorBuilder.cpp">
+    <ClCompile Include="UriIp4Base.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="QueryDocumentsHandler.cpp">
+    <ClCompile Include="UriMemory.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="UriExtractor.cpp">
+    <ClCompile Include="UriNormalize.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="UriNormalizeBase.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="UriParse.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="UriParseBase.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="UriQuery.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="UriRecompose.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="UriResolve.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="UriShorten.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

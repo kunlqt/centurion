@@ -17,6 +17,8 @@ struct InsertMultipleDocumentsHandler {
 	template<class Body, class Allocator>
 	http::response<http::string_body> handle(
 		std::shared_ptr<centurion::DatabaseManager> dbm,
+		const std::string& databaseName,
+		const std::string& collectionName,
 		const http::request<Body, http::basic_fields<Allocator>>& req,
 		std::function<void(size_t)> progress) {
 		auto log = spdlog::get("root");
@@ -28,17 +30,25 @@ struct InsertMultipleDocumentsHandler {
 			{
 				throw std::runtime_error("an error occured while parsing JSON document");
 			}
-			if (!rootDoc.IsArray())
+			centurion::DocumentIds documentIds;
+			if (rootDoc.IsArray())
 			{
-				throw std::runtime_error("Expected array of documents");
+				const auto& rootDocs = rootDoc.GetArray();
+				documentIds.resize(rootDocs.Size(), centurion::InvalidDocumentId);
+				dbm->insertMultipleDocuments(
+					documentIds,
+					rootDocs,
+					[&progress](size_t val) { progress(val); }
+				);
+			} else if (rootDoc.IsObject()) {
+				documentIds.push_back(dbm->insertSingleDocument(
+					centurion::InvalidDocumentId,
+					rootDoc,
+					[&progress](size_t val) { progress(val); })
+				);
+			} else {
+				throw std::runtime_error("Unsupported JSON root object, only Object and Array are supported as root element");
 			}
-			const auto& rootDocs = rootDoc.GetArray();
-			centurion::DocumentIds documentIds{ rootDocs.Size(), centurion::InvalidDocumentId };
-			dbm->insertMultipleDocuments(
-				documentIds,
-				rootDocs,
-				[&progress](size_t val) { progress(val); }
-			);
 			http::response<http::string_body> res{ http::status::ok, req.version() };
 			res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
 			res.set(http::field::content_type, "application/json");

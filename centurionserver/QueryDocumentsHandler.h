@@ -15,7 +15,9 @@ using tcp = boost::asio::ip::tcp;               // from <boost/asio/ip/tcp.hpp>
 struct QueryDocumentsHandler
 {
 	template<class Body, class Allocator>
-	http::response<http::string_body> handle(std::shared_ptr<centurion::DatabaseManager> dbm,
+	http::response<http::string_body> handle(
+		std::shared_ptr<centurion::DatabaseManager> dbm,
+		const std::string& databaseName,
 		const http::request<Body, http::basic_fields<Allocator>>& req) {
 		auto log = spdlog::get("root");
 		try {
