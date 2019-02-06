@@ -78,13 +78,13 @@ namespace centurion {
 		return totalDocumentsFound;
 	}
 
-	std::vector<bool> DatabaseManager::removeDocuments(const DocumentIds& documentIds)
+	std::vector<DocumentId, bool> DatabaseManager::removeDocuments(const DocumentIds& documentIds)
 	{
 		DocumentIndexer documentIndexer(documentStore_, indexNameStore_, isvs_, idvs_, ibvs_, savs_);
-		std::vector<bool> result;
+		std::vector<DocumentId, bool> result;
 		for (const auto& documentId : documentIds)
 		{
-			result.push_back(documentIndexer.unindexDocument(documentId));
+			result.emplace_back(std::make_pair(documentId, documentIndexer.unindexDocument(documentId)));
 		}
 		return result;
 	}

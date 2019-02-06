@@ -12,6 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AstVisitorImpl.h" />
+    <ClInclude Include="DeleteMultipleDocumentsHandler.h" />
     <ClInclude Include="HttpRequestHandler.h" />
     <ClInclude Include="InsertMultipleDocumentsHandler.h" />
     <ClInclude Include="InsertSingleDocumentHandler.h" />

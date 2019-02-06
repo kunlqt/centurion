@@ -1,6 +1,6 @@
 #pragma once
-#include "InsertSingleDocumentHandler.h"
 #include "InsertMultipleDocumentsHandler.h"
+#include "DeleteMultipleDocumentsHandler.h"
 #include "QueryDocumentsHandler.h"
 #include "SharedState.hpp"
 #include "DatabaseManager.h"
@@ -116,7 +116,7 @@ template<class Body, class Allocator, class Send>
 				dbm,
 				pathComponents[0],
 				pathComponents[1],
-				req,
+				std::move(req),
 				[&buildStatusProgress, &state](size_t progress) { state->send(buildStatusProgress(progress)); })
 		);
 	}
@@ -127,6 +127,14 @@ template<class Body, class Allocator, class Send>
 		{
 			return send(bad_request("Invalid DELETE method, valid delete documents format: DELETE /database/collection/documentId1/documentId2/documentIdN"));
 		}
+		DeleteMultipleDocumentsHandler deleteMultipleDocumentsHandler;
+		return send(
+			deleteMultipleDocumentsHandler.handle<Body, Allocator>(
+				dbm,
+				pathComponents,
+				std::move(req),
+				[&buildStatusProgress, &state](size_t progress) { state->send(buildStatusProgress(progress)); })
+		);
 	}
 
 	if (req.method() == http::verb::put || req.method() == http::verb::patch)

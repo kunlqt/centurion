@@ -17,7 +17,7 @@ struct InsertSingleDocumentHandler {
 	template<class Body, class Allocator>
 	http::response<http::string_body> handle(
 		std::shared_ptr<centurion::DatabaseManager> dbm,
-		const http::request<Body, http::basic_fields<Allocator>>& req, 
+		http::request<Body, http::basic_fields<Allocator>>&& req, 
 		std::function<void(size_t)> progress) {
 		auto log = spdlog::get("root");
 

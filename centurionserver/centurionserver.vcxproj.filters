@@ -60,6 +60,9 @@
     <ClInclude Include="UriExtractor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="DeleteMultipleDocumentsHandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="HttpSession.cpp">

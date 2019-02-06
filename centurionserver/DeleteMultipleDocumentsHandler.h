@@ -13,46 +13,25 @@ namespace websocket = beast::websocket;         // from <boost/beast/websocket.h
 using tcp = boost::asio::ip::tcp;               // from <boost/asio/ip/tcp.hpp>
 
 
-struct InsertMultipleDocumentsHandler {
+struct DeleteMultipleDocumentsHandler {
 	template<class Body, class Allocator>
 	http::response<http::string_body> handle(
 		std::shared_ptr<centurion::DatabaseManager> dbm,
-		const std::string& databaseName,
-		const std::string& collectionName,
+		const std::vector<std::string>& pathComponents,
 		http::request<Body, http::basic_fields<Allocator>>&& req,
 		std::function<void(size_t)> progress) {
 		auto log = spdlog::get("root");
-		try {
-			rapidjson::Document rootDoc;
-			log->trace("Parsing json document...");
-			rootDoc.Parse(req.body().data());
-			if (rootDoc.HasParseError())
-			{
-				throw std::runtime_error("an error occured while parsing JSON document");
-			}
+		try {			
 			centurion::DocumentIds documentIds;
-			if (rootDoc.IsArray())
+			for (size_t pathIdx = 2; pathIdx < pathComponents.size(); pathIdx++)
 			{
-				const auto& rootDocs = rootDoc.GetArray();
-				documentIds.resize(rootDocs.Size(), centurion::InvalidDocumentId);
-				dbm->insertMultipleDocuments(
-					documentIds,
-					rootDocs,
-					[&progress](size_t val) { progress(val); }
-				);
-			} else if (rootDoc.IsObject()) {
-				documentIds.push_back(dbm->insertSingleDocument(
-					centurion::InvalidDocumentId,
-					rootDoc,
-					[&progress](size_t val) { progress(val); })
-				);
-			} else {
-				throw std::runtime_error("Unsupported JSON root object, only Object and Array are supported as root element");
+				documentIds.push_back(std::stol(pathComponents[pathIdx]));
 			}
+			auto deleteResult = dbm->removeDocuments(documentIds);
 			http::response<http::string_body> res{ http::status::ok, req.version() };
 			res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
 			res.set(http::field::content_type, "application/json");
-			const auto insertResult = buildInsertMultipleResult(documentIds);
+			const auto insertResult = buildDeleteMultipleResult(deleteResult);
 			// state->send(insertResult);
 			res.body() = insertResult;
 			res.keep_alive(req.keep_alive());
@@ -68,14 +47,14 @@ struct InsertMultipleDocumentsHandler {
 		}
 	}
 
-	std::string buildInsertMultipleResult(const centurion::DocumentIds& docsInserted) {
+	std::string buildDeleteMultipleResult(const std::vector<centurion::DocumentId, bool>& docsDeleted) {
 		rapidjson::Document doc(rapidjson::kObjectType);
-		doc.AddMember(rapidjson::StringRef("status"), rapidjson::StringRef("insert_done"), doc.GetAllocator());
+		doc.AddMember(rapidjson::StringRef("status"), rapidjson::StringRef("delete_done"), doc.GetAllocator());
 		rapidjson::Value documentIds(rapidjson::kArrayType);
 		rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
-		documentIds.Reserve(docsInserted.size(), allocator);
-		for (auto docInserted : docsInserted) {
-			documentIds.PushBack(docInserted, allocator);
+		documentIds.Reserve(docsDeleted.size(), allocator);
+		for (const auto& docDeleted : docsDeleted) {
+			documentIds.PushBack(docDeleted, allocator);
 		}
 		doc.AddMember(rapidjson::StringRef("documents"), documentIds, doc.GetAllocator());
 		rapidjson::StringBuffer result;
