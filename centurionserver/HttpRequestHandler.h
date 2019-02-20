@@ -42,7 +42,7 @@ template<class Body, class Allocator, class Send>
 		[&req](beast::string_view why)
 	{
 		http::response<http::string_body> res{ http::status::bad_request, req.version() };
-		res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
+		res.set(http::field::server, ServerFullName);
 		res.set(http::field::content_type, "text/html");
 		res.keep_alive(req.keep_alive());
 		res.body() = why.to_string();
@@ -55,7 +55,7 @@ template<class Body, class Allocator, class Send>
 		[&req](beast::string_view target)
 	{
 		http::response<http::string_body> res{ http::status::not_found, req.version() };
-		res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
+		res.set(http::field::server, ServerFullName);
 		res.set(http::field::content_type, "text/html");
 		res.keep_alive(req.keep_alive());
 		res.body() = "The resource '" + target.to_string() + "' was not found.";
@@ -68,7 +68,7 @@ template<class Body, class Allocator, class Send>
 		[&req](beast::string_view what)
 	{
 		http::response<http::string_body> res{ http::status::internal_server_error, req.version() };
-		res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
+		res.set(http::field::server, ServerFullName);
 		res.set(http::field::content_type, "text/html");
 		res.keep_alive(req.keep_alive());
 		res.body() = "An error occurred: '" + what.to_string() + "'";
@@ -184,7 +184,7 @@ template<class Body, class Allocator, class Send>
 		if (req.method() == http::verb::head)
 		{
 			http::response<http::empty_body> res{ http::status::ok, req.version() };
-			res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
+			res.set(http::field::server, ServerFullName);
 			res.set(http::field::content_type, mime_type(path));
 			res.content_length(size);
 			res.keep_alive(req.keep_alive());
@@ -195,7 +195,7 @@ template<class Body, class Allocator, class Send>
 			std::piecewise_construct,
 			std::make_tuple(std::move(body)),
 			std::make_tuple(http::status::ok, req.version()) };
-		res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
+		res.set(http::field::server, ServerFullName);
 		res.set(http::field::content_type, mime_type(path));
 		res.content_length(size);
 		res.keep_alive(req.keep_alive());

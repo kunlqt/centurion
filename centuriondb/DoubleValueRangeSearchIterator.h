@@ -123,7 +123,8 @@ namespace centurion
 			indexId_(InvalidIndexId),
 			lowerBound_(lowerBound),
 			upperBound_(upperBound),
-			currentDocumentId_(InvalidDocumentId) { }
+			currentDocumentId_(InvalidDocumentId),
+			documentBufferPos_(0) { }
 		
 		inline rocksdb::Slice buildDoubleSlice(IndexId indexId, double value, char* dst, size_t dstSize)
 		{

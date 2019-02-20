@@ -78,11 +78,11 @@ namespace centurion {
 		return totalDocumentsFound;
 	}
 
-	std::vector<DocumentId, bool> DatabaseManager::removeDocuments(const DocumentIds& documentIds)
+	std::vector<std::pair<DocumentId, bool>> DatabaseManager::removeDocuments(const DocumentIds& documentIds)
 	{
 		DocumentIndexer documentIndexer(documentStore_, indexNameStore_, isvs_, idvs_, ibvs_, savs_);
-		std::vector<DocumentId, bool> result;
-		for (const auto& documentId : documentIds)
+		std::vector<std::pair<DocumentId, bool>> result;
+		for (auto documentId : documentIds)
 		{
 			result.emplace_back(std::make_pair(documentId, documentIndexer.unindexDocument(documentId)));
 		}
@@ -121,10 +121,10 @@ namespace centurion {
 			cnt++;
 			if ((cnt % div) == 0)
 			{
-				onProgress(((double)cnt / (double)total)*100.0F);
+				onProgress(static_cast<size_t>(static_cast<double>(cnt) / static_cast<double>(total)*100.0F));
 			}
 		}
-		onProgress(100.0F);
+		onProgress(100);
 		const auto end = std::chrono::system_clock::now();
 		std::chrono::duration<double> elapsed_seconds = end - start;
 		const auto speed = total / elapsed_seconds.count();

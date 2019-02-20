@@ -1,5 +1,5 @@
 #pragma once
-
+#include "ServiceConfig.h"
 #include "DatabaseManager.h"
 #include <rapidjson/document.h>
 #include <spdlog/logger.h>
@@ -27,18 +27,18 @@ struct DeleteMultipleDocumentsHandler {
 			{
 				documentIds.push_back(std::stol(pathComponents[pathIdx]));
 			}
-			auto deleteResult = dbm->removeDocuments(documentIds);
+			auto deletedDocumentIds = dbm->removeDocuments(documentIds);
+			const auto deleteResult = buildDeleteMultipleResult(deletedDocumentIds);
 			http::response<http::string_body> res{ http::status::ok, req.version() };
-			res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
+			res.set(http::field::server, ServerFullName);
 			res.set(http::field::content_type, "application/json");
-			const auto insertResult = buildDeleteMultipleResult(deleteResult);
-			// state->send(insertResult);
-			res.body() = insertResult;
+			// state->send(deleteResult);
+			res.body() = deleteResult;
 			res.keep_alive(req.keep_alive());
 			return res;
 		} catch (std::runtime_error& err) {
 			http::response<http::string_body> res{ http::status::internal_server_error, req.version() };
-			res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
+			res.set(http::field::server, ServerFullName);
 			res.set(http::field::content_type, "text/html");
 			res.keep_alive(req.keep_alive());
 			res.body() = "An error occurred: '" + std::string(err.what()) + "'";
@@ -47,14 +47,16 @@ struct DeleteMultipleDocumentsHandler {
 		}
 	}
 
-	std::string buildDeleteMultipleResult(const std::vector<centurion::DocumentId, bool>& docsDeleted) {
+	std::string buildDeleteMultipleResult(const std::vector<std::pair<centurion::DocumentId, bool>>& docsDeleted) {
 		rapidjson::Document doc(rapidjson::kObjectType);
 		doc.AddMember(rapidjson::StringRef("status"), rapidjson::StringRef("delete_done"), doc.GetAllocator());
 		rapidjson::Value documentIds(rapidjson::kArrayType);
 		rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
 		documentIds.Reserve(docsDeleted.size(), allocator);
 		for (const auto& docDeleted : docsDeleted) {
-			documentIds.PushBack(docDeleted, allocator);
+			if (docDeleted.second) {
+				documentIds.PushBack(docDeleted.first, allocator);
+			}
 		}
 		doc.AddMember(rapidjson::StringRef("documents"), documentIds, doc.GetAllocator());
 		rapidjson::StringBuffer result;

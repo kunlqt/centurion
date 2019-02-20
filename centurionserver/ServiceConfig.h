@@ -5,6 +5,10 @@
 #include <string>
 #include <boost/asio/ip/tcp.hpp>
 
+constexpr auto ServerVersion = "v0.0.1-pre";
+constexpr auto ServerName = "CenturionServer";
+constexpr auto ServerFullName = ServerName;
+
 namespace fs = boost::filesystem;
 
 struct ServiceConfig {

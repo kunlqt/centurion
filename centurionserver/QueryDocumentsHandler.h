@@ -1,5 +1,5 @@
 #pragma once
-
+#include "ServiceConfig.h"
 #include "DatabaseManager.h"
 #include <rapidjson/document.h>
 #include <spdlog/logger.h>
@@ -23,7 +23,7 @@ struct QueryDocumentsHandler
 		try {
 			log->trace("handling /query sql request");
 			http::response<http::string_body> res{ http::status::ok, req.version() };
-			res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
+			res.set(http::field::server, ServerFullName);
 			res.set(http::field::content_type, "application/json");
 			rapidjson::StringBuffer resultsString;
 			rapidjson::Writer<rapidjson::StringBuffer> writer(resultsString);
@@ -38,7 +38,7 @@ struct QueryDocumentsHandler
 		{
 			log->error("An error while query db: {0}", err.what());
 			http::response<http::string_body> res{ http::status::bad_request, req.version() };
-			res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
+			res.set(http::field::server, ServerFullName);
 			res.set(http::field::content_type, "application/json");
 			rapidjson::Document doc(rapidjson::kObjectType);
 			doc.AddMember(rapidjson::StringRef("status"), rapidjson::StringRef("error"), doc.GetAllocator());
@@ -54,7 +54,7 @@ struct QueryDocumentsHandler
 		{
 			log->error("Unknown error while query DB");
 			http::response<http::string_body> res{ http::status::internal_server_error, req.version() };
-			res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
+			res.set(http::field::server, ServerFullName);
 			res.set(http::field::content_type, "application/json");
 			rapidjson::Document doc(rapidjson::kObjectType);
 			doc.AddMember(rapidjson::StringRef("status"), rapidjson::StringRef("error"), doc.GetAllocator());

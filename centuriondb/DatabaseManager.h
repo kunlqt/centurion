@@ -34,7 +34,7 @@ namespace centurion
 		DocumentId insertSingleDocument(DocumentId documentId, const rapidjson::Document& rootDoc, std::function<void(size_t)> onProgress);
 		void insertMultipleDocuments(DocumentIds& documentIds, const rapidjson::Document::Array& rootDocs, std::function<void(size_t)> onProgress);
 
-		std::vector<DocumentId, bool> removeDocuments(const DocumentIds& documentIds);
+		std::vector<std::pair<DocumentId, bool>> removeDocuments(const DocumentIds& documentIds);
 		const DocumentStore& documentStore() const { return documentStore_; };
 		const IndexNameStore& indexNameStore() const { return indexNameStore_; };
 		const StringValueIndexStore& isvs() const { return isvs_; };

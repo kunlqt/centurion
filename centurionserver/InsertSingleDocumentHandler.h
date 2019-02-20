@@ -35,7 +35,7 @@ struct InsertSingleDocumentHandler {
 				[&progress](size_t value) { progress(value); }
 			);
 			http::response<http::string_body> res{ http::status::ok, req.version() };
-			res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
+			res.set(http::field::server, ServerFullName);
 			res.set(http::field::content_type, "application/json");
 			const auto insertResult = buildInsertSingleResult(docsInserted);
 			// state->send(insertResult);
@@ -45,7 +45,7 @@ struct InsertSingleDocumentHandler {
 		} catch (std::runtime_error& err)
 		{
 			http::response<http::string_body> res{ http::status::internal_server_error, req.version() };
-			res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
+			res.set(http::field::server, ServerFullName);
 			res.set(http::field::content_type, "text/html");
 			res.keep_alive(req.keep_alive());
 			res.body() = "An error occurred: '" + std::string(err.what()) + "'";

@@ -1,5 +1,5 @@
 #pragma once
-
+#include "ServiceConfig.h"
 #include "DatabaseManager.h"
 #include <rapidjson/document.h>
 #include <spdlog/logger.h>
@@ -50,7 +50,7 @@ struct InsertMultipleDocumentsHandler {
 				throw std::runtime_error("Unsupported JSON root object, only Object and Array are supported as root element");
 			}
 			http::response<http::string_body> res{ http::status::ok, req.version() };
-			res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
+			res.set(http::field::server, ServerFullName);
 			res.set(http::field::content_type, "application/json");
 			const auto insertResult = buildInsertMultipleResult(documentIds);
 			// state->send(insertResult);
@@ -59,7 +59,7 @@ struct InsertMultipleDocumentsHandler {
 			return res;
 		} catch (std::runtime_error& err) {
 			http::response<http::string_body> res{ http::status::internal_server_error, req.version() };
-			res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
+			res.set(http::field::server, ServerFullName);
 			res.set(http::field::content_type, "text/html");
 			res.keep_alive(req.keep_alive());
 			res.body() = "An error occurred: '" + std::string(err.what()) + "'";
