@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 project(centurionsql)
 
 
-add_library(centurionsql STATIC main.cpp
+add_library(centurionsql STATIC 
 	AstBuilder.cpp
 	AstNodes.cpp
 	AstVisitor.cpp

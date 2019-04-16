@@ -2,10 +2,11 @@ cmake_minimum_required(VERSION 3.10)
 project(centurionserver)
 
 add_executable(centurionserver  
+	UriExtractor.cpp
 	HttpSession.cpp
 	Listener.cpp
 	Main.cpp
-	QueryDocumentHandler.cpp
+	QueryDocumentsHandler.cpp
 	SearchIteratorBuilder.cpp
 	SharedState.cpp
 	WebsocketSession.cpp
@@ -28,7 +29,9 @@ if(MSVC)
 endif()
 if(UNIX)
 	target_link_libraries(centurionserver 
-		PRIVATE centurionsql 
+		PRIVATE 
+		centurionsql 
+		uriparser
 		centuriondb
 		antlr4-runtime.a 
 		rocksdb.a
@@ -41,9 +44,7 @@ if(UNIX)
 		${Boost_LIBRARIES}
 		)
 endif()
-if(Boost_FOUND)
-	target_include_directories(${PROJECT_NAME} PRIVATE ${Boost_INCLUDE_DIRS})
-endif(Boost_FOUND)
 
+target_include_directories(${PROJECT_NAME} PRIVATE ${Boost_INCLUDE_DIRS} ../uriparser/include)
 install(TARGETS centurionserver DESTINATION bin)
 #install(FILES test.h DESTINATION include)

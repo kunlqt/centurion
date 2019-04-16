@@ -11,7 +11,7 @@ set(Boost_USE_STATIC_LIBS ON)
 find_package(Boost 1.69.0 COMPONENTS program_options system filesystem REQUIRED)
 
 include_directories(${SOLUTION_DIR}/centuriondb ${SOLUTION_DIR}/centurionsql)
-link_directories(lib)
+#link_directories(lib)
 
 if(MSVC)
 	add_definitions(-D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0A00 -D_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS -DANTLR4CPP_STATIC -DNDEBUG -D_CONSOLE)
@@ -35,7 +35,7 @@ if(UNIX)
 	)
 endif()
 
-
+add_subdirectory(uriparser)
 add_subdirectory(centuriondb)
 add_subdirectory(centurionsql)
 add_subdirectory(centurionserver)
