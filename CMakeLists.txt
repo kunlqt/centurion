@@ -11,7 +11,6 @@ set(Boost_USE_STATIC_LIBS ON)
 find_package(Boost 1.69.0 COMPONENTS program_options system filesystem REQUIRED)
 
 include_directories(${SOLUTION_DIR}/centuriondb ${SOLUTION_DIR}/centurionsql)
-#link_directories(lib)
 
 if(MSVC)
 	add_definitions(-D_CRT_SECURE_NO_WARNINGS -D_WIN32_WINNT=0x0A00 -D_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS -DANTLR4CPP_STATIC -DNDEBUG -D_CONSOLE)
@@ -20,7 +19,7 @@ if(MSVC)
 	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
 endif()
 if(UNIX)
-	set (LIB_BASE_DIR /root)
+	set (LIB_BASE_DIR $ENV{CENT_EXT_LIB_BASE_DIR})
 	link_directories(
 		${LIB_BASE_DIR}/rocksdb 
 		${LIB_BASE_DIR}/antlr4/runtime/Cpp/dist
