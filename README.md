@@ -39,7 +39,7 @@ mkdir -p build && cd build && cmake .. && make
 
 ## Run instructions
 ```sh
-cd centurionserver &&  ./centurionserver --db /tmp --web /centurion/centurionserver/public --jwt s3kret --log-level 0
+cd centurionserver &&  ./centurionserver --ip 0.0.0.0 --db /tmp --web /centurion/centurionserver/public --jwt s3kret --log-level 0
 ```
 
 *Please note that above command will store database in container's /tmp directory that is emphermal storage subject to erase on container shutdown. If you want to persist database files, use host mounted volume as a DB folder
