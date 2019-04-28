@@ -11,12 +11,14 @@ Centurion Database Platform is:
 
 ## Build instructions
 
+Docker:
 For easy and portable building process, there is a preconfigured Docker build image. In order to build the project from source, you will need to clone this repo, get the build docker image, run the build image and build the source code within the docker container.
 Please be aware there are some inconsistencies between Windows docker and Mac OSX/Linux docker (environment variables, mounting drives and command line arguments for CURL). 
 
-For Linux, GCC(supporting at least C++11) can be used to build this project.
-For native Windows build, Visual Studio 2017+ can be used.
-For Mac OSX, XCode can be used to build this project.
+Or native:
+- For Linux, GCC(supporting at least C++11) can be used to build this project.
+- For native Windows build, Visual Studio 2017+ can be used.
+- For Mac OSX, XCode can be used to build this project.
 
 ### Getting Started
 
@@ -135,7 +137,9 @@ In case the payload is a single JSON object, document is considered as a single 
 *NOTE: Please be aware CURL for Windows does NOT accept single quotes in command line arguments. You will need to use double quotes instead. In this case, double quotes used in the JSON body needs to be escaped. Other option is to reference the request body as a file (using @file.name) 
 
 ### Querying documents
-SQL Query language, HTTP POST request where content-type is `application/sql` and payload is the SQL query
+SQL Query language, HTTP POST request where content-type is `application/sql` and payload is the SQL query.
+In the *SELECT* statement you can extract subset of fields instead of using `SELECT *` to return complete objects. In case subset is selected, then DB will create new JSON objects made of merged fields of SELECT statement.
+SQL supports: `AND`, `OR`, `(`, `IN`, `=`, `>`, `<`, `>=`, `<=` and arithmetic operations. There is still a lot of work that needs to be done to wire-up SQL parser with internal DB indices.
 
 ```
 curl -X POST \
@@ -176,15 +180,16 @@ curl -X DELETE \
 * Support for multiple Databases, support for multiple DB collections (currently DB name is ignored);
 * Implement Document ID generation service;
 * Able to exclude certain field in the indexing process (currently all fields are indexed);
-* Fix and publish all unit tests covering DB functionality (currently tests are not published)
-* Websocket and messaging functionality needs to be completed (current state is just PoC)
-* Enabling user access levels (currently JWT is built but not enabled and no user access system is in place)
-* Data partitioning and clustering 
+* Fix and publish all unit tests covering DB functionality (currently tests are not published);
+* Websocket and messaging functionality needs to be completed (current state is just PoC);
+* Enabling user access levels (currently JWT is built but not enabled and no user access system is in place);
+* Data partitioning and clustering;
 
 ### Notes
 Following external tools were used for this project:
 * JWT support by [JWT cpp](https://github.com/pokowaka/jwt-cpp)
 * Amazing header only logging library [SPDLog](https://github.com/gabime/spdlog)
+* Ultra fast JSON parser library [RapidJSON](https://github.com/Tencent/rapidjson)
 * For networking layer and local filesystem management in portable way, [Boost libraries](https://github.com/boostorg)
 * Indexes are internally managed thru [RocksDB](https://github.com/facebook/rocksdb)
 * SQL grammar parser is generated using [CPP target for Antlr4](https://github.com/antlr/antlr4/tree/master/runtime/Cpp)
