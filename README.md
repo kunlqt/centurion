@@ -58,42 +58,89 @@ For document INSERT, UPDATE AND QUERY:
 ### Insert document(s)
 ```
 curl -X POST \
-  http://127.0.0.1:8080/database_foo/collection_bar \
+  http://localhost:8080/db1/collection1 \
   -H 'Content-Type: application/json' \
-  -d '{
+  -d '[
+{
 	"student": {	
 		"person": {
-			"first_name": "vasko",
-			"last_name": "mitanov"
-		}
+			"first_name": "Jane",
+			"last_name": "Doe",
+			"age": 34
+		},
+		"degree": "bsc"
 	}
-}'
+},
+{
+	"student": {	
+		"person": {
+			"first_name": "John",
+			"last_name": "Doe",
+			"age": 35
+		},
+		"degree": "bsc"
+	}
+},
+{
+	"student": {	
+		"person": {
+			"first_name": "Albert",
+			"last_name": "Einstein",
+			"age": 60
+		},
+		"degree": "phd"
+	}
+},
+{
+	"student": {	
+		"person": {
+			"first_name": "Enrico",
+			"last_name": "Fermi",
+			"age": 65
+		},
+		"degree": "phd"
+	}
+},
+{
+	"student": {	
+		"person": {
+			"first_name": "Max",
+			"last_name": "Planck",
+			"age": 80
+		},
+		"degree": "phd"
+	}
+}
+]'
 ```
 
 In case the payload is a single JSON object, document is considered as a single document. In case payload is *array* of JSON objects, all objects are inserted as a separate JSON objects and can be queried as a separate documents. 
+
+*NOTE: Please be aware CURL for Windows does NOT accept single quotes in command line arguments. You will need to use double quotes instead. In this case, double quotes used in the JSON body needs to be escaped. Other option is to reference the request body as a file (using @file.name) 
 
 ### Query documents
 SQL Query language, HTTP POST request where content-type is `application/sql` and payload is the SQL query
 
 ```
 curl -X POST \
-  http://127.0.0.1:8080/database_foo \
+  http://localhost:8080/db1 \
   -H 'Content-Type: application/sql' \
-  -d 'select * from collection_bar where student.person.first_name='\''vasko'\'''
-```
+  -d 'select student.person.last_name,student.degree,student.person.age from collection1 where student.person.first_name='\''Albert'\'' or student.person.first_name='\''Enrico'\'' or (student.person.age=30+5 and student.person.last_name='\''Doe'\'')'
+ ```
+*NOTE: Please be aware CURL for Windows does NOT accept single quotes in command line arguments. You will need to use double quotes instead. In this case, double quotes used in the SQL expression body needs to be escaped. Other option is to reference the request body as a file (using @file.name) 
 
 ### Update document(s)
 Updating documents works in a similar way as inserting documents with only one difference. The URL path contains ID (or list of IDs) of documents to be updated
 
 ```
 curl -X POST \
-  http://127.0.0.1:8080/database_foo/collection_bar/12345 \
+  http://localhost:8080/database_foo/collection_bar/12345 \
   -H 'Content-Type: application/json' \
   -d '{
 	"student": {	
 		"person": {
 			"first_name": "vaskoz",
-			"last_name": "zmitanovq"
+			"last_name": "mitanov"
 		}
 	}
 }'
@@ -105,5 +152,5 @@ Deleting documents works in a similar way as updating documents. The method is D
 
 ```
 curl -X DELETE \
-  http://127.0.0.1:8080/database_foo/collection_bar/12345 
+  http://localhost:8080/database_foo/collection_bar/12345 
 ```
