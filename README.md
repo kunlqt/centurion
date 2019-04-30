@@ -41,7 +41,7 @@ cd centurion
 
 #### On Mac OSX and Linux
 ```sh
-docker run -it -w /centurion -v $PWD:/centurion -e HOST_PERMS="$(id -u):$(id -g)" vaskomitanov/centurion-devel bash
+docker run -it -p 8080:8080 -w /centurion -v $PWD:/centurion -e HOST_PERMS="$(id -u):$(id -g)" vaskomitanov/centurion-devel bash
 ```
 
 #### On Windows
